@@ -1,0 +1,306 @@
+{
+  "OV": {
+    "Titulo": "Living Object",
+    "Narrador": "Narrator",
+    "Tipo": {
+      "Tile": "Object",
+      "Porta": "Door",
+      "Parede": "Wall"
+    },
+    "Est": {
+      "Desligada": "Off",
+      "Ligada": "On",
+      "Solto": "Released",
+      "Apertado": "Pressed",
+      "Fechado": "Closed",
+      "Aberto": "Open",
+      "Solta": "Released",
+      "Pressionada": "Pressed",
+      "Apagada": "Dark",
+      "Acesa": "Lit",
+      "Estado1": "State 1",
+      "Estado2": "State 2",
+      "Novo": "State {n}"
+    },
+    "Preset": {
+      "alavanca": {
+        "Nome": "Lever",
+        "Desc": "Turns on and off"
+      },
+      "botao": {
+        "Nome": "Button",
+        "Desc": "Press and it springs back"
+      },
+      "bau": {
+        "Nome": "Chest",
+        "Desc": "Opens and closes"
+      },
+      "placa": {
+        "Nome": "Pressure plate",
+        "Desc": "Fires when stepped on"
+      },
+      "runa": {
+        "Nome": "Rune / crystal",
+        "Desc": "Lights up and goes dark"
+      },
+      "livre": {
+        "Nome": "Custom",
+        "Desc": "From scratch, your way"
+      }
+    },
+    "Anim": {
+      "nenhuma": "None",
+      "girar": "Rotate",
+      "deslizar": "Slide",
+      "virar": "Flip",
+      "pulsar": "Pulse",
+      "sumir": "Blink"
+    },
+    "Mom": {
+      "AoFicar": "When it becomes: {estado}",
+      "sempreTile": "Whenever it changes",
+      "sempreParede": "Always (open, close, lock...)",
+      "abrir": "When opens",
+      "fechar": "When closes",
+      "trancar": "When locked",
+      "destrancar": "When unlocked",
+      "tentativa": "When tried while locked",
+      "atravessar": "When someone walks through"
+    },
+    "Aba": {
+      "Aparencia": "Appearance",
+      "Uso": "How players use it",
+      "Acoes": "What happens",
+      "Regras": "Rules"
+    },
+    "Editor": {
+      "Titulo": "Living object: {nome}",
+      "Etapas": "Steps",
+      "Cancelar": "Cancel",
+      "Salvar": "Save object",
+      "ResumoTile": "{estados} states · {n} action(s) · {uso}",
+      "ResumoParede": "{n} action(s)",
+      "PortaDica": "The door still opens and closes the normal Foundry way. Here you choose what else happens at each moment.",
+      "ParedeDica": "A plain wall only has the \"When someone walks through\" moment. Tip: a wall that doesn't block movement becomes an invisible tripwire.",
+      "Testar": "Test: change state",
+      "Nome": "Name",
+      "Estados": "Object states",
+      "NomeEstado": "State name",
+      "ImagemEstado": "Image for this state",
+      "Escolher": "Browse",
+      "Inicial": "Initial state",
+      "RemoverEstado": "Remove state",
+      "AdicionarEstado": "Add state",
+      "Arquivo": "file path",
+      "Ouvir": "Listen",
+      "Subir": "Move up",
+      "Descer": "Move down",
+      "Editar": "Edit",
+      "Fechar": "Close",
+      "Remover": "Remove"
+    },
+    "Aparencia": {
+      "Titulo": "What is this object?",
+      "Dica": "Pick a template. It comes with states, animation and how it's used, and you can change anything.",
+      "Anim": "How it moves when it changes state",
+      "AnimDica": "Besides the animation, each state can have its own image (on the left). Click \"Test\" to see it.",
+      "Som": "Sound when it changes state",
+      "SomDica": "Plays for everyone on this map whenever the object changes state."
+    },
+    "Uso": {
+      "Titulo": "How do players use the object?",
+      "clicar": {
+        "Nome": "Click the object",
+        "Desc": "The player clicks it on the map",
+        "Resumo": "players click it"
+      },
+      "pisar": {
+        "Nome": "Step on it",
+        "Desc": "Changes when a token stops on it",
+        "Resumo": "players step on it"
+      },
+      "perto": {
+        "Nome": "Get close",
+        "Desc": "Changes when a token comes near, no click",
+        "Resumo": "players get close"
+      },
+      "mestre": {
+        "Nome": "GM only",
+        "Desc": "Players can't use it",
+        "Resumo": "GM only"
+      },
+      "Distancia": "Reach",
+      "DistanciaClicar": "The player's token must be this close to use it.",
+      "DistanciaPerto": "How close a token must get for the object to react.",
+      "Ajudas": "Visual hints",
+      "Mao": "Hand cursor on hover",
+      "MaoDica": "Shows the object can be used",
+      "Brilho": "Glow when someone is close",
+      "BrilhoDica": "A pulsing outline when the player's token is in reach",
+      "MestreDica": "The GM uses any object with Alt+click on the map, or with the button on the tile HUD."
+    },
+    "Acoes": {
+      "Titulo": "What happens",
+      "Vazio": "Nothing happens at this moment yet. Pick an action below.",
+      "Adicionar": "Add action",
+      "PrecisaNavegador": "Needs World Navigator active"
+    },
+    "Regras": {
+      "Quem": "Who can use it",
+      "ArrasteAtor": "Drag an actor from the sidebar here",
+      "SoAtor": "Drag an actor.",
+      "Usos": "How many times it can be used",
+      "UsosDica": "After that the object stops responding. Used {n}x so far.",
+      "Zerar": "Reset count",
+      "Voltar": "Springs back to the initial state",
+      "VoltarDica": "Like a button or a pressure plate",
+      "VoltarTempo": "Time to spring back",
+      "VoltarTempoDica": "After this time the object returns to state 1",
+      "Confirmar": "Ask the GM to confirm",
+      "ConfirmarDica": "The GM approves before the actions happen",
+      "Trancado": "Locked",
+      "TrancadoDica": "Nobody can use it until unlocked (by you, another object or a macro)"
+    },
+    "Quem": {
+      "todos": "Anyone",
+      "jogadores": "Players only",
+      "npcs": "NPCs only",
+      "ator": "A specific character"
+    },
+    "Valor": {
+      "Casas": "{n} square(s)",
+      "Qualquer": "Any",
+      "Vezes": "{n} time(s)",
+      "SemLimite": "Unlimited",
+      "Segundos": "{n} s"
+    },
+    "Para": {
+      "disparou": "Whoever used it",
+      "mapa": "Everyone on this map",
+      "todos": "Everyone",
+      "mestre": "GM only"
+    },
+    "Opc": {
+      "abrir": "Open",
+      "fechar": "Close",
+      "trancar": "Lock",
+      "destrancar": "Unlock",
+      "alternar": "Toggle",
+      "mostrar": "Show",
+      "esconder": "Hide",
+      "proximo": "Go to the next state",
+      "inicial": "Back to the initial state",
+      "narrador": "Narration (everyone sees)",
+      "sussurro": "Whisper to whoever used it",
+      "soMestre": "GM only",
+      "tocar": "Play",
+      "parar": "Stop",
+      "pararTodas": "Stop all playlists",
+      "token": "The token of whoever used it",
+      "jogadores": "All player tokens on the map"
+    },
+    "Acao": {
+      "som": "Sound effect",
+      "portas": "Doors",
+      "visibilidade": "Show / hide",
+      "objeto": "Another object",
+      "chat": "Chat message",
+      "imagem": "Show image",
+      "diario": "Open journal",
+      "camera": "Move the camera",
+      "escuridao": "Darkness",
+      "musica": "Music",
+      "mover": "Move to another map",
+      "esperar": "Wait"
+    },
+    "AcaoDesc": {
+      "som": "Door, button, scream",
+      "portas": "Open, close, lock",
+      "visibilidade": "Tiles, lights, tokens",
+      "objeto": "Changes or locks another",
+      "chat": "Narration or whisper",
+      "imagem": "On the player's screen",
+      "diario": "A page or note",
+      "camera": "Shows what changed",
+      "escuridao": "Day, night, blackout",
+      "musica": "Play or stop",
+      "mover": "With World Navigator",
+      "esperar": "Pause between actions"
+    },
+    "AcaoDica": {
+      "som": "Plays once. For long or ambient sounds, use Music.",
+      "portas": "On the Walls layer, select the doors on the map and click \"Add selected\".",
+      "visibilidade": "Select tiles, tokens, lights, sounds, notes or drawings on the map and click \"Add selected\". You can go layer by layer.",
+      "objeto": "Example: the lever unlocks the chest, or lights the room's runes.",
+      "chat": "You can use {token}, {jogador}, {objeto} and {mapa} in the text.",
+      "imagem": "Opens the image in a window for whoever needs to see it.",
+      "diario": "If the person can't see the journal, the GM grants observer permission.",
+      "camera": "Pans the camera to the object or to a region. Zoom 0 keeps the current zoom.",
+      "escuridao": "0% = bright day, 100% = total darkness. Duration in seconds.",
+      "musica": "Uses Foundry's native playlists and plays for the whole table.",
+      "mover": "Moves the token (with HP and effects) and the player who owns it, with World Navigator's transition screen.",
+      "esperar": "Pauses before the next action."
+    },
+    "Campo": {
+      "som": "Sound",
+      "arquivo": "File",
+      "volume": "Volume",
+      "para": "For whom",
+      "portas": "Doors",
+      "estado": "What to do",
+      "alvos": "Targets",
+      "texto": "Text",
+      "como": "How",
+      "titulo": "Title",
+      "diario": "Journal or page",
+      "regiao": "Where",
+      "zoom": "Zoom",
+      "valor": "Darkness",
+      "duracao": "Duration (s)",
+      "playlist": "Playlist",
+      "modo": "What to do",
+      "destino": "Destination map",
+      "quem": "Who goes",
+      "segundos": "Seconds",
+      "PontoChegada": "Map's arrival point",
+      "TextoExemplo": "Something heavy moves in the depths...",
+      "UsarPortas": "Add selected",
+      "UsarSelecionados": "Add selected",
+      "Limpar": "Clear",
+      "SemObjetos": "There are no other living objects on this map.",
+      "AbraOMapa": "Open the map \"{mapa}\" to select things on it.",
+      "SelecionePortas": "Select one or more doors on the Walls layer.",
+      "SelecioneObjetos": "Select tiles, tokens, lights, sounds, notes or drawings on the map."
+    },
+    "Resumo": {
+      "Configurar": "Click Edit to set it up",
+      "PortasN": "{n} door(s)",
+      "ObjetosN": "{n} object(s)",
+      "EsteObjeto": "This object",
+      "Segundos": "{n} second(s)"
+    },
+    "Secao": {
+      "NaoETile": "This tile is not a living object yet.",
+      "NaoEParede": "This wall has no actions yet.",
+      "ResumoTile": "Current state: {estado} · {n} action(s) · {uso}",
+      "ResumoParede": "{n} action(s) set up",
+      "Transformar": "Make it a living object",
+      "Editar": "Edit living object",
+      "Remover": "Remove living object",
+      "RemoverPergunta": "Remove the living object? Its states and actions will be lost (the tile or wall stays on the map)."
+    },
+    "Hud": {
+      "Alternar": "Change state (GM test)"
+    },
+    "Aviso": {
+      "SalvePrimeiro": "Save the tile or wall first.",
+      "Salvo": "Object \"{objeto}\" saved.",
+      "Longe": "You are too far away to use that.",
+      "SemMestre": "A GM must be connected to use objects.",
+      "Trancado": "\"{objeto}\" is locked.",
+      "Confirmar": "<strong>{quem}</strong> wants to use <strong>{objeto}</strong>. Allow?",
+      "ErroAcao": "\"{objeto}\": the \"{acao}\" action failed. Check the console (F12).",
+      "SemNavegador": "\"Move to another map\" needs the World Navigator module active."
+    }
+  }
+}

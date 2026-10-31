@@ -1,0 +1,306 @@
+{
+  "OV": {
+    "Titulo": "Objeto Vivo",
+    "Narrador": "Narrador",
+    "Tipo": {
+      "Tile": "Objeto",
+      "Porta": "Porta",
+      "Parede": "Parede"
+    },
+    "Est": {
+      "Desligada": "Desligada",
+      "Ligada": "Ligada",
+      "Solto": "Solto",
+      "Apertado": "Apertado",
+      "Fechado": "Fechado",
+      "Aberto": "Aberto",
+      "Solta": "Solta",
+      "Pressionada": "Pressionada",
+      "Apagada": "Apagada",
+      "Acesa": "Acesa",
+      "Estado1": "Estado 1",
+      "Estado2": "Estado 2",
+      "Novo": "Estado {n}"
+    },
+    "Preset": {
+      "alavanca": {
+        "Nome": "Alavanca",
+        "Desc": "Liga e desliga"
+      },
+      "botao": {
+        "Nome": "Botão",
+        "Desc": "Aperta e volta sozinho"
+      },
+      "bau": {
+        "Nome": "Baú",
+        "Desc": "Abre e fecha"
+      },
+      "placa": {
+        "Nome": "Placa de pressão",
+        "Desc": "Dispara ao pisar"
+      },
+      "runa": {
+        "Nome": "Runa / cristal",
+        "Desc": "Acende e apaga"
+      },
+      "livre": {
+        "Nome": "Personalizado",
+        "Desc": "Do zero, do seu jeito"
+      }
+    },
+    "Anim": {
+      "nenhuma": "Nenhuma",
+      "girar": "Girar",
+      "deslizar": "Deslizar",
+      "virar": "Virar",
+      "pulsar": "Pulsar",
+      "sumir": "Piscar"
+    },
+    "Mom": {
+      "AoFicar": "Ao ficar: {estado}",
+      "sempreTile": "Sempre que mudar",
+      "sempreParede": "Sempre (abrir, fechar, trancar...)",
+      "abrir": "Ao abrir",
+      "fechar": "Ao fechar",
+      "trancar": "Ao trancar",
+      "destrancar": "Ao destrancar",
+      "tentativa": "Ao tentar abrir trancada",
+      "atravessar": "Ao alguém atravessar"
+    },
+    "Aba": {
+      "Aparencia": "Aparência",
+      "Uso": "Como o jogador usa",
+      "Acoes": "O que acontece",
+      "Regras": "Regras"
+    },
+    "Editor": {
+      "Titulo": "Objeto vivo: {nome}",
+      "Etapas": "Etapas",
+      "Cancelar": "Cancelar",
+      "Salvar": "Salvar objeto",
+      "ResumoTile": "{estados} estados · {n} ação(ões) · {uso}",
+      "ResumoParede": "{n} ação(ões)",
+      "PortaDica": "A porta continua sendo aberta e fechada do jeito normal do Foundry. Aqui você escolhe o que mais acontece em cada momento.",
+      "ParedeDica": "Uma parede comum só tem o momento \"Ao alguém atravessar\". Dica: uma parede que não bloqueia movimento vira um fio de armadilha invisível.",
+      "Testar": "Testar: mudar de estado",
+      "Nome": "Nome",
+      "Estados": "Estados do objeto",
+      "NomeEstado": "Nome do estado",
+      "ImagemEstado": "Imagem deste estado",
+      "Escolher": "Escolher",
+      "Inicial": "Estado inicial",
+      "RemoverEstado": "Remover estado",
+      "AdicionarEstado": "Adicionar estado",
+      "Arquivo": "caminho do arquivo",
+      "Ouvir": "Ouvir",
+      "Subir": "Subir",
+      "Descer": "Descer",
+      "Editar": "Editar",
+      "Fechar": "Fechar",
+      "Remover": "Remover"
+    },
+    "Aparencia": {
+      "Titulo": "O que é este objeto?",
+      "Dica": "Escolha um modelo. Ele já vem com estados, animação e jeito de usar prontos, e você muda o que quiser.",
+      "Anim": "Como ele se mexe ao mudar de estado",
+      "AnimDica": "Além da animação, cada estado pode ter sua própria imagem (à esquerda). Clique em \"Testar\" para ver.",
+      "Som": "Som ao mudar de estado",
+      "SomDica": "Toca para todos que estão neste mapa sempre que o objeto muda de estado."
+    },
+    "Uso": {
+      "Titulo": "Como o jogador usa o objeto?",
+      "clicar": {
+        "Nome": "Clicar no objeto",
+        "Desc": "O jogador clica nele no mapa",
+        "Resumo": "o jogador clica"
+      },
+      "pisar": {
+        "Nome": "Pisar em cima",
+        "Desc": "Muda quando um token para em cima dele",
+        "Resumo": "o jogador pisa em cima"
+      },
+      "perto": {
+        "Nome": "Chegar perto",
+        "Desc": "Muda quando um token se aproxima, sem clicar",
+        "Resumo": "o jogador chega perto"
+      },
+      "mestre": {
+        "Nome": "Só o mestre aciona",
+        "Desc": "Os jogadores não conseguem usar",
+        "Resumo": "só o mestre aciona"
+      },
+      "Distancia": "Distância para alcançar",
+      "DistanciaClicar": "O token do jogador precisa estar perto assim para conseguir usar.",
+      "DistanciaPerto": "A que distância o token precisa chegar para o objeto reagir.",
+      "Ajudas": "Ajudas visuais",
+      "Mao": "Mãozinha ao passar o mouse",
+      "MaoDica": "Mostra que o objeto pode ser usado",
+      "Brilho": "Brilho quando alguém está perto",
+      "BrilhoDica": "Um contorno que pulsa quando o token do jogador está no alcance",
+      "MestreDica": "O mestre usa qualquer objeto com Alt+clique no mapa, ou pelo botão no HUD do tile."
+    },
+    "Acoes": {
+      "Titulo": "O que acontece",
+      "Vazio": "Nada acontece ainda neste momento. Escolha uma ação abaixo.",
+      "Adicionar": "Adicionar ação",
+      "PrecisaNavegador": "Precisa do Navegador de Mundos ativo"
+    },
+    "Regras": {
+      "Quem": "Quem pode usar",
+      "ArrasteAtor": "Arraste um ator da barra lateral para cá",
+      "SoAtor": "Arraste um ator.",
+      "Usos": "Quantas vezes pode ser usado",
+      "UsosDica": "Depois disso o objeto para de responder. Já usado {n}x.",
+      "Zerar": "Zerar contagem",
+      "Voltar": "Volta sozinho ao estado inicial",
+      "VoltarDica": "Como um botão ou uma placa de pressão",
+      "VoltarTempo": "Tempo para voltar",
+      "VoltarTempoDica": "Depois desse tempo o objeto volta ao estado 1",
+      "Confirmar": "Pedir confirmação ao mestre",
+      "ConfirmarDica": "O mestre aprova antes de as ações acontecerem",
+      "Trancado": "Trancado",
+      "TrancadoDica": "Ninguém consegue usar até destrancar (por você, por outro objeto ou por macro)"
+    },
+    "Quem": {
+      "todos": "Qualquer um",
+      "jogadores": "Só jogadores",
+      "npcs": "Só NPCs",
+      "ator": "Um personagem específico"
+    },
+    "Valor": {
+      "Casas": "{n} casa(s)",
+      "Qualquer": "Qualquer",
+      "Vezes": "{n} vez(es)",
+      "SemLimite": "Sem limite",
+      "Segundos": "{n} s"
+    },
+    "Para": {
+      "disparou": "Quem usou",
+      "mapa": "Todos neste mapa",
+      "todos": "Todos",
+      "mestre": "Só o mestre"
+    },
+    "Opc": {
+      "abrir": "Abrir",
+      "fechar": "Fechar",
+      "trancar": "Trancar",
+      "destrancar": "Destrancar",
+      "alternar": "Alternar",
+      "mostrar": "Mostrar",
+      "esconder": "Esconder",
+      "proximo": "Mudar para o próximo estado",
+      "inicial": "Voltar ao estado inicial",
+      "narrador": "Narração (todos veem)",
+      "sussurro": "Sussurro para quem usou",
+      "soMestre": "Só para o mestre",
+      "tocar": "Tocar",
+      "parar": "Parar",
+      "pararTodas": "Parar todas as playlists",
+      "token": "O token de quem usou",
+      "jogadores": "Todos os tokens de jogadores do mapa"
+    },
+    "Acao": {
+      "som": "Efeito sonoro",
+      "portas": "Portas",
+      "visibilidade": "Mostrar / esconder",
+      "objeto": "Outro objeto",
+      "chat": "Mensagem no chat",
+      "imagem": "Mostrar imagem",
+      "diario": "Abrir diário",
+      "camera": "Mover a câmera",
+      "escuridao": "Escuridão",
+      "musica": "Música",
+      "mover": "Levar a outro mapa",
+      "esperar": "Esperar"
+    },
+    "AcaoDesc": {
+      "som": "Porta, botão, grito",
+      "portas": "Abrir, fechar, trancar",
+      "visibilidade": "Tiles, luzes, tokens",
+      "objeto": "Muda ou tranca outro",
+      "chat": "Narração ou sussurro",
+      "imagem": "Na tela do jogador",
+      "diario": "Uma página ou nota",
+      "camera": "Mostra onde mudou",
+      "escuridao": "Dia, noite, apagão",
+      "musica": "Tocar ou parar",
+      "mover": "Com o Navegador de Mundos",
+      "esperar": "Pausa entre ações"
+    },
+    "AcaoDica": {
+      "som": "Toca uma vez. Para sons longos ou ambiente, use Música.",
+      "portas": "Na camada Paredes, selecione as portas no mapa e clique em \"Adicionar selecionadas\".",
+      "visibilidade": "Selecione tiles, tokens, luzes, sons, notas ou desenhos no mapa e clique em \"Adicionar selecionados\". Pode ir de camada em camada.",
+      "objeto": "Exemplo: a alavanca destranca o baú, ou acende as runas da sala.",
+      "chat": "Pode usar {token}, {jogador}, {objeto} e {mapa} no texto.",
+      "imagem": "Abre a imagem numa janela na tela de quem precisa ver.",
+      "diario": "Se a pessoa não tiver permissão para ver o diário, o mestre dá permissão de observador.",
+      "camera": "Leva a câmera até o objeto ou até uma região. Zoom 0 mantém o zoom atual.",
+      "escuridao": "0% = dia claro, 100% = escuro total. Duração em segundos.",
+      "musica": "Usa as playlists nativas do Foundry e toca para a mesa toda.",
+      "mover": "Leva o token (com vida e efeitos) e o jogador dono dele, com a tela de transição do Navegador de Mundos.",
+      "esperar": "Pausa antes da próxima ação."
+    },
+    "Campo": {
+      "som": "Som",
+      "arquivo": "Arquivo",
+      "volume": "Volume",
+      "para": "Para quem",
+      "portas": "Portas",
+      "estado": "O que fazer",
+      "alvos": "Alvos",
+      "texto": "Texto",
+      "como": "Como",
+      "titulo": "Título",
+      "diario": "Diário ou página",
+      "regiao": "Onde",
+      "zoom": "Zoom",
+      "valor": "Escuridão",
+      "duracao": "Duração (s)",
+      "playlist": "Playlist",
+      "modo": "O que fazer",
+      "destino": "Mapa de destino",
+      "quem": "Quem vai",
+      "segundos": "Segundos",
+      "PontoChegada": "Ponto de chegada do mapa",
+      "TextoExemplo": "Algo pesado se move nas profundezas...",
+      "UsarPortas": "Adicionar selecionadas",
+      "UsarSelecionados": "Adicionar selecionados",
+      "Limpar": "Limpar",
+      "SemObjetos": "Não há outros objetos vivos neste mapa.",
+      "AbraOMapa": "Abra o mapa \"{mapa}\" para selecionar nele.",
+      "SelecionePortas": "Selecione uma ou mais portas na camada Paredes.",
+      "SelecioneObjetos": "Selecione tiles, tokens, luzes, sons, notas ou desenhos no mapa."
+    },
+    "Resumo": {
+      "Configurar": "Clique em Editar para configurar",
+      "PortasN": "{n} porta(s)",
+      "ObjetosN": "{n} objeto(s)",
+      "EsteObjeto": "Este objeto",
+      "Segundos": "{n} segundo(s)"
+    },
+    "Secao": {
+      "NaoETile": "Este tile ainda não é um objeto vivo.",
+      "NaoEParede": "Esta parede ainda não tem ações.",
+      "ResumoTile": "Estado atual: {estado} · {n} ação(ões) · {uso}",
+      "ResumoParede": "{n} ação(ões) configurada(s)",
+      "Transformar": "Transformar em objeto vivo",
+      "Editar": "Editar objeto vivo",
+      "Remover": "Remover objeto vivo",
+      "RemoverPergunta": "Remover o objeto vivo? Os estados e as ações configuradas serão perdidos (o tile ou a parede continua no mapa)."
+    },
+    "Hud": {
+      "Alternar": "Mudar de estado (teste do mestre)"
+    },
+    "Aviso": {
+      "SalvePrimeiro": "Salve o tile ou a parede primeiro.",
+      "Salvo": "Objeto \"{objeto}\" salvo.",
+      "Longe": "Você está longe demais para usar isso.",
+      "SemMestre": "Precisa de um mestre conectado para usar objetos.",
+      "Trancado": "\"{objeto}\" está trancado.",
+      "Confirmar": "<strong>{quem}</strong> quer usar <strong>{objeto}</strong>. Deixar?",
+      "ErroAcao": "\"{objeto}\": a ação \"{acao}\" falhou. Veja o console (F12).",
+      "SemNavegador": "\"Levar a outro mapa\" precisa do módulo Navegador de Mundos ativo."
+    }
+  }
+}
