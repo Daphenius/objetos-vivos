@@ -34,8 +34,17 @@ Depois, ative o módulo no mundo em **Gerenciar Módulos**.
 2. Escolha um objeto:
    - **Prontos**: alavanca, botão, baú, placa de pressão e runa, já com as imagens de cada aparência;
    - **Usar uma imagem minha**: escolha qualquer imagem do seu Foundry e ela vira um objeto com profundidade;
+   - **Assets**: escolha a pasta onde você guarda seus assets (itens, móveis, objetos de cena, inclusive os baixados do Forgotten Adventures). Navegue pelas subpastas e busque pelo nome;
    - **Meus objetos**: os que você montou e salvou para usar em qualquer mapa.
-3. **Clique** no objeto para colocá-lo no centro da tela, ou **arraste** para o lugar certo do mapa.
+3. **Clique** no objeto para **encaixá-lo na cena**: ele segue o mouse e você ajusta antes de colocar. Também dá para **arrastar** direto para o mapa.
+
+| Ao encaixar | O que faz |
+|---|---|
+| Clique | Coloca o objeto ali |
+| Roda do mouse | Gira de 15 em 15 graus (com Shift, de 1 em 1) |
+| Ctrl + roda | Aumenta ou diminui o tamanho |
+| Segurar Shift | Solta do quadriculado, para colocar em qualquer lugar |
+| Botão direito ou Esc | Cancela |
 
 O editor abre sozinho. Ele tem três passos:
 
@@ -43,7 +52,7 @@ O editor abre sozinho. Ele tem três passos:
 |---|---|
 | **Aparência** | Profundidade (Plano, Leve, Médio, Alto, ou ajuste sombra, altura e inclinação), se o objeto mexe de leve quando a câmera anda, o movimento ao trocar de aparência e o som |
 | **Como usar** | Clicando, pisando em cima, chegando perto ou só o mestre; a distância; quem pode usar; se volta sozinho; a mãozinha e o brilho |
-| **O que acontece** | As ações para cada aparência ("Quando ficar: Ligada") e para "Sempre que for usado". Em **Mais opções**: limite de usos, confirmação do mestre e trancado |
+| **O que acontece** | As ações para cada aparência ("Quando ficar: Ligada") e para "Sempre que for usado". Cada ação pode **esperar alguns segundos antes** de acontecer. Em **Mais opções**: limite de usos, confirmação do mestre e trancado |
 
 À esquerda do editor ficam as **aparências** (por exemplo Desligada e Ligada), cada uma com nome e imagem. O botão **Testar** mostra a troca. Tudo o que você muda na profundidade aparece no mapa na hora.
 
@@ -53,7 +62,7 @@ O botão **Salvar na biblioteca** guarda o objeto em **Meus objetos**. Portas e 
 
 - **Jogadores**: clicam no objeto (a mãozinha aparece, e ele brilha quando o token está perto o bastante), pisam em cima ou chegam perto, conforme você configurou.
 - **Mestre**: na camada de **tokens**, um clique simples usa o objeto, como os jogadores. Para **editar**, abra a ferramenta Objetos Vivos e clique no objeto.
-- Um tile já existente também pode virar objeto: abra a configuração dele, ou o HUD (clique direito), e use **Transformar em objeto vivo**.
+- **Um tile que já está no mapa** também vira objeto: com a ferramenta Objetos Vivos aberta, clique nele. Serve para assets colocados por outros meios, como o FA Nexus. A configuração do tile e o HUD (clique direito) também têm **Transformar em objeto vivo**.
 
 ## Portas e paredes
 

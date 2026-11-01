@@ -54,7 +54,7 @@ const ACOES = {
   mover:        { campos: { destino: ["cena", ""], regiao: ["regiaoDestino", ""], quem: ["opcao", "token", ["token", "jogadores"]] } },
   esperar:      { campos: { segundos: ["numero", 1] } }
 };
-const novaAcao = tipo => ({ id: novoId(), tipo, ...Object.fromEntries(Object.entries(ACOES[tipo].campos).map(([k, [, v]]) => [k, clone(v)])) });
+const novaAcao = tipo => ({ id: novoId(), tipo, atraso: 0, ...Object.fromEntries(Object.entries(ACOES[tipo].campos).map(([k, [, v]]) => [k, clone(v)])) });
 
 // Configuração guardada no objeto (flags)
 const cfgDe = doc => doc?.getFlag?.(ID, "objeto") ?? null;
@@ -266,11 +266,18 @@ const EXECUTAR = {
   async esperar(a) { await new Promise(r => setTimeout(r, Math.max(0, Number(a.segundos) || 0) * 1000)); }
 };
 
+// Uma ação, com o tempo de espera antes dela (as ações acontecem uma depois da outra)
+const pausa = segundos => new Promise(r => setTimeout(r, Math.max(0, Number(segundos) || 0) * 1000));
+async function rodarAcao(a, ctx) {
+  if (Number(a.atraso) > 0) await pausa(a.atraso);
+  return EXECUTAR[a.tipo]?.(a, ctx);
+}
+
 async function executarAcoes(doc, momento, ctx) {
   const c = cfgDe(doc);
   for (const id of [momento, "sempre"]) {
     for (const a of c?.acoes?.[id] ?? []) {
-      try { await EXECUTAR[a.tipo]?.(a, ctx); }
+      try { await rodarAcao(a, ctx); }
       catch (err) { console.error(`${ID} | ação "${a.tipo}" de "${nomeObjeto(doc)}" falhou`, err); ui.notifications.error(t("Aviso.ErroAcao", { objeto: nomeObjeto(doc), acao: t(`Acao.${a.tipo}`) })); }
     }
   }
@@ -353,7 +360,7 @@ async function eventoParede(doc, momento, { tokenUuid = null, userId = null }) {
   const ctx = { cena, token, userId, fonte: doc, profundidade: 0 };
   if (momento === "atravessar") {
     for (const a of c.acoes?.atravessar ?? []) {
-      try { await EXECUTAR[a.tipo]?.(a, ctx); } catch (err) { console.error(err); }
+      try { await rodarAcao(a, ctx); } catch (err) { console.error(err); }
     }
   } else await executarAcoes(doc, momento, ctx);
 }
@@ -499,6 +506,8 @@ const usaveis = () => (canvas.tiles?.placeables ?? []).filter(o => {
   if (game.user.isGM) return true;
   return !o.document.hidden && c.interacao === "clicar";
 });
+const tileNoPonto = p => (canvas.tiles?.placeables ?? []).filter(o => o.visible !== false && noTile(o.document, p))
+  .sort((a, b) => (b.document.sort ?? 0) - (a.document.sort ?? 0))[0] ?? null;
 const objetoNoPonto = p => {
   const lista = usaveis().filter(o => noTile(o.document, p));
   return lista.sort((a, b) => (b.document.sort ?? 0) - (a.document.sort ?? 0))[0] ?? null;
@@ -527,7 +536,7 @@ function ligarMapa() {
     const p = pontoDoMouse(ev.clientX, ev.clientY);
     // Mestre: na ferramenta Objetos Vivos o clique abre o editor; na camada de tokens, usa o objeto
     if (game.user.isGM) {
-      if (naFerramenta()) { const o = objetoNoPonto(p); if (o) abrirEditor(o.document); return; }
+      if (naFerramenta()) { const o = objetoNoPonto(p) ?? tileNoPonto(p); if (o) abrirEditor(o.document); return; }
       if (!mestrePodeUsar() || ev.altKey || ev.shiftKey || ev.ctrlKey) return;
     }
     // Clique em cima de um token é para o token, não para o objeto embaixo dele
@@ -604,29 +613,26 @@ function aoMoverToken(tk, mud) {
 const estadosPorta = new Map();
 function lembrarPortas(cena) { for (const w of cena?.walls ?? []) if (w.door > 0) estadosPorta.set(w.uuid, w.ds); }
 
+// "Ao tentar abrir trancada": cada controle de porta ganha um ouvinte próprio.
+// O módulo NÃO substitui nenhuma função do Foundry (nada de prototype nem libWrapper),
+// então não entra em conflito com Gazua da Mesa, Arm's Reach ou qualquer outro módulo.
+function aoClicarPorta(ev) {
+  try {
+    if ((ev?.button ?? 0) !== 0 || game.user.isGM) return;
+    const w = this.wall?.document;
+    if (!w || !ehObjeto(w) || w.ds !== CONST.WALL_DOOR_STATES.LOCKED) return;
+    if (souMestreAtivo()) eventoParede(w, "tentativa", { userId: game.user.id });
+    else emitir({ acao: "parede", uuid: w.uuid, momento: "tentativa", userId: game.user.id });
+  } catch (err) { console.warn(`${ID} |`, err); }
+}
+function ouvirPorta(dc) {
+  if (!dc || dc.destroyed || dc._ovOuvindo || typeof dc.on !== "function") return;
+  dc._ovOuvindo = true;
+  dc.on("pointerdown", aoClicarPorta);
+}
 function ouvirTentativas() {
-  // O Objetos Vivos não mexe em nenhuma função do Foundry (nem pelo libWrapper): só coloca um
-  // "ouvido" a mais no ícone de cada porta. Assim nunca entra no aviso de conflito do libWrapper
-  // e não bloqueia nenhum outro módulo (Gazua da Mesa, Arm's Reach).
-  const ouvidas = new WeakSet();
-  const ouvirPorta = wall => {
-    const icone = wall?.doorControl;
-    if (!icone || ouvidas.has(icone) || typeof icone.on !== "function") return;
-    ouvidas.add(icone);
-    icone.on("pointerdown", event => {
-      try {
-        const w = wall.document;
-        if (w && ehObjeto(w) && w.ds === CONST.WALL_DOOR_STATES.LOCKED && (event?.button ?? 0) === 0 && !game.user.isGM) {
-          if (souMestreAtivo()) eventoParede(w, "tentativa", { userId: game.user.id });
-          else emitir({ acao: "parede", uuid: w.uuid, momento: "tentativa", userId: game.user.id });
-        }
-      } catch (err) { console.warn(`${ID} |`, err); }
-    });
-  };
-  Hooks.on("drawWall", ouvirPorta);
-  Hooks.on("refreshWall", ouvirPorta);
-  Hooks.on("canvasReady", () => { for (const w of canvas.walls?.placeables ?? []) ouvirPorta(w); });
-  for (const w of canvas?.walls?.placeables ?? []) ouvirPorta(w);
+  for (const dc of canvas.controls?.doors?.children ?? []) ouvirPorta(dc);
+  for (const w of canvas.walls?.placeables ?? []) ouvirPorta(w.doorControl);
 }
 
 // Editor do objeto
@@ -634,6 +640,11 @@ const CSS = `
 .ov-editor .window-content { padding: 0; background: #17151c; color: #ece8f1; }
 .ov-raiz { display: flex; height: 100%; font-family: Signika, system-ui, sans-serif; }
 .ov-raiz button { font-family: inherit; }
+.ov-lado > * { flex: none; }
+.ov-lado > input[type=text] { flex: none; height: 36px; }
+.ov-mini { width: 40px; height: 40px; flex: none; border-radius: 6px; border: none; background: #2e2a37; object-fit: contain; display: flex; align-items: center; justify-content: center; color: #a8a1b4; }
+.ov-arquivo { flex: 1; min-width: 0; font-size: 12px; color: #cfc8da; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ov-aviso-img { margin: 0; padding: 8px 10px; border-radius: 8px; background: rgba(240,160,60,.10); border: 1px solid #f0a03c66; font-size: 12px; color: #ffd09a; }
 .ov-lado { width: 300px; flex: none; padding: 16px; box-sizing: border-box; border-right: 1px solid #343041; background: #1a1720; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
 .ov-palco { position: relative; height: 200px; border-radius: 12px; border: 1px solid #343041; background-color: #221f29;
   background-image: radial-gradient(#2e2a37 1px, transparent 1px); background-size: 14px 14px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -734,6 +745,25 @@ fieldset.ov-secao .ov-botoes { display: flex; gap: 6px; } fieldset.ov-secao .ov-
 .ov-bib-linha:hover { border-color: #f0a03c; }
 .ov-bib-linha img { width: 48px; height: 48px; object-fit: contain; border: none; pointer-events: none; }
 .ov-bib-linha .ov-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; } .ov-bib-linha .ov-txt b { font-size: 13px; } .ov-bib-linha .ov-txt span { font-size: 11px; color: #a8a1b4; }
+.ov-bib-aba { padding: 0 6px; }
+.ov-bib-vazio { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; font-size: 13px; color: #cfc8da; }
+.ov-bib-vazio p { margin: 0; line-height: 1.45; }
+.ov-assets-topo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.ov-assets-busca { width: 100%; height: 34px; box-sizing: border-box; border-radius: 8px; border: 1px solid #343041; background: #1e1b24; color: #ece8f1; padding: 0 10px; margin-bottom: 8px; }
+.ov-assets-dir { display: flex; align-items: center; gap: 8px; width: 100%; height: 34px; padding: 0 10px; margin-bottom: 4px; border-radius: 8px; border: 1px solid #343041;
+  background: #221f29; color: #ece8f1; font-size: 13px; cursor: pointer; text-align: left; }
+.ov-assets-dir:hover { border-color: #f0a03c; } .ov-assets-dir i { color: #f0a03c; }
+.ov-assets-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.ov-asset { aspect-ratio: 1; padding: 4px; border-radius: 8px; border: 1px solid #343041; background: #221f29 repeating-conic-gradient(#2a2632 0 25%, #221f29 0 50%) 0 0 / 16px 16px;
+  cursor: grab; height: auto; width: 100%; display: flex; align-items: center; justify-content: center; }
+.ov-asset:hover { border-color: #f0a03c; }
+.ov-asset img, .ov-asset video { max-width: 100%; max-height: 100%; object-fit: contain; border: none; pointer-events: none; }
+.ov-asset[hidden], .ov-assets-dir[hidden] { display: none; }
+.ov-encaixe-aviso { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 10000; padding: 10px 16px; border-radius: 10px;
+  background: #17151cf0; border: 1px solid #f0a03c; color: #ece8f1; font-family: Signika, system-ui, sans-serif; font-size: 13px; pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5); max-width: 90vw; text-align: center; }
+.ov-encaixe-valores { display: block; margin-top: 4px; color: #ffd09a; font-weight: 600; }
+body.ov-encaixando #board { cursor: crosshair !important; }
 .ov-bib-dica { margin: 0; padding: 10px 14px; border-top: 1px solid #343041; font-size: 12px; color: #a8a1b4; flex: none; }
 `;
 function injetarEstilo() {
@@ -754,6 +784,10 @@ function nomeDoc(uuid) {
 
 // Resumo de uma ação em uma linha
 function resumoAcao(a) {
+  const base = resumoBase(a);
+  return Number(a.atraso) > 0 ? `${t("Resumo.Depois", { n: a.atraso })} · ${base}` : base;
+}
+function resumoBase(a) {
   const n = x => x?.length ?? 0;
   switch (a.tipo) {
     case "som": return a.arquivo ? `${a.arquivo.split("/").pop()} · ${t(`Para.${a.para}`)}` : t("Resumo.Configurar");
@@ -854,11 +888,13 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
         <div class="ov-linha"><span class="ov-num">${i + 1}</span>
           <input type="text" data-estado="nome" value="${esc(e.nome)}" aria-label="${esc(t("Editor.NomeEstado"))}">
           ${d.estados.length > 2 ? `<button type="button" class="ov-btn ov-icone ov-perigo" data-a="estado-remover" aria-label="${esc(t("Editor.RemoverEstado"))}">${icone("fa-trash")}</button>` : ""}</div>
-        <div class="ov-linha"><input type="text" data-estado="img" value="${esc(e.img)}" placeholder="${esc(t("Editor.ImagemEstado"))}" aria-label="${esc(t("Editor.ImagemEstado"))}">
-          <button type="button" class="ov-btn ov-icone" data-a="estado-img" aria-label="${esc(t("Editor.Escolher"))}">${icone("fa-file-image")}</button></div>
+        <div class="ov-linha">${e.img ? `<img class="ov-mini" src="${esc(e.img)}" alt="">` : `<span class="ov-mini">${icone("fa-image")}</span>`}
+          <span class="ov-arquivo" data-tooltip="${esc(e.img)}">${esc(e.img ? decodeURIComponent(e.img.split("/").pop()) : t("Editor.SemImagem"))}</span>
+          <button type="button" class="ov-btn" data-a="estado-img">${t("Editor.TrocarImagem")}</button></div>
         ${i === 0 ? `<span style="font-size:11px;color:#a8a1b4">${t("Editor.Inicial")}</span>` : ""}
       </div>`).join("")}
       <button type="button" class="ov-btn" data-a="estado-add" style="border-style:dashed">+ ${t("Editor.AdicionarEstado")}</button>
+      ${new Set(d.estados.map(e => e.img)).size === 1 ? `<p class="ov-aviso-img">${icone("fa-lightbulb")} ${t("Editor.MesmaImagem")}</p>` : ""}
     </aside>`;
   }
 
@@ -974,7 +1010,10 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
 
   _htmlAcao(a, i) {
     const aberta = this.abertas.has(a.id);
-    const campos = aberta ? Object.entries(ACOES[a.tipo]?.campos ?? {}).map(([campo, [tipo, , escolhas]]) => this._htmlCampo(a, campo, tipo, escolhas)).join("") : "";
+    const tempo = a.tipo === "esperar" ? "" : `<div class="ov-campo"><label>${t("Campo.atraso")}</label>
+      <input type="number" min="0" step="0.5" data-campo="atraso" data-rerender value="${Number(a.atraso) || 0}" style="flex:none;width:90px">
+      <span class="ov-dica">${t("Campo.AtrasoDica")}</span></div>`;
+    const campos = aberta ? tempo + Object.entries(ACOES[a.tipo]?.campos ?? {}).map(([campo, [tipo, , escolhas]]) => this._htmlCampo(a, campo, tipo, escolhas)).join("") : "";
     return `<div class="ov-acao" data-i="${i}">
       <div class="ov-acao-cab"><span class="ov-num">${i + 1}</span>
         <div class="ov-txt"><b>${icone(ICONES[a.tipo])} ${t(`Acao.${a.tipo}`)}</b><span>${esc(resumoAcao(a))}</span></div>
@@ -1260,10 +1299,8 @@ async function tamanhoDaImagem(src, gs) {
   } catch { return { w: gs, h: gs }; }
 }
 
-async function criarObjeto({ preset = null, img = null, salvo = null, x = null, y = null } = {}) {
-  if (!game.user.isGM) return;
-  const cena = canvas.scene;
-  if (!cena) return ui.notifications.warn(t("Bib.SemMapa"));
+// Monta a configuração, a imagem e o tamanho de um objeto novo
+async function prepararObjeto({ preset = null, img = null, salvo = null } = {}) {
   const gs = canvas.dimensions.size;
   let cfg, w = gs, h = gs;
   if (salvo) {
@@ -1272,26 +1309,133 @@ async function criarObjeto({ preset = null, img = null, salvo = null, x = null, 
     w = Math.round((salvo.w || 1) * gs); h = Math.round((salvo.h || 1) * gs);
   } else if (img) {
     cfg = padrao(null, "livre", img);
-    cfg.nome = decodeURIComponent(img.split("/").pop().replace(/\.[a-z0-9]+$/i, "")).replace(/[-_]+/g, " ");
+    cfg.nome = nomeDoArquivo(img);
     ({ w, h } = await tamanhoDaImagem(img, gs));
   } else cfg = padrao(null, preset ?? "alavanca");
   const src = cfg.estados?.[0]?.img;
-  if (!src) return;
-  // Onde: no ponto em que soltou ou no centro da tela; modelos de 1 casa encaixam no quadriculado
-  const cx = x ?? canvas.stage.pivot.x, cy = y ?? canvas.stage.pivot.y;
-  let tx = cx - w / 2, ty = cy - h / 2;
-  if (w % gs === 0 && h % gs === 0) { tx = Math.floor((tx + gs / 2) / gs) * gs; ty = Math.floor((ty + gs / 2) / gs) * gs; }
+  return src ? { cfg, src, w, h, rotacao: salvo?.rotacao ?? 0 } : null;
+}
+const nomeDoArquivo = caminho => decodeURIComponent(String(caminho).split("/").pop().replace(/\.[a-z0-9]+$/i, "")).replace(/[-_]+/g, " ").trim();
+
+// Onde o centro do objeto cai: objetos de casas inteiras ocupam casas; os outros encaixam a cada meia casa
+function centroEncaixado(x, y, w, h, livre = false) {
+  if (livre) return { x, y };
+  const gs = canvas.dimensions.size;
+  if (w % gs === 0 && h % gs === 0) {
+    return { x: Math.floor((x - w / 2 + gs / 2) / gs) * gs + w / 2, y: Math.floor((y - h / 2 + gs / 2) / gs) * gs + h / 2 };
+  }
+  const meia = gs / 2;
+  return { x: Math.round(x / meia) * meia, y: Math.round(y / meia) * meia };
+}
+
+async function criarObjeto({ preset = null, img = null, salvo = null, x = null, y = null, rotacao = null, escala = 1, livre = false, pronto = null } = {}) {
+  if (!game.user.isGM) return;
+  const cena = canvas.scene;
+  if (!cena) return ui.notifications.warn(t("Bib.SemMapa"));
+  const p = pronto ?? await prepararObjeto({ preset, img, salvo });
+  if (!p) return;
+  const w = Math.max(10, Math.round(p.w * escala)), h = Math.max(10, Math.round(p.h * escala));
+  const c = centroEncaixado(x ?? canvas.stage.pivot.x, y ?? canvas.stage.pivot.y, w, h, livre);
   const [doc] = await cena.createEmbeddedDocuments("Tile", [{
-    texture: { src }, x: tx, y: ty, width: w, height: h,
-    flags: { [ID]: { objeto: cfg } }
+    texture: { src: p.src }, x: Math.round(c.x - w / 2), y: Math.round(c.y - h / 2), width: w, height: h,
+    rotation: ((rotacao ?? p.rotacao ?? 0) % 360 + 360) % 360,
+    flags: { [ID]: { objeto: p.cfg } }
   }]);
   if (doc) abrirEditor(doc);
   return doc;
 }
 
+// Encaixar na cena: o objeto segue o mouse; roda gira, Ctrl+roda muda o tamanho,
+// Shift solta do quadriculado, clique coloca, botão direito ou Esc cancela
+let encaixe = null;
+function cancelarEncaixe() {
+  if (!encaixe) return;
+  const e = encaixe;
+  encaixe = null;
+  for (const [nome, fn] of e.ouvintes) window.removeEventListener(nome, fn, { capture: true });
+  e.spr?.destroy?.();
+  e.aviso?.remove?.();
+  document.body.classList.remove("ov-encaixando");
+}
+
+async function encaixar(opcoes = {}) {
+  if (!game.user.isGM) return;
+  if (!canvas.ready || !canvas.scene) return ui.notifications.warn(t("Bib.SemMapa"));
+  cancelarEncaixe();
+  const p = await prepararObjeto(opcoes);
+  if (!p) return;
+  const carregar = foundry.canvas?.loadTexture ?? globalThis.loadTexture;
+  let tex = null;
+  try { tex = await carregar(p.src); } catch {}
+  const view = canvas.app?.view ?? canvas.app?.canvas;
+  if (!tex || !view || !globalThis.PIXI?.Sprite) return criarObjeto({ pronto: p });
+
+  const spr = new PIXI.Sprite(tex);
+  spr.anchor.set(0.5);
+  spr.alpha = 0.75;
+  spr.eventMode = "none";
+  (canvas.controls ?? canvas.interface).addChild(spr);
+  const e = { p, spr, rot: p.rotacao ?? 0, escala: 1, x: canvas.stage.pivot.x, y: canvas.stage.pivot.y, livre: false, ouvintes: [] };
+  encaixe = e;
+  injetarEstilo();
+  e.aviso = document.createElement("div");
+  e.aviso.className = "ov-encaixe-aviso";
+  e.aviso.setAttribute("role", "status");
+  document.body.append(e.aviso);
+  document.body.classList.add("ov-encaixando");
+
+  const desenhar = () => {
+    const w = p.w * e.escala, h = p.h * e.escala;
+    const c = centroEncaixado(e.x, e.y, w, h, e.livre);
+    spr.width = w; spr.height = h;
+    spr.position.set(c.x, c.y);
+    spr.rotation = e.rot * Math.PI / 180;
+    e.aviso.innerHTML = `<b>${esc(p.cfg.nome || t(`Preset.${p.cfg.preset}.Nome`))}</b> · ${t("Encaixe.Dica")}
+      <span class="ov-encaixe-valores">${Math.round(e.rot)}° · ${Math.round(e.escala * 100)}% · ${t(e.livre ? "Encaixe.Livre" : "Encaixe.Grade")}</span>`;
+  };
+  const noMapa = ev => ev.target === view;
+  const ouvir = (nome, fn) => { e.ouvintes.push([nome, fn]); window.addEventListener(nome, fn, { capture: true, passive: false }); };
+
+  ouvir("pointermove", ev => {
+    if (!noMapa(ev)) return;
+    const q = pontoDoMouse(ev.clientX, ev.clientY);
+    e.x = q.x; e.y = q.y; e.livre = ev.shiftKey;
+    desenhar();
+  });
+  ouvir("wheel", ev => {
+    if (!noMapa(ev)) return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    const dir = Math.sign(ev.deltaY || ev.deltaX);
+    if (ev.ctrlKey || ev.metaKey) e.escala = Math.min(8, Math.max(0.1, e.escala * (dir > 0 ? 0.9 : 1.1)));
+    else e.rot = (e.rot + dir * (ev.shiftKey ? 1 : 15) + 360) % 360;
+    desenhar();
+  });
+  ouvir("pointerdown", ev => {
+    if (!noMapa(ev)) return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    if (ev.button === 2) return cancelarEncaixe();
+    if (ev.button !== 0) return;
+    const q = pontoDoMouse(ev.clientX, ev.clientY);
+    const dados = { pronto: p, x: q.x, y: q.y, rotacao: e.rot, escala: e.escala, livre: ev.shiftKey };
+    cancelarEncaixe();
+    criarObjeto(dados);
+  });
+  // O Foundry também escuta soltar e o menu do botão direito: enquanto encaixa, eles ficam com a gente
+  for (const nome of ["pointerup", "contextmenu"]) ouvir(nome, ev => { if (noMapa(ev)) { ev.preventDefault(); ev.stopImmediatePropagation(); } });
+  ouvir("keydown", ev => {
+    if (ev.key !== "Escape") return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    cancelarEncaixe();
+  });
+  desenhar();
+}
+
 function escolherImagem() {
   const FP = foundry.applications.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
-  new FP({ type: "image", callback: caminho => criarObjeto({ img: caminho }) }).render(true);
+  new FP({ type: "imagevideo", callback: caminho => encaixar({ img: caminho }) }).render(true);
 }
 
 // "Meus objetos": objetos que o mestre salvou para reaproveitar em qualquer mapa
@@ -1314,35 +1458,83 @@ async function salvarNaBiblioteca(doc, dados) {
   foundry.applications.instances?.get?.(`${ID}-biblioteca`)?.render();
 }
 
+const EXT_IMAGEM = /\.(png|jpe?g|webp|gif|svg|avif|webm|mp4)$/i;
+const ehVideo = c => /\.(webm|mp4)$/i.test(c);
+
 class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
   static DEFAULT_OPTIONS = {
     id: `${ID}-biblioteca`,
     classes: ["ov-biblioteca"],
-    position: { width: 340, height: 600, left: 120, top: 70 },
+    position: { width: 380, height: 640, left: 120, top: 70 },
     window: { icon: "fa-solid fa-cube", resizable: true }
   };
   aba = "prontos";
+  pasta = null;      // pasta de assets aberta agora
+  lista = null;      // { dirs, files } da pasta aberta
+  limite = 120;
 
   get title() { return t("Bib.Titulo"); }
 
+  get FP() { return foundry.applications.apps?.FilePicker?.implementation ?? globalThis.FilePicker; }
+
+  // Lê a pasta de assets (só a pasta aberta, sem descer em todas de uma vez, para ficar rápido)
+  async _carregarPasta() {
+    const salva = game.settings.get(ID, "pastaAssets") ?? {};
+    this.pasta ??= salva.pasta || null;
+    if (!this.pasta) { this.lista = null; return; }
+    try {
+      const r = await this.FP.browse(salva.fonte || "data", this.pasta);
+      this.lista = {
+        dirs: (r.dirs ?? []).slice().sort(comparar),
+        files: (r.files ?? []).filter(f => EXT_IMAGEM.test(f)).sort(comparar)
+      };
+    } catch (err) {
+      console.warn(`${ID} | não consegui abrir a pasta`, err);
+      this.lista = { dirs: [], files: [], erro: true };
+    }
+  }
+
+  _htmlAssets() {
+    const salva = game.settings.get(ID, "pastaAssets") ?? {};
+    if (!salva.pasta) return `<div class="ov-bib-vazio">
+        <p>${t("Assets.Explica")}</p>
+        <button type="button" class="ov-btn ov-forte" data-a="pasta">${icone("fa-folder-open")} ${t("Assets.Escolher")}</button></div>`;
+    const l = this.lista ?? { dirs: [], files: [] };
+    const raiz = salva.pasta.replace(/\/$/, "");
+    const atual = (this.pasta ?? raiz).replace(/\/$/, "");
+    const podeSubir = atual !== raiz && atual.startsWith(raiz);
+    const arquivos = l.files.slice(0, this.limite);
+    return `<div class="ov-assets-topo">
+        ${podeSubir ? `<button type="button" class="ov-btn ov-icone" data-a="subir-pasta" aria-label="${esc(t("Assets.Voltar"))}">${icone("fa-arrow-left")}</button>` : ""}
+        <span class="ov-arquivo" data-tooltip="${esc(atual)}">${icone("fa-folder")} ${esc(decodeURIComponent(atual.split("/").pop() || atual))}</span>
+        <button type="button" class="ov-btn" data-a="pasta">${t("Assets.Trocar")}</button></div>
+      <input type="search" class="ov-assets-busca" placeholder="${esc(t("Assets.Buscar"))}" aria-label="${esc(t("Assets.Buscar"))}">
+      ${l.erro ? `<p class="ov-vazio">${t("Assets.Erro")}</p>` : ""}
+      ${l.dirs.map(d => `<button type="button" class="ov-assets-dir" data-dir="${esc(d)}" data-nome="${esc(nomeDoArquivo(d).toLowerCase())}">${icone("fa-folder")} ${esc(decodeURIComponent(d.replace(/\/$/, "").split("/").pop()))}</button>`).join("")}
+      <div class="ov-assets-grade">${arquivos.map(f => `<button type="button" class="ov-asset" draggable="true" data-img="${esc(f)}" data-nome="${esc(nomeDoArquivo(f).toLowerCase())}" data-tooltip="${esc(nomeDoArquivo(f))}">
+          ${ehVideo(f) ? `<video src="${esc(f)}" muted loop preload="metadata"></video>` : `<img src="${esc(f)}" alt="" loading="lazy">`}</button>`).join("")}</div>
+      ${l.files.length > this.limite ? `<button type="button" class="ov-btn" data-a="mais-assets" style="width:100%;margin-top:8px">${t("Assets.Mais", { n: l.files.length - this.limite })}</button>` : ""}
+      ${!l.erro && !l.files.length && !l.dirs.length ? `<p class="ov-vazio">${t("Assets.Vazia")}</p>` : ""}`;
+  }
+
   async _renderHTML() {
+    if (this.aba === "assets") await this._carregarPasta();
     const meus = meusObjetos();
     const div = document.createElement("div");
     div.className = "ov-bib";
-    const corpo = this.aba === "prontos"
-      ? `<div class="ov-bib-grade">${PRONTOS.map(p => `<button type="button" class="ov-bib-item" draggable="true" data-preset="${p}">
-          <img src="${imgPreset(p, 0)}" alt=""><b>${t(`Preset.${p}.Nome`)}</b><span>${t(`Preset.${p}.Desc`)}</span></button>`).join("")}</div>`
-      : meus.length
-        ? meus.map(o => `<div class="ov-bib-linha" draggable="true" data-salvo="${o.id}" role="button" tabindex="0">
-            <img src="${esc(o.img)}" alt=""><span class="ov-txt"><b>${esc(o.nome)}</b><span>${esc(t(`Uso.${o.cfg?.interacao ?? "clicar"}.Resumo`))}</span></span>
-            <button type="button" class="ov-btn ov-icone ov-perigo" data-apagar="${o.id}" aria-label="${esc(t("Editor.Remover"))}">${icone("fa-trash")}</button></div>`).join("")
-        : `<p class="ov-vazio">${t("Bib.MeusVazio")}</p>`;
+    let corpo;
+    if (this.aba === "prontos") corpo = `<div class="ov-bib-grade">${PRONTOS.map(p => `<button type="button" class="ov-bib-item" draggable="true" data-preset="${p}">
+          <img src="${imgPreset(p, 0)}" alt=""><b>${t(`Preset.${p}.Nome`)}</b><span>${t(`Preset.${p}.Desc`)}</span></button>`).join("")}</div>`;
+    else if (this.aba === "assets") corpo = this._htmlAssets();
+    else corpo = meus.length
+      ? meus.map(o => `<div class="ov-bib-linha" draggable="true" data-salvo="${o.id}" role="button" tabindex="0">
+          <img src="${esc(o.img)}" alt=""><span class="ov-txt"><b>${esc(o.nome)}</b><span>${esc(t(`Uso.${o.cfg?.interacao ?? "clicar"}.Resumo`))}</span></span>
+          <button type="button" class="ov-btn ov-icone ov-perigo" data-apagar="${o.id}" aria-label="${esc(t("Editor.Remover"))}">${icone("fa-trash")}</button></div>`).join("")
+      : `<p class="ov-vazio">${t("Bib.MeusVazio")}</p>`;
+    const aba = (id, nome) => `<button type="button" role="tab" aria-selected="${this.aba === id}" class="ov-bib-aba ${this.aba === id ? "ov-on" : ""}" data-aba="${id}">${nome}</button>`;
     div.innerHTML = `<div class="ov-bib-topo">
         <button type="button" class="ov-minha" data-a="imagem">${icone("fa-image")}<span><b>${t("Bib.Minha")}</b><span>${t("Bib.MinhaDica")}</span></span></button>
-        <div class="ov-bib-abas" role="tablist">
-          <button type="button" role="tab" class="ov-bib-aba ${this.aba === "prontos" ? "ov-on" : ""}" data-aba="prontos">${t("Bib.Prontos")}</button>
-          <button type="button" role="tab" class="ov-bib-aba ${this.aba === "meus" ? "ov-on" : ""}" data-aba="meus">${t("Bib.Meus")} (${meus.length})</button>
-        </div></div>
+        <div class="ov-bib-abas" role="tablist">${aba("prontos", t("Bib.Prontos"))}${aba("assets", t("Assets.Aba"))}${aba("meus", `${t("Bib.Meus")} (${meus.length})`)}</div></div>
       <div class="ov-bib-corpo">${corpo}</div>
       <p class="ov-bib-dica">${t("Bib.Dica")}</p>`;
     return div;
@@ -1350,11 +1542,23 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
 
   _replaceHTML(result, content) { content.replaceChildren(result); }
 
+  _escolherPasta() {
+    const atual = game.settings.get(ID, "pastaAssets") ?? {};
+    new this.FP({
+      type: "folder", current: atual.pasta || "",
+      callback: async (caminho, fp) => {
+        await game.settings.set(ID, "pastaAssets", { pasta: caminho, fonte: fp?.activeSource || atual.fonte || "data" });
+        this.pasta = caminho; this.limite = 120;
+        this.render();
+      }
+    }).render(true);
+  }
+
   _onFirstRender() {
     injetarEstilo();
     const el = this.element;
     el.addEventListener("click", async ev => {
-      const alvo = ev.target.closest("[data-a], [data-aba], [data-preset], [data-salvo], [data-apagar]");
+      const alvo = ev.target.closest("[data-a], [data-aba], [data-preset], [data-salvo], [data-apagar], [data-dir], [data-img]");
       if (!alvo) return;
       ev.preventDefault();
       const ds = alvo.dataset;
@@ -1365,14 +1569,25 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
         return;
       }
       if (ds.a === "imagem") return escolherImagem();
+      if (ds.a === "pasta") return this._escolherPasta();
+      if (ds.a === "mais-assets") { this.limite += 120; return this.render(); }
+      if (ds.a === "subir-pasta") { this.pasta = this.pasta.replace(/\/$/, "").split("/").slice(0, -1).join("/"); this.limite = 120; return this.render(); }
       if (ds.aba) { this.aba = ds.aba; return this.render(); }
-      if (ds.preset) return criarObjeto({ preset: ds.preset });
-      if (ds.salvo) { const o = meusObjetos().find(x => x.id === ds.salvo); if (o) criarObjeto({ salvo: o }); }
+      if (ds.dir) { this.pasta = ds.dir; this.limite = 120; return this.render(); }
+      if (ds.img) return encaixar({ img: ds.img });
+      if (ds.preset) return encaixar({ preset: ds.preset });
+      if (ds.salvo) { const o = meusObjetos().find(x => x.id === ds.salvo); if (o) encaixar({ salvo: o }); }
+    });
+    // Busca na pasta aberta: só esconde o que não combina, sem redesenhar a janela
+    el.addEventListener("input", ev => {
+      if (!ev.target.matches?.(".ov-assets-busca")) return;
+      const q = ev.target.value.trim().toLowerCase();
+      el.querySelectorAll("[data-nome]").forEach(b => { b.hidden = !!q && !b.dataset.nome.includes(q); });
     });
     el.addEventListener("dragstart", ev => {
-      const item = ev.target.closest?.("[data-preset], [data-salvo]");
+      const item = ev.target.closest?.("[data-preset], [data-salvo], [data-img]");
       if (!item) return;
-      const dados = { type: "ObjetoVivo", preset: item.dataset.preset ?? null, salvo: item.dataset.salvo ?? null };
+      const dados = { type: "ObjetoVivo", preset: item.dataset.preset ?? null, salvo: item.dataset.salvo ?? null, img: item.dataset.img ?? null };
       ev.dataTransfer.setData("text/plain", JSON.stringify(dados));
     });
   }
@@ -1476,6 +1691,7 @@ function botoesHud(hud, html) {
 Hooks.once("init", () => {
   injetarEstilo();
   game.settings.register(ID, "biblioteca", { scope: "world", config: false, type: Array, default: [] });
+  game.settings.register(ID, "pastaAssets", { scope: "client", config: false, type: Object, default: {} });
 });
 
 Hooks.on("getSceneControlButtons", botaoNaBarra);
@@ -1487,7 +1703,7 @@ Hooks.on("renderTileHUD", botoesHud);
 Hooks.on("dropCanvasData", (_canvas, dados) => {
   if (dados?.type !== "ObjetoVivo" || !game.user.isGM) return;
   const salvo = dados.salvo ? meusObjetos().find(o => o.id === dados.salvo) : null;
-  criarObjeto({ preset: dados.preset, salvo, x: dados.x, y: dados.y });
+  criarObjeto({ preset: dados.img ? null : dados.preset, img: dados.img ?? null, salvo, x: dados.x, y: dados.y });
   return false;
 });
 
@@ -1495,7 +1711,9 @@ Hooks.on("dropCanvasData", (_canvas, dados) => {
 Hooks.on("refreshTile", tile => { if (tile._ovSombra || profDe(tile)) aplicarProfundidade(tile); });
 Hooks.on("canvasPan", () => atualizarProfundidades());
 
-Hooks.on("canvasReady", () => { ligarMapa(); lembrarPosicoes(canvas.scene); atualizarBrilho(); atualizarProfundidades(); });
+Hooks.on("drawWall", w => ouvirPorta(w.doorControl));
+Hooks.on("refreshWall", w => ouvirPorta(w.doorControl));
+Hooks.on("canvasReady", () => { ouvirTentativas(); ligarMapa(); lembrarPosicoes(canvas.scene); atualizarBrilho(); atualizarProfundidades(); });
 Hooks.on("createToken", tk => posicoes.set(tk.uuid, centroToken(tk)));
 Hooks.on("deleteToken", tk => posicoes.delete(tk.uuid));
 Hooks.on("updateToken", aoMoverToken);
@@ -1521,7 +1739,6 @@ Hooks.on("createWall", w => { if (w.door > 0) estadosPorta.set(w.uuid, w.ds); })
 
 Hooks.once("ready", () => {
   if (game.user.isGM) for (const cena of game.scenes) { lembrarPosicoes(cena); lembrarPortas(cena); }
-  ouvirTentativas();
 
   game.socket.on(SOCKET, async data => {
     if (data?.acao === "efeito") {
@@ -1539,6 +1756,7 @@ Hooks.once("ready", () => {
   game.modules.get(ID).api = {
     biblioteca: () => abrirBiblioteca(),
     criar: (opcoes = {}) => criarObjeto(opcoes),
+    encaixar: (opcoes = {}) => encaixar(opcoes),
     editar: async uuid => abrirEditor(await fromUuid(uuid)),
     usar: async (uuid, tokenUuid = null) => { const d = await fromUuid(uuid); if (d && ehObjeto(d)) pedirUso(d, tokenUuid); },
     mudarEstado: async (uuid, indice) => { if (!game.user.isGM) return; const d = await fromUuid(uuid); if (cfgDe(d)) mudarEstado(d, indice, { cena: d.parent, token: null, userId: game.user.id, fonte: d, profundidade: 0 }); },

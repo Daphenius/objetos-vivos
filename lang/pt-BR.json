@@ -97,7 +97,10 @@
       "Descer": "Descer",
       "Editar": "Editar",
       "Fechar": "Fechar",
-      "Remover": "Remover"
+      "Remover": "Remover",
+      "SemImagem": "sem imagem",
+      "TrocarImagem": "Trocar imagem",
+      "MesmaImagem": "As aparências estão com a mesma imagem. Use \"Trocar imagem\" para o objeto mudar de verdade quando for usado."
     },
     "Aparencia": {
       "Titulo": "O que é este objeto?",
@@ -137,7 +140,7 @@
       "MaoDica": "Mostra que o objeto pode ser usado",
       "Brilho": "Brilho quando alguém está perto",
       "BrilhoDica": "Um contorno que pulsa quando o token do jogador está no alcance",
-      "MestreDica": "Você, mestre, usa qualquer objeto com um clique simples na camada de tokens, como os jogadores. Para editar, abra a ferramenta Objetos Vivos na barra da esquerda e clique no objeto."
+      "MestreDica": "Você, mestre, usa qualquer objeto com um clique simples na camada de tokens, como os jogadores. Para editar, abra a ferramenta Objetos Vivos na barra da esquerda e clique no objeto. Com ela aberta, clicar em um tile comum (por exemplo, um asset colocado pelo FA Nexus) transforma ele em objeto vivo."
     },
     "Acoes": {
       "Titulo": "O que acontece",
@@ -270,14 +273,17 @@
       "SemObjetos": "Não há outros objetos vivos neste mapa.",
       "AbraOMapa": "Abra o mapa \"{mapa}\" para selecionar nele.",
       "SelecionePortas": "Selecione uma ou mais portas na camada Paredes.",
-      "SelecioneObjetos": "Selecione tiles, tokens, luzes, sons, notas ou desenhos no mapa."
+      "SelecioneObjetos": "Selecione tiles, tokens, luzes, sons, notas ou desenhos no mapa.",
+      "atraso": "Esperar antes (s)",
+      "AtrasoDica": "0 = acontece na hora"
     },
     "Resumo": {
       "Configurar": "Clique em Editar para configurar",
       "PortasN": "{n} porta(s)",
       "ObjetosN": "{n} objeto(s)",
       "EsteObjeto": "Este objeto",
-      "Segundos": "{n} segundo(s)"
+      "Segundos": "{n} segundo(s)",
+      "Depois": "depois de {n} s"
     },
     "Secao": {
       "NaoETile": "Este tile ainda não é um objeto vivo.",
@@ -309,7 +315,7 @@
       "Prontos": "Prontos",
       "Meus": "Meus objetos",
       "MeusVazio": "Aqui ficam os objetos que você montar e salvar com \"Salvar na biblioteca\", prontos para usar em qualquer mapa.",
-      "Dica": "Clique para pôr no centro da tela ou arraste para o lugar certo do mapa.",
+      "Dica": "Clique para encaixar na cena (gire e ajuste o tamanho antes de colocar) ou arraste direto para o mapa.",
       "ApagarPergunta": "Tirar este objeto de \"Meus objetos\"? Os que já estão nos mapas continuam lá.",
       "Salvar": "Salvar na biblioteca",
       "SalvarDica": "Guarda este objeto em \"Meus objetos\" para usar em outros mapas. Portas e objetos escolhidos nas ações ficam de fora, porque são deste mapa.",
@@ -318,7 +324,7 @@
     },
     "Controle": {
       "Titulo": "Objetos Vivos",
-      "Editar": "Clicar em um objeto para editar",
+      "Editar": "Clicar em um tile para editar ou transformar em objeto vivo",
       "Biblioteca": "Biblioteca de objetos",
       "Imagem": "Usar uma imagem minha"
     },
@@ -337,6 +343,22 @@
     },
     "Mais": {
       "Titulo": "Mais opções (usos, confirmação, trancado)"
+    },
+    "Encaixe": {
+      "Dica": "clique para colocar · roda do mouse gira · Ctrl+roda muda o tamanho · Shift solta do quadriculado · botão direito ou Esc cancela",
+      "Livre": "solto",
+      "Grade": "no quadriculado"
+    },
+    "Assets": {
+      "Aba": "Assets",
+      "Explica": "Escolha a pasta onde você guarda seus assets (itens, móveis, objetos de cena, inclusive os baixados do Forgotten Adventures e outros). Você navega pelas pastas, busca pelo nome e clica no asset para encaixá-lo na cena como objeto vivo.",
+      "Escolher": "Escolher pasta de assets",
+      "Trocar": "Trocar pasta",
+      "Voltar": "Pasta de cima",
+      "Buscar": "Buscar nesta pasta",
+      "Erro": "Não consegui abrir esta pasta. Escolha outra.",
+      "Vazia": "Nenhuma imagem nesta pasta.",
+      "Mais": "Mostrar mais ({n})"
     }
   }
 }

@@ -97,7 +97,10 @@
       "Descer": "Move down",
       "Editar": "Edit",
       "Fechar": "Close",
-      "Remover": "Remove"
+      "Remover": "Remove",
+      "SemImagem": "no image",
+      "TrocarImagem": "Change image",
+      "MesmaImagem": "All looks use the same image. Use \"Change image\" so the object really changes when used."
     },
     "Aparencia": {
       "Titulo": "What is this object?",
@@ -137,7 +140,7 @@
       "MaoDica": "Shows the object can be used",
       "Brilho": "Glow when someone is close",
       "BrilhoDica": "A pulsing outline when the player's token is in reach",
-      "MestreDica": "You, the GM, use any object with a plain click on the token layer, just like players. To edit, open the Living Objects tool on the left bar and click the object."
+      "MestreDica": "You, the GM, use any object with a plain click on the token layer, just like players. To edit, open the Living Objects tool on the left bar and click the object. With it open, clicking a regular tile (for example, an asset placed with FA Nexus) turns it into a living object."
     },
     "Acoes": {
       "Titulo": "What happens",
@@ -270,14 +273,17 @@
       "SemObjetos": "There are no other living objects on this map.",
       "AbraOMapa": "Open the map \"{mapa}\" to select things on it.",
       "SelecionePortas": "Select one or more doors on the Walls layer.",
-      "SelecioneObjetos": "Select tiles, tokens, lights, sounds, notes or drawings on the map."
+      "SelecioneObjetos": "Select tiles, tokens, lights, sounds, notes or drawings on the map.",
+      "atraso": "Wait before (s)",
+      "AtrasoDica": "0 = happens right away"
     },
     "Resumo": {
       "Configurar": "Click Edit to set it up",
       "PortasN": "{n} door(s)",
       "ObjetosN": "{n} object(s)",
       "EsteObjeto": "This object",
-      "Segundos": "{n} second(s)"
+      "Segundos": "{n} second(s)",
+      "Depois": "after {n} s"
     },
     "Secao": {
       "NaoETile": "This tile is not a living object yet.",
@@ -309,7 +315,7 @@
       "Prontos": "Ready-made",
       "Meus": "My objects",
       "MeusVazio": "Objects you build and save with \"Save to library\" show up here, ready to use on any map.",
-      "Dica": "Click to place it in the middle of the screen, or drag it to the right spot on the map.",
+      "Dica": "Click to place it in the scene (rotate and resize before placing) or drag it straight onto the map.",
       "ApagarPergunta": "Remove this object from \"My objects\"? The ones already on maps stay there.",
       "Salvar": "Save to library",
       "SalvarDica": "Keeps this object in \"My objects\" to use on other maps. Doors and objects picked in the actions are left out, since they belong to this map.",
@@ -318,7 +324,7 @@
     },
     "Controle": {
       "Titulo": "Living Objects",
-      "Editar": "Click an object to edit it",
+      "Editar": "Click a tile to edit it or make it a living object",
       "Biblioteca": "Object library",
       "Imagem": "Use one of my images"
     },
@@ -337,6 +343,22 @@
     },
     "Mais": {
       "Titulo": "More options (uses, confirmation, locked)"
+    },
+    "Encaixe": {
+      "Dica": "click to place · mouse wheel rotates · Ctrl+wheel resizes · Shift ignores the grid · right click or Esc cancels",
+      "Livre": "free",
+      "Grade": "on the grid"
+    },
+    "Assets": {
+      "Aba": "Assets",
+      "Explica": "Pick the folder where you keep your assets (items, furniture, scene props, including ones downloaded from Forgotten Adventures and others). Browse the folders, search by name and click an asset to place it in the scene as a living object.",
+      "Escolher": "Pick assets folder",
+      "Trocar": "Change folder",
+      "Voltar": "Parent folder",
+      "Buscar": "Search this folder",
+      "Erro": "Couldn't open this folder. Pick another one.",
+      "Vazia": "No images in this folder.",
+      "Mais": "Show more ({n})"
     }
   }
 }

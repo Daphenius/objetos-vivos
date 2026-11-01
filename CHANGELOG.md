@@ -1,7 +1,19 @@
 # Changelog
 
-## v2.0.2
-- **Aviso do libWrapper resolvido de vez**: o Objetos Vivos não mexe mais em nenhuma função do Foundry, nem pelo libWrapper. Ele só "ouve" o clique no ícone da porta para a ação "ao tentar abrir trancada", então nunca mais entra no aviso de conflito com o Arm's Reach ou a Gazua da Mesa. O libWrapper deixou de ser recomendado.
+## v2.1.0
+
+### Novidades
+- **Encaixar na cena**: ao escolher um objeto na biblioteca, ele segue o mouse. A roda gira, Ctrl+roda muda o tamanho, Shift solta do quadriculado, o clique coloca e Esc ou o botão direito cancela.
+- **Aba Assets** na biblioteca: escolha a pasta onde você guarda seus assets, navegue pelas subpastas, busque pelo nome e clique (ou arraste) para transformar qualquer asset em objeto vivo.
+- **Tempo nas ações**: cada ação pode esperar alguns segundos antes de acontecer ("Esperar antes"). O resumo mostra "depois de X s".
+- Com a ferramenta Objetos Vivos aberta, **clicar em um tile comum** já abre o editor para transformá-lo em objeto vivo.
+
+### Correções
+- **Fim do aviso do libWrapper de vez.** O Objetos Vivos não substitui mais nenhuma função do Foundry: cada porta ganha um ouvinte próprio para perceber a tentativa de abrir trancada. Assim ele não entra em conflito com a Gazua da Mesa, o Arm's Reach ou outros módulos, com ou sem o libWrapper, que deixou de ser recomendado.
+- O campo **Nome** do editor esticava e ocupava a coluna inteira (aparecia em portas, paredes e tiles transformados).
+- As imagens das aparências viraram miniaturas com o botão **Trocar imagem**, no lugar do caminho do arquivo.
+- O editor avisa quando todas as aparências têm a mesma imagem (comum ao transformar um tile que já estava no mapa).
+- "Usar uma imagem minha" também aceita vídeos (webm/mp4), como os assets animados.
 
 ## v2.0.1
 - Corrigido o aviso do libWrapper ("Objetos Vivos e Gazua da Mesa, Arms Reach modificam a mesma funcionalidade"). O clique em portas voltou a ser registrado pelo libWrapper, agora como ouvinte: o Objetos Vivos só percebe a tentativa de abrir a porta trancada e não bloqueia nenhum outro módulo. Sem o libWrapper, funciona como antes.
@@ -23,6 +35,10 @@ O módulo ficou mais simples de achar e de usar.
 - "Estados" agora se chamam **aparências**.
 - **O mestre usa os objetos com um clique simples** na camada de tokens. O Alt+clique saiu. Para editar, use a ferramenta Objetos Vivos e clique no objeto.
 - A escolha de modelo saiu do editor e foi para a biblioteca.
+
+## v1.0.1
+- Corrigido o aviso do libWrapper ("Objetos Vivos e Arms Reach modificam a mesma funcionalidade"). Com o libWrapper ativo, o clique em portas passa a ser registrado por ele, e os dois módulos convivem. Sem o libWrapper, funciona como antes.
+- libWrapper entrou como módulo recomendado.
 
 ## v1.0.0
 
