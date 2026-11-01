@@ -432,8 +432,9 @@ function novaSombra() {
   return new ClasseSombra();
 }
 
-// Camaleão: para os jogadores o objeto mostra o que está atrás dele (o fundo do mapa e os
-// tiles de baixo). O mestre vê o objeto meio transparente. Só muda o desenho, nunca o documento.
+// Camaleão: para os jogadores o objeto simplesmente NÃO é desenhado. Ele continua no mapa e
+// funcionando (pisar, clicar, chegar perto), mas fica idêntico ao que está atrás dele, sem nenhuma
+// diferença de cor, nitidez ou luz. O mestre vê o objeto meio transparente.
 function camuflado(tile) {
   const c = tile?._ovPreviaCamo ?? cfgDe(tile?.document);
   if (!c?.camaleao || c.revelado) return false;
@@ -441,84 +442,24 @@ function camuflado(tile) {
 }
 const camoMestre = tile => { const c = tile?._ovPreviaCamo ?? cfgDe(tile?.document); return game.user.isGM && !!c?.camaleao && !c.revelado && !tile._ovVerCamo; };
 
-// Copia o desenho de um objeto do mapa para dentro da imagem do camaleão
-function copiaDoDesenho(mesh, cx, cy) {
-  if (!mesh?.texture || mesh.destroyed || mesh.visible === false) return null;
-  const spr = new PIXI.Sprite(mesh.texture);
-  spr.anchor.set(mesh.anchor?.x ?? 0.5, mesh.anchor?.y ?? 0.5);
-  spr.position.set(mesh.position.x - cx, mesh.position.y - cy);
-  spr.scale.set(mesh.scale.x, mesh.scale.y);
-  spr.rotation = mesh.rotation ?? 0;
-  spr.alpha = mesh.alpha ?? 1;
-  return spr;
-}
-
-function montarCamuflagem(tile) {
-  const doc = tile.document;
-  const w = Math.max(1, Math.round(doc.width)), h = Math.max(1, Math.round(doc.height));
-  const cx = doc.x + doc.width / 2, cy = doc.y + doc.height / 2;
-  const grupo = new PIXI.Container();
-  const miolo = new PIXI.Container();
-  miolo.position.set(w / 2, h / 2);
-  miolo.rotation = -((doc.rotation ?? 0) * Math.PI / 180);
-  grupo.addChild(miolo);
-  // Cor de fundo do mapa, depois a imagem de fundo, depois os tiles que ficam embaixo deste
-  const fundo = new PIXI.Graphics();
-  const cor = Number(foundry.utils.Color?.from?.(canvas.scene?.backgroundColor ?? "#000000") ?? 0);
-  fundo.beginFill(cor).drawRect(-w, -h, w * 2, h * 2).endFill();
-  miolo.addChild(fundo);
-  const bg = copiaDoDesenho(canvas.primary?.background, cx, cy);
-  if (bg) miolo.addChild(bg);
-  const abaixo = (canvas.tiles?.placeables ?? []).filter(o => {
-    if (o === tile || o.document.hidden || !o.mesh?.texture) return false;
-    const d = o.document;
-    const el = d.elevation ?? 0, minha = doc.elevation ?? 0;
-    const embaixo = el < minha || (el === minha && (d.sort ?? 0) < (doc.sort ?? 0));
-    const toca = d.x < doc.x + doc.width && d.x + d.width > doc.x && d.y < doc.y + doc.height && d.y + d.height > doc.y;
-    return embaixo && toca && !camuflado(o);
-  }).sort((a, b) => ((a.document.elevation ?? 0) - (b.document.elevation ?? 0)) || ((a.document.sort ?? 0) - (b.document.sort ?? 0)));
-  for (const o of abaixo) { const spr = copiaDoDesenho(o.mesh, cx, cy); if (spr) miolo.addChild(spr); }
-  const rt = PIXI.RenderTexture.create({ width: w, height: h });
-  canvas.app.renderer.render(grupo, { renderTexture: rt, clear: true });
-  grupo.destroy({ children: true, texture: false, baseTexture: false });
-  return rt;
-}
-
 function aplicarCamaleao(tile) {
   const mesh = tile?.mesh;
-  if (!mesh || mesh.destroyed || !globalThis.PIXI?.RenderTexture) return;
-  const ativo = camuflado(tile);
-  const atual = tile._ovCamo;
-  if (!ativo) {
-    if (atual) {
-      tile._ovCamo = null;
-      if (mesh.texture === atual.rt && tile.texture) mesh.texture = tile.texture;
-      atual.rt?.destroy?.(true);
-      tile.renderFlags?.set?.({ refreshMesh: true, refreshSize: true });
-    }
-    if (camoMestre(tile)) { mesh.alpha = Math.min(mesh.alpha ?? 1, 0.5); tile._ovMeio = true; }
-    else if (tile._ovMeio) { tile._ovMeio = false; tile.renderFlags?.set?.({ refreshState: true }); }
+  if (!mesh || mesh.destroyed) return;
+  if (camuflado(tile)) {
+    // Nada desenhado: nem a imagem, nem sombra, nem contorno
+    mesh.renderable = false;
+    mesh.alpha = 0;
+    tile._ovCamo = true;
+    tile._ovMeio = false;
     return;
   }
-  if (!atual || atual.sujo) {
-    try {
-      const rt = montarCamuflagem(tile);
-      atual?.rt?.destroy?.(true);
-      tile._ovCamo = { rt, sujo: false };
-    } catch (err) { console.warn(`${ID} | camaleão falhou`, err); return; }
+  if (tile._ovCamo) {
+    tile._ovCamo = false;
+    mesh.renderable = true;
+    tile.renderFlags?.set?.({ refreshState: true });
   }
-  mesh.texture = tile._ovCamo.rt;
-  mesh.width = tile.document.width;
-  mesh.height = tile.document.height;
-}
-
-// O que está atrás pode mudar (outro tile mexido, fundo trocado): refaz as camuflagens
-let tCamo = 0;
-function refazerCamuflagens() {
-  clearTimeout(tCamo);
-  tCamo = setTimeout(() => {
-    for (const o of canvas.tiles?.placeables ?? []) if (o._ovCamo || camuflado(o)) { if (o._ovCamo) o._ovCamo.sujo = true; aplicarCamaleao(o); }
-  }, 150);
+  if (camoMestre(tile)) { mesh.alpha = Math.min(mesh.alpha ?? 1, 0.5); tile._ovMeio = true; }
+  else if (tile._ovMeio) { tile._ovMeio = false; tile.renderFlags?.set?.({ refreshState: true }); }
 }
 
 // Visão (3D): a imagem vira uma "carta" que pode inclinar para frente/trás (eixo X) e virar
@@ -1233,7 +1174,6 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
     if (!tile) return;
     tile._ovPreviaCamo = { camaleao: !!this.dados.camaleao, revelado: !!this.dados.revelado };
     tile._ovVerCamo = !!this.verCamo;
-    if (tile._ovCamo) tile._ovCamo.sujo = true;
     aplicarCamaleao(tile);
     aplicarProfundidade(tile);
   }
@@ -2351,13 +2291,11 @@ Hooks.on("refreshTile", tile => {
   if (tile._ov3d || visaoDe(tile)) aplicarVisao(tile);
   if (tile._ovSombra || profDe(tile)) aplicarProfundidade(tile);
 });
-for (const h of ["createTile", "deleteTile"]) Hooks.on(h, doc => { if (doc.parent?.id === canvas.scene?.id) refazerCamuflagens(); });
-Hooks.on("updateScene", (cena, mud) => { if (cena.id === canvas.scene?.id && ("background" in mud || "backgroundColor" in mud)) refazerCamuflagens(); });
 Hooks.on("canvasPan", () => atualizarProfundidades());
 
 Hooks.on("drawWall", w => ouvirPorta(w.doorControl));
 Hooks.on("refreshWall", w => ouvirPorta(w.doorControl));
-Hooks.on("canvasReady", () => { ouvirTentativas(); ligarMapa(); lembrarPosicoes(canvas.scene); atualizarBrilho(); atualizarProfundidades(); refazerCamuflagens(); });
+Hooks.on("canvasReady", () => { ouvirTentativas(); ligarMapa(); lembrarPosicoes(canvas.scene); atualizarBrilho(); atualizarProfundidades(); for (const o of canvas.tiles?.placeables ?? []) if (camuflado(o) || camoMestre(o)) aplicarCamaleao(o); });
 Hooks.on("createToken", tk => posicoes.set(tk.uuid, centroToken(tk)));
 Hooks.on("deleteToken", tk => posicoes.delete(tk.uuid));
 Hooks.on("updateToken", aoMoverToken);
@@ -2365,8 +2303,6 @@ Hooks.on("controlToken", () => atualizarBrilho());
 Hooks.on("updateTile", (doc, mud) => {
   if (doc.parent?.id !== canvas.scene?.id) return;
   if (foundry.utils.hasProperty(mud, `flags.${ID}`)) { aplicarCamaleao(doc.object); aplicarVisao(doc.object); aplicarProfundidade(doc.object); }
-  // Mexeu a posição, o tamanho ou a imagem de um tile: o que está atrás dos camaleões mudou
-  if (["x", "y", "width", "height", "rotation", "sort", "elevation", "texture", "hidden"].some(k => k in mud)) refazerCamuflagens();
   if (foundry.utils.hasProperty(mud, `flags.${ID}.objeto.estado`)) animar(doc.object, cfgDe(doc)?.anim);
   atualizarBrilho();
 });

@@ -409,14 +409,14 @@
     "Camaleao": {
       "Titulo": "Chameleon",
       "Ligar": "Camouflage on the map",
-      "LigarDica": "For players, the object takes the same texture as the floor or whatever is behind it. You still see the object, half transparent.",
+      "LigarDica": "For players, the object becomes invisible: the map looks exactly the same, with no difference at all, but the object keeps working (stepping, clicking, coming close). You still see the object, half transparent.",
       "Revelar": "Shows up after being used",
       "RevelarDica": "When someone uses it (or steps on it), the object is revealed to everyone",
       "Revelado": "This object has already been revealed.",
       "Reesconder": "Hide it again",
       "Ver": "See it as players do",
       "VerParar": "Stop seeing it as players do",
-      "SemProf": "While the object is camouflaged, depth, the hand cursor and the glow stay off so they don't give it away."
+      "SemProf": "While the object is camouflaged, depth, 3D view, the hand cursor and the glow stay off so they don't give it away."
     },
     "Visao": {
       "Titulo": "View (3D)",

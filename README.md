@@ -71,7 +71,7 @@ No passo **Aparência**, a seção **Visão (3D)** gira o objeto como uma carta 
 
 ## Camaleão
 
-No passo **Aparência**, ligue **Camuflar no mapa**: para os jogadores, o objeto passa a mostrar a mesma textura do chão ou dos tiles que estão atrás dele. É ideal para placas de pressão, botões e alavancas secretas.
+No passo **Aparência**, ligue **Camuflar no mapa**: para os jogadores, o objeto fica invisível. O mapa fica exatamente igual, sem nenhuma diferença, mas o objeto continua funcionando (pisar, clicar, chegar perto). É ideal para placas de pressão, botões e alavancas secretas.
 
 - Você, mestre, continua vendo o objeto meio transparente. O botão **Ver como o jogador vê** mostra a camuflagem na sua tela.
 - **Aparece depois de usado**: quando alguém usa (ou pisa), o objeto se revela para todos. **Esconder de novo** volta a camuflar.

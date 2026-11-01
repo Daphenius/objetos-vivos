@@ -409,14 +409,14 @@
     "Camaleao": {
       "Titulo": "Camaleão",
       "Ligar": "Camuflar no mapa",
-      "LigarDica": "Para os jogadores, o objeto fica com a mesma textura do chão ou do que estiver atrás dele. Você continua vendo o objeto meio transparente.",
+      "LigarDica": "Para os jogadores, o objeto fica invisível: o mapa fica exatamente igual, sem nenhuma diferença, mas o objeto continua funcionando (pisar, clicar, chegar perto). Você continua vendo o objeto meio transparente.",
       "Revelar": "Aparece depois de usado",
       "RevelarDica": "Quando alguém usar (ou pisar), o objeto se revela para todos",
       "Revelado": "Este objeto já foi revelado.",
       "Reesconder": "Esconder de novo",
       "Ver": "Ver como o jogador vê",
       "VerParar": "Parar de ver como jogador",
-      "SemProf": "Enquanto o objeto está camuflado, a profundidade, a mãozinha e o brilho ficam desligados para não entregar onde ele está."
+      "SemProf": "Enquanto o objeto está camuflado, a profundidade, a visão 3D, a mãozinha e o brilho ficam desligados para não entregar onde ele está."
     },
     "Visao": {
       "Titulo": "Visão (3D)",

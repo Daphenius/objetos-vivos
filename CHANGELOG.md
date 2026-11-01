@@ -1,5 +1,8 @@
 # Changelog
 
+## v2.4.1
+- **Camaleão perfeito**: o objeto camuflado agora fica invisível de verdade para os jogadores. Antes, o módulo redesenhava o chão por cima do objeto, e essa cópia saía um pouco mais borrada e com outra luz, deixando um quadrado aparente. Agora nada é desenhado no lugar: o mapa fica exatamente igual, e o objeto continua funcionando (pisar, clicar, chegar perto). O mestre continua vendo o objeto meio transparente.
+
 ## v2.4.0
 
 ### Novidades
