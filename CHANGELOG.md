@@ -1,5 +1,8 @@
 # Changelog
 
+## v2.0.2
+- **Aviso do libWrapper resolvido de vez**: o Objetos Vivos não mexe mais em nenhuma função do Foundry, nem pelo libWrapper. Ele só "ouve" o clique no ícone da porta para a ação "ao tentar abrir trancada", então nunca mais entra no aviso de conflito com o Arm's Reach ou a Gazua da Mesa. O libWrapper deixou de ser recomendado.
+
 ## v2.0.1
 - Corrigido o aviso do libWrapper ("Objetos Vivos e Gazua da Mesa, Arms Reach modificam a mesma funcionalidade"). O clique em portas voltou a ser registrado pelo libWrapper, agora como ouvinte: o Objetos Vivos só percebe a tentativa de abrir a porta trancada e não bloqueia nenhum outro módulo. Sem o libWrapper, funciona como antes.
 - libWrapper entrou como módulo recomendado.
