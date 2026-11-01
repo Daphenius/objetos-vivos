@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.1
+- Corrigido o aviso do libWrapper ("Objetos Vivos e Arms Reach modificam a mesma funcionalidade"). Com o libWrapper ativo, o clique em portas passa a ser registrado por ele, e os dois módulos convivem. Sem o libWrapper, funciona como antes.
+- libWrapper entrou como módulo recomendado.
+
 ## v1.0.0
 
 Primeira versão. Os gatilhos que existiam no Navegador de Mundos viraram este módulo separado, com uma interface nova.

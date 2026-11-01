@@ -486,10 +486,7 @@ const estadosPorta = new Map();
 function lembrarPortas(cena) { for (const w of cena?.walls ?? []) if (w.door > 0) estadosPorta.set(w.uuid, w.ds); }
 
 function ouvirTentativas() {
-  const DC = foundry.canvas?.containers?.DoorControl ?? globalThis.DoorControl;
-  const original = DC?.prototype?._onMouseDown;
-  if (!original) return console.warn(`${ID} | não achei o controle de portas; "ao tentar abrir trancada" desligado`);
-  DC.prototype._onMouseDown = function (event) {
+  const aoClicarPorta = function (wrapped, event) {
     try {
       const w = this.wall?.document;
       if (w && ehObjeto(w) && w.ds === CONST.WALL_DOOR_STATES.LOCKED && (event?.button ?? 0) === 0 && !game.user.isGM) {
@@ -497,7 +494,18 @@ function ouvirTentativas() {
         else emitir({ acao: "parede", uuid: w.uuid, momento: "tentativa", userId: game.user.id });
       }
     } catch (err) { console.warn(`${ID} |`, err); }
-    return original.call(this, event);
+    return wrapped(event);
+  };
+  // Com o libWrapper ativo, registra por ele (convive com Arm's Reach e outros); sem ele, envolve direto.
+  if (globalThis.libWrapper) {
+    libWrapper.register(ID, "foundry.canvas.containers.DoorControl.prototype._onMouseDown", aoClicarPorta, "WRAPPER");
+    return;
+  }
+  const DC = foundry.canvas?.containers?.DoorControl;
+  const original = DC?.prototype?._onMouseDown;
+  if (!original) return console.warn(`${ID} | não achei o controle de portas; "ao tentar abrir trancada" desligado`);
+  DC.prototype._onMouseDown = function (event) {
+    return aoClicarPorta.call(this, ev => original.call(this, ev), event);
   };
 }
 
