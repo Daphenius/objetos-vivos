@@ -315,12 +315,21 @@
       "Prontos": "Ready-made",
       "Meus": "My objects",
       "MeusVazio": "Objects you build and save with \"Save to library\" show up here, ready to use on any map.",
-      "Dica": "Click to place it in the scene (rotate and resize before placing) or drag it straight onto the map.",
+      "Dica": "Click an asset to place it in the scene (wheel rotates, Ctrl+wheel resizes) or drag it straight onto the map. The library stays open while you build the scene.",
       "ApagarPergunta": "Remove this object from \"My objects\"? The ones already on maps stay there.",
       "Salvar": "Save to library",
       "SalvarDica": "Keeps this object in \"My objects\" to use on other maps. Doors and objects picked in the actions are left out, since they belong to this map.",
       "Salvo": "\"{objeto}\" saved to My objects.",
-      "SemMapa": "Open a map first."
+      "SemMapa": "Open a map first.",
+      "Tamanho": "Thumbnail size",
+      "Tam": {
+        "p": "Small thumbnails",
+        "m": "Medium thumbnails",
+        "g": "Large thumbnails"
+      },
+      "Erro": "Something went wrong showing the library. Details are in the console (F12).",
+      "Recomecar": "Restart the library",
+      "Buscar": "Search by name"
     },
     "Controle": {
       "Titulo": "Living Objects",
@@ -386,7 +395,12 @@
         "roofs": "Roofs",
         "tilesets": "Floors",
         "decals": "Decals"
-      }
+      },
+      "Guardar": "Keep in Foundry",
+      "GuardarDica": "Copies the pack file into Foundry. In future sessions it shows up in the list and opens with one click, without picking the file again.",
+      "Guardando": "Keeping “{nome}” in Foundry…",
+      "Guardado": "“{nome}” kept. It will show up in the list in future sessions.",
+      "VerTodos": "See all ({n})"
     },
     "Camaleao": {
       "Titulo": "Chameleon",

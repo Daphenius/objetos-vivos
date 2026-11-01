@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.3.0
+
+### Biblioteca nova
+- **Janela maior** (e redimensionável), com uma **barra lateral**: Prontos, Meus objetos, sua pasta de assets e os pacotes do Dungeondraft.
+- **Pacotes separados por categoria**: na barra lateral aparecem as categorias e subcategorias de cada pacote, com a quantidade de assets. Na área principal, os assets vêm agrupados por subcategoria, com "Ver todos".
+- **Tamanho das miniaturas**: pequeno, médio ou grande (fica guardado).
+- **Vários pacotes abertos ao mesmo tempo**.
+- **Guardar no Foundry**: copia o pacote para o Foundry; nas próximas sessões ele aparece na lista e abre com um clique.
+
+### Correções
+- **Fechar a biblioteca não fecha mais o pacote** do Dungeondraft: ao reabrir, ele continua lá, do jeito que estava.
+- Se algo der errado ao mostrar a biblioteca, ela mostra um aviso com o botão "Recomeçar" em vez de travar, e o botão Objetos Vivos sempre consegue abrir uma janela nova.
+
 ## v2.2.0
 
 ### Novidades

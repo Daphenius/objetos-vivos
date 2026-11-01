@@ -824,46 +824,63 @@ fieldset.ov-secao .ov-botoes { display: flex; gap: 6px; } fieldset.ov-secao .ov-
 .ov-faixa-linha b { font-size: 13px; } .ov-faixa-linha input[type=range] { width: 100%; accent-color: #f0a03c; }
 .ov-btn.ov-mais { align-self: flex-start; }
 .ov-previa { transition: transform .25s, filter .25s; }
-.ov-biblioteca .window-content { padding: 0; background: #17151c; color: #ece8f1; }
-.ov-bib { display: flex; flex-direction: column; height: 100%; font-family: Signika, system-ui, sans-serif; }
+.ov-biblioteca .window-content { padding: 0; background: #17151c; color: #ece8f1; overflow: hidden; }
+.ov-bib { display: flex; flex-direction: column; height: 100%; font-family: Signika, system-ui, sans-serif; --ov-tam: 116px; }
 .ov-bib button { font-family: inherit; }
-.ov-bib-topo { padding: 14px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #343041; flex: none; }
-.ov-minha { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 2px dashed #f0a03c; background: rgba(240,160,60,.08);
-  color: #ece8f1; text-align: left; cursor: pointer; width: 100%; height: auto; line-height: 1.25; }
-.ov-minha i { font-size: 24px; color: #f0a03c; } .ov-minha b { display: block; font-size: 14px; } .ov-minha span { font-size: 12px; color: #d9c4a6; }
-.ov-bib-abas { display: flex; gap: 6px; }
-.ov-bib-aba { flex: 1; height: 34px; border-radius: 8px; border: 1px solid #343041; background: transparent; color: #a8a1b4; font-size: 13px; font-weight: 600; cursor: pointer; }
-.ov-bib-aba.ov-on { background: #f0a03c; border-color: #f0a03c; color: #1a1408; }
-.ov-bib-corpo { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; }
-.ov-bib-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.ov-bib-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px 10px; border-radius: 12px; border: 1px solid #343041;
-  background: #221f29; color: #ece8f1; cursor: grab; width: 100%; height: auto; line-height: 1.25; }
-.ov-bib-item:hover { border-color: #f0a03c; }
-.ov-bib-item img { width: 64px; height: 64px; object-fit: contain; border: none; filter: drop-shadow(4px 8px 5px rgba(0,0,0,.6)); pointer-events: none; }
-.ov-bib-item b { font-size: 13px; } .ov-bib-item span { font-size: 11px; color: #a8a1b4; }
-.ov-bib-linha { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; border: 1px solid #343041; background: #221f29; margin-bottom: 8px; cursor: grab; }
-.ov-bib-linha:hover { border-color: #f0a03c; }
-.ov-bib-linha img { width: 48px; height: 48px; object-fit: contain; border: none; pointer-events: none; }
-.ov-bib-linha .ov-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; } .ov-bib-linha .ov-txt b { font-size: 13px; } .ov-bib-linha .ov-txt span { font-size: 11px; color: #a8a1b4; }
-.ov-bib-aba { padding: 0 6px; }
+.ov-bib-barra { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid #343041; flex: none; }
+.ov-bib-barra .ov-btn { flex: none; }
+.ov-busca { flex: 1; min-width: 120px; height: 36px; box-sizing: border-box; border-radius: 8px; border: 1px solid #343041; background: #1e1b24; color: #ece8f1; padding: 0 12px; font-size: 13px; }
+.ov-tamanhos { display: flex; gap: 2px; padding: 3px; border-radius: 9px; background: #1e1b24; border: 1px solid #343041; flex: none; }
+.ov-tam { width: 32px; height: 30px; border: none; border-radius: 7px; background: transparent; color: #a8a1b4; cursor: pointer; padding: 0; line-height: 1; }
+.ov-tam.ov-on { background: #f0a03c; color: #1a1408; }
+.ov-bib-meio { flex: 1; min-height: 0; display: flex; }
+.ov-bib-lado { width: 240px; flex: none; overflow-y: auto; border-right: 1px solid #343041; background: #1a1720; padding: 8px 6px; box-sizing: border-box; }
+.ov-lado-grupo { display: flex; flex-direction: column; gap: 2px; }
+.ov-lado-titulo { margin: 14px 8px 6px; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: #a8a1b4; }
+.ov-lado-titulo i { color: #f0a03c; }
+.ov-lado-item { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 4px 10px; border: none; border-radius: 8px; background: transparent;
+  color: #cfc8da; font-size: 13px; text-align: left; cursor: pointer; line-height: 1.2; }
+.ov-lado-item:hover { background: #26222d; color: #ece8f1; }
+.ov-lado-item.ov-on { background: rgba(240,160,60,.16); color: #ffd09a; font-weight: 600; }
+.ov-lado-item > i { width: 16px; text-align: center; flex: none; color: #a8a1b4; } .ov-lado-item.ov-on > i { color: #f0a03c; }
+.ov-lado-nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-conta { flex: none; font-size: 11px; padding: 1px 7px; border-radius: 999px; background: #2e2a37; color: #a8a1b4; font-weight: 600; }
+.ov-lado-abrir { margin-top: 6px; border: 1px dashed #4a4454; color: #ffd09a; }
+.ov-lado-abrir .ov-lado-nome { white-space: normal; }
+.ov-bib-conteudo { flex: 1; min-width: 0; overflow-y: auto; padding: 14px 16px 20px; box-sizing: border-box; }
+.ov-sec-titulo { margin: 0 0 10px; font-size: 18px; font-weight: 700; border: none; color: #ece8f1; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-sec-titulo i { color: #f0a03c; font-size: 15px; }
+.ov-sec-cab { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; } .ov-sec-cab .ov-sec-titulo { margin: 0; }
+.ov-sec-info { margin: 0 0 10px; font-size: 12px; color: #a8a1b4; }
+.ov-dd-cab { padding: 10px 12px; border-radius: 10px; background: rgba(240,160,60,.08); border: 1px solid #f0a03c55; }
+.ov-dd-cab .ov-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; } .ov-dd-cab .ov-txt > span { font-size: 12px; color: #a8a1b4; }
+.ov-trilha { font-size: 13px; color: #a8a1b4; margin: 0 0 12px; }
+.ov-link { border: none; background: none; padding: 0; color: #ffc27a; cursor: pointer; font-size: inherit; width: auto; height: auto; line-height: inherit; }
+.ov-link:hover { text-decoration: underline; }
+.ov-grupo { margin-bottom: 18px; }
+.ov-grupo-cab { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #2c2834; }
+.ov-grupo-nome { font-size: 15px; font-weight: 600; color: #ece8f1; } button.ov-grupo-nome { color: #ece8f1; } .ov-grupo-nome i { color: #f0a03c; }
+.ov-grupo-cab .ov-link:last-child { margin-left: auto; font-size: 12px; }
+.ov-grade-assets { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--ov-tam), 1fr)); gap: 8px; }
+.ov-cartao-asset { display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: 10px; border: 1px solid #343041; background: #221f29; color: #ece8f1;
+  cursor: grab; width: 100%; height: auto; line-height: 1.2; text-align: center; }
+.ov-cartao-asset:hover { border-color: #f0a03c; background: #2a2533; }
+.ov-cartao-img { aspect-ratio: 1; width: 100%; border-radius: 7px; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  background: #2b2733 repeating-conic-gradient(#322d3b 0 25%, #2b2733 0 50%) 0 0 / 16px 16px; }
+.ov-cartao-img img, .ov-cartao-img video { max-width: 92%; max-height: 92%; object-fit: contain; border: none; pointer-events: none; filter: drop-shadow(2px 4px 3px rgba(0,0,0,.5)); }
+.ov-cartao-nome { font-size: 11px; color: #cfc8da; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ov-com-apagar { position: relative; }
+.ov-com-apagar[hidden], .ov-cartao-asset[hidden], .ov-pasta-chip[hidden] { display: none; }
+.ov-apagar { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; padding: 0; border-radius: 7px; border: none; background: #17151ccc; color: #ff9a8a; cursor: pointer; opacity: 0; line-height: 1; }
+.ov-com-apagar:hover .ov-apagar, .ov-apagar:focus-visible { opacity: 1; }
+.ov-pastas { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.ov-pasta-chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid #343041; background: #221f29; color: #ece8f1; font-size: 13px; cursor: pointer; width: auto; }
+.ov-pasta-chip:hover { border-color: #f0a03c; } .ov-pasta-chip i { color: #f0a03c; }
+.ov-dd-chip { border-color: #f0a03c88; }
+.ov-mais-largo { width: 100%; margin-top: 10px; }
 .ov-bib-vazio { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; font-size: 13px; color: #cfc8da; }
-.ov-bib-vazio p { margin: 0; line-height: 1.45; }
-.ov-assets-topo { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.ov-assets-busca { width: 100%; height: 34px; box-sizing: border-box; border-radius: 8px; border: 1px solid #343041; background: #1e1b24; color: #ece8f1; padding: 0 10px; margin-bottom: 8px; }
-.ov-assets-dir { display: flex; align-items: center; gap: 8px; width: 100%; height: 34px; padding: 0 10px; margin-bottom: 4px; border-radius: 8px; border: 1px solid #343041;
-  background: #221f29; color: #ece8f1; font-size: 13px; cursor: pointer; text-align: left; }
-.ov-assets-dir:hover { border-color: #f0a03c; } .ov-assets-dir i { color: #f0a03c; }
-.ov-assets-grade { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
-.ov-asset { aspect-ratio: 1; padding: 4px; border-radius: 8px; border: 1px solid #343041; background: #221f29 repeating-conic-gradient(#2a2632 0 25%, #221f29 0 50%) 0 0 / 16px 16px;
-  cursor: grab; height: auto; width: 100%; display: flex; align-items: center; justify-content: center; }
-.ov-asset:hover { border-color: #f0a03c; }
-.ov-asset img, .ov-asset video { max-width: 100%; max-height: 100%; object-fit: contain; border: none; pointer-events: none; }
-.ov-asset[hidden], .ov-assets-dir[hidden] { display: none; }
-.ov-dd-abrir { width: 100%; }
-.ov-dd-cab { display: flex; align-items: center; gap: 10px; padding: 10px; margin-bottom: 10px; border-radius: 10px; background: rgba(240,160,60,.08); border: 1px solid #f0a03c66; }
-.ov-dd-cab > i { font-size: 20px; color: #f0a03c; }
-.ov-dd-cab .ov-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; } .ov-dd-cab .ov-txt b { font-size: 14px; } .ov-dd-cab .ov-txt span { font-size: 11px; color: #a8a1b4; }
-.ov-dd-tag { margin-left: auto; font-size: 10px; padding: 2px 6px; border-radius: 999px; background: #3a2a14; color: #ffc27a; }
+.ov-bib-vazio p { margin: 0; line-height: 1.45; max-width: 520px; }
+.ov-bib-dica { margin: 0; padding: 8px 14px; border-top: 1px solid #343041; font-size: 12px; color: #a8a1b4; flex: none; }
 .ov-encaixe-aviso { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 10000; padding: 10px 16px; border-radius: 10px;
   background: #17151cf0; border: 1px solid #f0a03c; color: #ece8f1; font-family: Signika, system-ui, sans-serif; font-size: 13px; pointer-events: none;
   box-shadow: 0 8px 24px rgba(0,0,0,.5); max-width: 90vw; text-align: center; }
@@ -1598,7 +1615,8 @@ async function salvarNaBiblioteca(doc, dados) {
 // Lemos só o índice; cada imagem é recortada do arquivo quando precisa, sem carregar o pacote inteiro.
 const DD_PX_POR_CASA = 256;
 const EXT_DD = /\.(png|webp|jpe?g)$/i;
-let pacoteAberto = null;
+// Pacotes abertos nesta sessão (continuam abertos mesmo se a janela da biblioteca fechar)
+const pacotes = new Map();
 
 async function lerPacoteDD(blob, nomeArquivo = "") {
   let buf = new Uint8Array(0), ini = 0, pos = 0;
@@ -1650,7 +1668,13 @@ async function lerPacoteDD(blob, nomeArquivo = "") {
   }).sort((a, b) => comparar(a.rel, b.rel));
   if (!imagens.length) throw new Error("nenhuma imagem no pacote");
   const slug = (nome || "pacote").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "pacote";
-  return { nome, autor, slug, blob, imagens, cortar, urls: new Map(), enviados: new Map() };
+  // Categorias: "objects", "objects/furniture"... com quantas imagens cada uma tem (contando as de dentro)
+  const contagem = new Map();
+  for (const a of imagens) {
+    const partes = a.rel.split("/").slice(0, -1);
+    for (let i = 1; i <= partes.length; i++) { const k = partes.slice(0, i).join("/"); contagem.set(k, (contagem.get(k) ?? 0) + 1); }
+  }
+  return { id: slug, nome, autor, slug, blob, imagens, contagem, cortar, urls: new Map(), enviados: new Map() };
 }
 
 const tipoImagem = c => /\.webp$/i.test(c) ? "image/webp" : /\.jpe?g$/i.test(c) ? "image/jpeg" : "image/png";
@@ -1658,9 +1682,10 @@ function urlDaMiniatura(pac, a) {
   if (!pac.urls.has(a.rel)) pac.urls.set(a.rel, URL.createObjectURL(new Blob([pac.cortar(a)], { type: tipoImagem(a.rel) })));
   return pac.urls.get(a.rel);
 }
-function fecharPacote() {
-  for (const u of pacoteAberto?.urls?.values?.() ?? []) URL.revokeObjectURL(u);
-  pacoteAberto = null;
+function fecharPacote(id) {
+  const pac = pacotes.get(id);
+  for (const u of pac?.urls?.values?.() ?? []) URL.revokeObjectURL(u);
+  pacotes.delete(id);
 }
 
 // Manda para o Foundry só a imagem que vai ser usada (os jogadores precisam carregá-la do servidor)
@@ -1690,8 +1715,8 @@ async function enviarDoPacote(pac, a) {
   return caminho;
 }
 
-async function usarDoPacote(rel, onde = null) {
-  const pac = pacoteAberto;
+async function usarDoPacote(id, rel, onde = null) {
+  const pac = pacotes.get(id);
   const a = pac?.imagens.find(x => x.rel === rel);
   if (!a) return;
   try {
@@ -1706,24 +1731,30 @@ async function usarDoPacote(rel, onde = null) {
 
 const EXT_IMAGEM = /\.(png|jpe?g|webp|gif|svg|avif|webm|mp4)$/i;
 const ehVideo = c => /\.(webm|mp4)$/i.test(c);
+const TAMANHOS = { p: 84, m: 116, g: 160 };
+const POR_GRUPO = 36;
 
+// Biblioteca: barra lateral (seções e categorias dos pacotes) + grade de miniaturas
 class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
   static DEFAULT_OPTIONS = {
     id: `${ID}-biblioteca`,
     classes: ["ov-biblioteca"],
-    position: { width: 380, height: 640, left: 120, top: 70 },
+    position: { width: 900, height: 680, left: 110, top: 60 },
     window: { icon: "fa-solid fa-cube", resizable: true }
   };
-  aba = "prontos";
-  pasta = null;      // pasta de assets aberta agora
-  lista = null;      // { dirs, files } da pasta aberta
-  limite = 120;
+  secao = "prontos";   // prontos | pasta | meus | pacote
+  pacoteId = null;
+  ddPasta = "";
+  busca = "";
+  limite = 240;
+  pasta = null;
+  lista = null;
 
   get title() { return t("Bib.Titulo"); }
-
   get FP() { return foundry.applications.apps?.FilePicker?.implementation ?? globalThis.FilePicker; }
+  get tam() { return game.settings.get(ID, "tamMiniatura") || "m"; }
+  get pacote() { return pacotes.get(this.pacoteId) ?? null; }
 
-  // Lê a pasta de assets (só a pasta aberta, sem descer em todas de uma vez, para ficar rápido)
   async _carregarPasta() {
     const salva = game.settings.get(ID, "pastaAssets") ?? {};
     this.pasta ??= salva.pasta || null;
@@ -1737,89 +1768,227 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
       };
     } catch (err) {
       console.warn(`${ID} | não consegui abrir a pasta`, err);
-      this.lista = { dirs: [], files: [], erro: true };
+      this.lista = { dirs: [], files: [], pacotes: [], erro: true };
     }
   }
 
-  _htmlPacote() {
-    const pac = pacoteAberto;
-    const atual = this.ddPasta ?? "";
-    const prefixo = atual ? `${atual}/` : "";
-    const dentro = pac.imagens.filter(a => a.rel.startsWith(prefixo));
-    const subpastas = [...new Set(dentro.map(a => a.rel.slice(prefixo.length)).filter(r => r.includes("/")).map(r => r.split("/")[0]))]
-      .sort((a, b) => (a === "objects" ? -1 : b === "objects" ? 1 : comparar(a, b)));
-    const aqui = dentro.filter(a => !a.rel.slice(prefixo.length).includes("/"));
-    // A busca procura no pacote todo, não só na pasta aberta
-    const busca = (this.ddBusca ?? "").trim().toLowerCase();
-    const lista = busca ? pac.imagens.filter(a => nomeDoArquivo(a.rel).toLowerCase().includes(busca)) : aqui;
-    const mostrar = lista.slice(0, this.limite);
-    const nomePasta = p => t(`DD.Pasta.${p}`) === `OV.DD.Pasta.${p}` ? p.replace(/[-_]+/g, " ") : t(`DD.Pasta.${p}`);
-    return `<div class="ov-dd-cab">${icone("fa-box-open")}<span class="ov-txt"><b>${esc(pac.nome)}</b><span>${esc(pac.autor ? t("DD.De", { autor: pac.autor }) : "")} ${t("DD.Total", { n: pac.imagens.length })}</span></span>
-        <button type="button" class="ov-btn" data-a="fechar-pacote">${t("DD.Fechar")}</button></div>
-      <div class="ov-assets-topo">
-        ${atual && !busca ? `<button type="button" class="ov-btn ov-icone" data-a="dd-subir" aria-label="${esc(t("Assets.Voltar"))}">${icone("fa-arrow-left")}</button>` : ""}
-        <span class="ov-arquivo">${icone("fa-folder")} ${esc(busca ? t("DD.Resultados", { n: lista.length }) : atual ? atual.split("/").map(nomePasta).join(" › ") : t("DD.Inicio"))}</span></div>
-      <input type="search" class="ov-assets-busca ov-dd-busca" value="${esc(this.ddBusca ?? "")}" placeholder="${esc(t("DD.Buscar"))}" aria-label="${esc(t("DD.Buscar"))}">
-      ${busca ? "" : subpastas.map(d => `<button type="button" class="ov-assets-dir" data-dd-pasta="${esc(prefixo + d)}">${icone("fa-folder")} ${esc(nomePasta(d))}</button>`).join("")}
-      <div class="ov-assets-grade">${mostrar.map(a => `<button type="button" class="ov-asset" draggable="true" data-dd="${esc(a.rel)}" data-tooltip="${esc(nomeDoArquivo(a.rel))}">
-          <img src="${urlDaMiniatura(pac, a)}" alt="" loading="lazy"></button>`).join("")}</div>
-      ${lista.length > this.limite ? `<button type="button" class="ov-btn" data-a="mais-assets" style="width:100%;margin-top:8px">${t("Assets.Mais", { n: lista.length - this.limite })}</button>` : ""}
-      ${!lista.length && !subpastas.length ? `<p class="ov-vazio">${t("Assets.Vazia")}</p>` : ""}`;
+  // ---------- partes da janela
+  _item({ attrs, iconeNome, nome, conta = null, ativo = false, nivel = 0 }) {
+    return `<button type="button" class="ov-lado-item ${ativo ? "ov-on" : ""}" style="padding-left:${10 + nivel * 14}px" ${attrs}>
+      ${icone(iconeNome)}<span class="ov-lado-nome">${esc(nome)}</span>${conta !== null ? `<span class="ov-conta">${conta}</span>` : ""}</button>`;
   }
 
-  _htmlAssets() {
-    if (pacoteAberto) return this._htmlPacote();
+  _nomePasta(p) {
+    const k = `DD.Pasta.${p}`;
+    const tr = t(k);
+    if (typeof tr === "string" && tr !== `OV.${k}`) return tr;
+    const nome = p.replace(/[-_]+/g, " ").trim();
+    return nome.charAt(0).toUpperCase() + nome.slice(1);
+  }
+
+  _htmlLado() {
+    const meus = meusObjetos();
     const salva = game.settings.get(ID, "pastaAssets") ?? {};
-    const abrirPacote = `<button type="button" class="ov-btn ov-dd-abrir" data-a="abrir-pacote">${icone("fa-box-open")} ${t("DD.Abrir")}</button>
-      <input type="file" class="ov-dd-arquivo" accept=".dungeondraft_pack" hidden>`;
-    if (!salva.pasta) return `<div class="ov-bib-vazio">
-        <p>${t("Assets.Explica")}</p>
-        <button type="button" class="ov-btn ov-forte" data-a="pasta">${icone("fa-folder-open")} ${t("Assets.Escolher")}</button>
-        <p>${t("DD.Explica")}</p>${abrirPacote}</div>`;
-    const l = this.lista ?? { dirs: [], files: [] };
+    const guardados = (game.settings.get(ID, "pacotesGuardados") ?? []).filter(g => ![...pacotes.values()].some(p => p.caminho === g.caminho));
+    let h = `<div class="ov-lado-grupo">
+      ${this._item({ attrs: 'data-secao="prontos"', iconeNome: "fa-shapes", nome: t("Bib.Prontos"), conta: PRONTOS.length, ativo: this.secao === "prontos" })}
+      ${this._item({ attrs: 'data-secao="meus"', iconeNome: "fa-bookmark", nome: t("Bib.Meus"), conta: meus.length, ativo: this.secao === "meus" })}
+      ${this._item({ attrs: 'data-secao="pasta"', iconeNome: "fa-folder-open", nome: salva.pasta ? decodeURIComponent(salva.pasta.replace(/\/$/, "").split("/").pop()) : t("Assets.Aba"), ativo: this.secao === "pasta" })}
+      </div><div class="ov-lado-titulo">${icone("fa-box-open")} Dungeondraft</div><div class="ov-lado-grupo">`;
+    for (const pac of pacotes.values()) {
+      const ativo = this.secao === "pacote" && this.pacoteId === pac.id;
+      h += this._item({ attrs: `data-pacote-id="${esc(pac.id)}"`, iconeNome: "fa-box-open", nome: pac.nome, conta: pac.imagens.length, ativo: ativo && !this.ddPasta && !this.busca });
+      if (!ativo) continue;
+      // Categorias de primeiro nível e, da aberta, as subcategorias
+      const topo = [...pac.contagem.keys()].filter(k => !k.includes("/")).sort((a, b) => (a === "objects" ? -1 : b === "objects" ? 1 : comparar(a, b)));
+      for (const c of topo) {
+        h += this._item({ attrs: `data-dd-pasta="${esc(c)}"`, iconeNome: "fa-folder", nome: this._nomePasta(c), conta: pac.contagem.get(c), ativo: this.ddPasta === c && !this.busca, nivel: 1 });
+        if (!(this.ddPasta === c || this.ddPasta.startsWith(`${c}/`))) continue;
+        const subs = [...pac.contagem.keys()].filter(k => k.startsWith(`${c}/`) && k.split("/").length === 2).sort(comparar);
+        for (const sub of subs) h += this._item({ attrs: `data-dd-pasta="${esc(sub)}"`, iconeNome: "fa-folder-tree", nome: this._nomePasta(sub.split("/")[1]), conta: pac.contagem.get(sub), ativo: (this.ddPasta === sub || this.ddPasta.startsWith(`${sub}/`)) && !this.busca, nivel: 2 });
+      }
+    }
+    for (const g of guardados) h += this._item({ attrs: `data-guardado="${esc(g.caminho)}"`, iconeNome: "fa-cloud-arrow-down", nome: g.nome, nivel: 0 });
+    h += `<button type="button" class="ov-lado-item ov-lado-abrir" data-a="abrir-pacote">${icone("fa-plus")}<span class="ov-lado-nome">${t("DD.Abrir")}</span></button>
+      <input type="file" class="ov-dd-arquivo" accept=".dungeondraft_pack" hidden></div>`;
+    return h;
+  }
+
+  _cartao({ attrs, src, nome, video = false }) {
+    return `<button type="button" class="ov-cartao-asset" draggable="true" ${attrs} data-nome="${esc(nome.toLowerCase())}" data-tooltip="${esc(nome)}">
+      <span class="ov-cartao-img">${video ? `<video src="${esc(src)}" muted loop preload="metadata"></video>` : `<img src="${esc(src)}" alt="" loading="lazy">`}</span>
+      <span class="ov-cartao-nome">${esc(nome)}</span></button>`;
+  }
+
+  _htmlProntos() {
+    return `<h2 class="ov-sec-titulo">${t("Bib.Prontos")}</h2><div class="ov-grade-assets">${PRONTOS.map(p =>
+      this._cartao({ attrs: `data-preset="${p}"`, src: imgPreset(p, 0), nome: t(`Preset.${p}.Nome`) })).join("")}</div>`;
+  }
+
+  _htmlMeus() {
+    const meus = meusObjetos();
+    if (!meus.length) return `<h2 class="ov-sec-titulo">${t("Bib.Meus")}</h2><p class="ov-vazio">${t("Bib.MeusVazio")}</p>`;
+    return `<h2 class="ov-sec-titulo">${t("Bib.Meus")}</h2><div class="ov-grade-assets">${meus.map(o => `<div class="ov-com-apagar">
+        ${this._cartao({ attrs: `data-salvo="${o.id}"`, src: o.img, nome: o.nome, video: ehVideo(o.img) })}
+        <button type="button" class="ov-apagar" data-apagar="${o.id}" aria-label="${esc(t("Editor.Remover"))}">${icone("fa-trash")}</button></div>`).join("")}</div>`;
+  }
+
+  _htmlPasta() {
+    const salva = game.settings.get(ID, "pastaAssets") ?? {};
+    if (!salva.pasta) return `<div class="ov-bib-vazio"><h2 class="ov-sec-titulo">${t("Assets.Aba")}</h2><p>${t("Assets.Explica")}</p>
+      <button type="button" class="ov-btn ov-forte" data-a="pasta">${icone("fa-folder-open")} ${t("Assets.Escolher")}</button></div>`;
+    const l = this.lista ?? { dirs: [], files: [], pacotes: [] };
     const raiz = salva.pasta.replace(/\/$/, "");
     const atual = (this.pasta ?? raiz).replace(/\/$/, "");
     const podeSubir = atual !== raiz && atual.startsWith(raiz);
     const arquivos = l.files.slice(0, this.limite);
-    return `<div class="ov-assets-topo">
+    return `<div class="ov-sec-cab">
         ${podeSubir ? `<button type="button" class="ov-btn ov-icone" data-a="subir-pasta" aria-label="${esc(t("Assets.Voltar"))}">${icone("fa-arrow-left")}</button>` : ""}
-        <span class="ov-arquivo" data-tooltip="${esc(atual)}">${icone("fa-folder")} ${esc(decodeURIComponent(atual.split("/").pop() || atual))}</span>
+        <h2 class="ov-sec-titulo" data-tooltip="${esc(atual)}">${icone("fa-folder-open")} ${esc(decodeURIComponent(atual.split("/").pop() || atual))}</h2>
         <button type="button" class="ov-btn" data-a="pasta">${t("Assets.Trocar")}</button></div>
-      <div style="margin-bottom:8px">${abrirPacote}</div>
-      <input type="search" class="ov-assets-busca" placeholder="${esc(t("Assets.Buscar"))}" aria-label="${esc(t("Assets.Buscar"))}">
       ${l.erro ? `<p class="ov-vazio">${t("Assets.Erro")}</p>` : ""}
-      ${(l.pacotes ?? []).map(f => `<button type="button" class="ov-assets-dir ov-dd-item" data-pacote="${esc(f)}" data-nome="${esc(nomeDoArquivo(f).toLowerCase())}">${icone("fa-box-open")} ${esc(nomeDoArquivo(f))} <span class="ov-dd-tag">Dungeondraft</span></button>`).join("")}
-      ${l.dirs.map(d => `<button type="button" class="ov-assets-dir" data-dir="${esc(d)}" data-nome="${esc(nomeDoArquivo(d).toLowerCase())}">${icone("fa-folder")} ${esc(decodeURIComponent(d.replace(/\/$/, "").split("/").pop()))}</button>`).join("")}
-      <div class="ov-assets-grade">${arquivos.map(f => `<button type="button" class="ov-asset" draggable="true" data-img="${esc(f)}" data-nome="${esc(nomeDoArquivo(f).toLowerCase())}" data-tooltip="${esc(nomeDoArquivo(f))}">
-          ${ehVideo(f) ? `<video src="${esc(f)}" muted loop preload="metadata"></video>` : `<img src="${esc(f)}" alt="" loading="lazy">`}</button>`).join("")}</div>
-      ${l.files.length > this.limite ? `<button type="button" class="ov-btn" data-a="mais-assets" style="width:100%;margin-top:8px">${t("Assets.Mais", { n: l.files.length - this.limite })}</button>` : ""}
-      ${!l.erro && !l.files.length && !l.dirs.length && !(l.pacotes ?? []).length ? `<p class="ov-vazio">${t("Assets.Vazia")}</p>` : ""}`;
+      ${(l.dirs.length || l.pacotes.length) ? `<div class="ov-pastas">
+        ${l.pacotes.map(f => `<button type="button" class="ov-pasta-chip ov-dd-chip" data-pacote-arquivo="${esc(f)}" data-nome="${esc(nomeDoArquivo(f).toLowerCase())}">${icone("fa-box-open")} ${esc(nomeDoArquivo(f))}</button>`).join("")}
+        ${l.dirs.map(d => `<button type="button" class="ov-pasta-chip" data-dir="${esc(d)}" data-nome="${esc(nomeDoArquivo(d).toLowerCase())}">${icone("fa-folder")} ${esc(decodeURIComponent(d.replace(/\/$/, "").split("/").pop()))}</button>`).join("")}</div>` : ""}
+      <div class="ov-grade-assets">${arquivos.map(f => this._cartao({ attrs: `data-img="${esc(f)}"`, src: f, nome: nomeDoArquivo(f), video: ehVideo(f) })).join("")}</div>
+      ${l.files.length > this.limite ? `<button type="button" class="ov-btn ov-mais-largo" data-a="mais">${t("Assets.Mais", { n: l.files.length - this.limite })}</button>` : ""}
+      ${!l.erro && !l.files.length && !l.dirs.length && !l.pacotes.length ? `<p class="ov-vazio">${t("Assets.Vazia")}</p>` : ""}`;
+  }
+
+  _htmlPacote() {
+    const pac = this.pacote;
+    if (!pac) { this.secao = "prontos"; return this._htmlProntos(); }
+    const cab = `<div class="ov-sec-cab ov-dd-cab">
+        <div class="ov-txt"><h2 class="ov-sec-titulo">${icone("fa-box-open")} ${esc(pac.nome)}</h2>
+          <span>${esc(pac.autor ? t("DD.De", { autor: pac.autor }) : "")} ${t("DD.Total", { n: pac.imagens.length })}</span></div>
+        ${pac.caminho ? "" : `<button type="button" class="ov-btn" data-a="guardar-pacote" data-tooltip="${esc(t("DD.GuardarDica"))}">${icone("fa-cloud-arrow-up")} ${t("DD.Guardar")}</button>`}
+        <button type="button" class="ov-btn" data-a="fechar-pacote">${icone("fa-xmark")} ${t("DD.Fechar")}</button></div>`;
+    const card = a => this._cartao({ attrs: `data-dd="${esc(a.rel)}" data-pac="${esc(pac.id)}"`, src: urlDaMiniatura(pac, a), nome: nomeDoArquivo(a.rel) });
+
+    // Busca: no pacote todo
+    const q = this.busca.trim().toLowerCase();
+    if (q) {
+      const achados = pac.imagens.filter(a => nomeDoArquivo(a.rel).toLowerCase().includes(q) || a.rel.toLowerCase().includes(q));
+      return `${cab}<p class="ov-sec-info">${t("DD.Resultados", { n: achados.length })}</p>
+        <div class="ov-grade-assets">${achados.slice(0, this.limite).map(card).join("")}</div>
+        ${achados.length > this.limite ? `<button type="button" class="ov-btn ov-mais-largo" data-a="mais">${t("Assets.Mais", { n: achados.length - this.limite })}</button>` : ""}`;
+    }
+
+    // Categoria aberta: um grupo para as imagens soltas dela e um para cada subcategoria
+    const prefixo = this.ddPasta ? `${this.ddPasta}/` : "";
+    const dentro = pac.imagens.filter(a => a.rel.startsWith(prefixo));
+    const grupos = new Map();
+    for (const a of dentro) {
+      const resto = a.rel.slice(prefixo.length);
+      const g = resto.includes("/") ? resto.split("/")[0] : "";
+      if (!grupos.has(g)) grupos.set(g, []);
+      grupos.get(g).push(a);
+    }
+    const trilha = this.ddPasta ? `<nav class="ov-trilha">
+        <button type="button" class="ov-link" data-dd-pasta="">${esc(pac.nome)}</button>
+        ${this.ddPasta.split("/").map((p, i, arr) => ` › <button type="button" class="ov-link" data-dd-pasta="${esc(arr.slice(0, i + 1).join("/"))}">${esc(this._nomePasta(p))}</button>`).join("")}</nav>` : "";
+    const ordem = [...grupos.keys()].sort((a, b) => (a === "" ? -1 : b === "" ? 1 : a === "objects" ? -1 : b === "objects" ? 1 : comparar(a, b)));
+    const blocos = ordem.map(g => {
+      const lista = grupos.get(g);
+      const nome = g ? this._nomePasta(g) : (this.ddPasta ? this._nomePasta(this.ddPasta.split("/").pop()) : pac.nome);
+      const mostrar = g ? lista.slice(0, POR_GRUPO) : lista.slice(0, this.limite);
+      const ver = g && lista.length > POR_GRUPO ? `<button type="button" class="ov-link" data-dd-pasta="${esc(prefixo + g)}">${t("DD.VerTodos", { n: lista.length })} ›</button>` : "";
+      return `<section class="ov-grupo"><div class="ov-grupo-cab">
+          ${g ? `<button type="button" class="ov-link ov-grupo-nome" data-dd-pasta="${esc(prefixo + g)}">${icone("fa-folder")} ${esc(nome)}</button>` : `<span class="ov-grupo-nome">${esc(nome)}</span>`}
+          <span class="ov-conta">${lista.length}</span>${ver}</div>
+        <div class="ov-grade-assets">${mostrar.map(card).join("")}</div>
+        ${!g && lista.length > this.limite ? `<button type="button" class="ov-btn ov-mais-largo" data-a="mais">${t("Assets.Mais", { n: lista.length - this.limite })}</button>` : ""}</section>`;
+    }).join("");
+    return `${cab}${trilha}${blocos || `<p class="ov-vazio">${t("Assets.Vazia")}</p>`}`;
   }
 
   async _renderHTML() {
-    if (this.aba === "assets") await this._carregarPasta();
-    const meus = meusObjetos();
     const div = document.createElement("div");
     div.className = "ov-bib";
-    let corpo;
-    if (this.aba === "prontos") corpo = `<div class="ov-bib-grade">${PRONTOS.map(p => `<button type="button" class="ov-bib-item" draggable="true" data-preset="${p}">
-          <img src="${imgPreset(p, 0)}" alt=""><b>${t(`Preset.${p}.Nome`)}</b><span>${t(`Preset.${p}.Desc`)}</span></button>`).join("")}</div>`;
-    else if (this.aba === "assets") corpo = this._htmlAssets();
-    else corpo = meus.length
-      ? meus.map(o => `<div class="ov-bib-linha" draggable="true" data-salvo="${o.id}" role="button" tabindex="0">
-          <img src="${esc(o.img)}" alt=""><span class="ov-txt"><b>${esc(o.nome)}</b><span>${esc(t(`Uso.${o.cfg?.interacao ?? "clicar"}.Resumo`))}</span></span>
-          <button type="button" class="ov-btn ov-icone ov-perigo" data-apagar="${o.id}" aria-label="${esc(t("Editor.Remover"))}">${icone("fa-trash")}</button></div>`).join("")
-      : `<p class="ov-vazio">${t("Bib.MeusVazio")}</p>`;
-    const aba = (id, nome) => `<button type="button" role="tab" aria-selected="${this.aba === id}" class="ov-bib-aba ${this.aba === id ? "ov-on" : ""}" data-aba="${id}">${nome}</button>`;
-    div.innerHTML = `<div class="ov-bib-topo">
-        <button type="button" class="ov-minha" data-a="imagem">${icone("fa-image")}<span><b>${t("Bib.Minha")}</b><span>${t("Bib.MinhaDica")}</span></span></button>
-        <div class="ov-bib-abas" role="tablist">${aba("prontos", t("Bib.Prontos"))}${aba("assets", t("Assets.Aba"))}${aba("meus", `${t("Bib.Meus")} (${meus.length})`)}</div></div>
-      <div class="ov-bib-corpo">${corpo}</div>
-      <p class="ov-bib-dica">${t("Bib.Dica")}</p>`;
+    div.style.setProperty?.("--ov-tam", `${TAMANHOS[this.tam] ?? 116}px`);
+    try {
+      if (this.secao === "pasta") await this._carregarPasta();
+      const corpo = this.secao === "pasta" ? this._htmlPasta() : this.secao === "meus" ? this._htmlMeus() : this.secao === "pacote" ? this._htmlPacote() : this._htmlProntos();
+      const buscaPacote = this.secao === "pacote";
+      div.innerHTML = `<div class="ov-bib-barra">
+          <button type="button" class="ov-btn ov-forte" data-a="imagem">${icone("fa-image")} ${t("Bib.Minha")}</button>
+          <input type="search" class="ov-busca ${buscaPacote ? "ov-busca-pacote" : ""}" value="${esc(buscaPacote ? this.busca : "")}" placeholder="${esc(t(buscaPacote ? "DD.Buscar" : this.secao === "pasta" ? "Assets.Buscar" : "Bib.Buscar"))}" aria-label="${esc(t("Assets.Buscar"))}">
+          <div class="ov-tamanhos" role="group" aria-label="${esc(t("Bib.Tamanho"))}">${Object.keys(TAMANHOS).map(k =>
+            `<button type="button" class="ov-tam ${this.tam === k ? "ov-on" : ""}" data-tam="${k}" aria-label="${esc(t(`Bib.Tam.${k}`))}" data-tooltip="${esc(t(`Bib.Tam.${k}`))}">${icone(k === "p" ? "fa-table-cells" : k === "m" ? "fa-table-cells-large" : "fa-square")}</button>`).join("")}</div>
+        </div>
+        <div class="ov-bib-meio"><nav class="ov-bib-lado" aria-label="${esc(t("Bib.Titulo"))}">${this._htmlLado()}</nav>
+          <div class="ov-bib-conteudo">${corpo}</div></div>
+        <p class="ov-bib-dica">${t("Bib.Dica")}</p>`;
+    } catch (err) {
+      // Nunca deixa a janela travada: mostra o erro e um botão para recomeçar
+      console.error(`${ID} | erro ao desenhar a biblioteca`, err);
+      div.innerHTML = `<div class="ov-bib-vazio" style="padding:20px"><p>${t("Bib.Erro")}</p>
+        <button type="button" class="ov-btn ov-forte" data-a="recomecar">${icone("fa-rotate")} ${t("Bib.Recomecar")}</button></div>`;
+    }
     return div;
   }
 
-  _replaceHTML(result, content) { content.replaceChildren(result); }
+  _replaceHTML(result, content) {
+    const rolagem = content.querySelector?.(".ov-bib-conteudo")?.scrollTop ?? 0;
+    const lado = content.querySelector?.(".ov-bib-lado")?.scrollTop ?? 0;
+    content.replaceChildren(result);
+    const c = content.querySelector?.(".ov-bib-conteudo"); if (c && !this._rolarTopo) c.scrollTop = rolagem;
+    const l = content.querySelector?.(".ov-bib-lado"); if (l) l.scrollTop = lado;
+    this._rolarTopo = false;
+  }
+
+  // ---------- ações
+  _ir(mudancas) { Object.assign(this, { limite: 240, ...mudancas }); this._rolarTopo = true; return this.render(); }
+
+  async _abrirPacote(blob, nome, caminho = null) {
+    ui.notifications.info(t("DD.Abrindo", { nome }));
+    try {
+      const pac = await lerPacoteDD(blob, nome);
+      pac.caminho = caminho;
+      if (pacotes.has(pac.id)) fecharPacote(pac.id);
+      pacotes.set(pac.id, pac);
+      return this._ir({ secao: "pacote", pacoteId: pac.id, ddPasta: pac.contagem.has("objects") ? "objects" : "", busca: "" });
+    } catch (err) {
+      console.error(`${ID} | não consegui ler o pacote`, err);
+      ui.notifications.error(t("DD.ErroLer", { nome }));
+    }
+  }
+
+  async _abrirDoServidor(caminho) {
+    try {
+      const r = await fetch(caminho);
+      if (!r.ok) throw new Error(r.status);
+      return this._abrirPacote(await r.blob(), decodeURIComponent(caminho.split("/").pop()), caminho);
+    } catch (err) {
+      console.error(err);
+      ui.notifications.error(t("DD.ErroLer", { nome: nomeDoArquivo(caminho) }));
+    }
+  }
+
+  // Guarda o arquivo do pacote no Foundry: na próxima sessão ele aparece na lista sem precisar escolher de novo
+  async _guardarPacote() {
+    const pac = this.pacote;
+    if (!pac) return;
+    ui.notifications.info(t("DD.Guardando", { nome: pac.nome }));
+    try {
+      const fonte = game.settings.get(ID, "pastaAssets")?.fonte || "data";
+      const pasta = "objetos-vivos/pacotes";
+      for (const p of ["objetos-vivos", pasta]) { try { await this.FP.createDirectory(fonte, p); } catch {} }
+      const arquivo = `${pac.slug}.dungeondraft_pack`;
+      const r = await this.FP.upload(fonte, pasta, new File([pac.blob], arquivo), {}, { notify: false });
+      const caminho = r?.path ?? (r ? `${pasta}/${arquivo}` : null);
+      if (!caminho) throw new Error("envio recusado");
+      pac.caminho = caminho;
+      const lista = (game.settings.get(ID, "pacotesGuardados") ?? []).filter(g => g.caminho !== caminho);
+      lista.push({ nome: pac.nome, caminho });
+      await game.settings.set(ID, "pacotesGuardados", lista);
+      ui.notifications.info(t("DD.Guardado", { nome: pac.nome }));
+      this.render();
+    } catch (err) {
+      console.error(`${ID} | não consegui guardar o pacote`, err);
+      ui.notifications.error(t("DD.ErroEnvio"));
+    }
+  }
 
   _escolherPasta() {
     const atual = game.settings.get(ID, "pastaAssets") ?? {};
@@ -1827,27 +1996,40 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
       type: "folder", current: atual.pasta || "",
       callback: async (caminho, fp) => {
         await game.settings.set(ID, "pastaAssets", { pasta: caminho, fonte: fp?.activeSource || atual.fonte || "data" });
-        this.pasta = caminho; this.limite = 120;
-        this.render();
+        this._ir({ secao: "pasta", pasta: caminho });
       }
     }).render(true);
   }
 
-  async _abrirPacote(blob, nome) {
-    ui.notifications.info(t("DD.Abrindo", { nome }));
-    try {
-      fecharPacote();
-      pacoteAberto = await lerPacoteDD(blob, nome);
-      this.ddPasta = pacoteAberto.imagens.some(a => a.rel.startsWith("objects/")) ? "objects" : "";
-      this.ddBusca = ""; this.limite = 120; this.aba = "assets";
-      this.render();
-    } catch (err) {
-      console.error(`${ID} | não consegui ler o pacote`, err);
-      ui.notifications.error(t("DD.ErroLer", { nome }));
+  async _aoClicar(alvo, ev) {
+    const ds = alvo.dataset;
+    if (ds.apagar) {
+      const ok = await foundry.applications.api.DialogV2.confirm({ window: { title: t("Bib.Meus") }, content: `<p>${t("Bib.ApagarPergunta")}</p>`, rejectClose: false });
+      if (ok) { await game.settings.set(ID, "biblioteca", meusObjetos().filter(o => o.id !== ds.apagar)); this.render(); }
+      return;
     }
+    if (ds.tam) { await game.settings.set(ID, "tamMiniatura", ds.tam); return this.render(); }
+    if (ds.secao) return this._ir({ secao: ds.secao, busca: "" });
+    if (ds.pacoteId) return this._ir({ secao: "pacote", pacoteId: ds.pacoteId, ddPasta: "", busca: "" });
+    if (ds.ddPasta !== undefined) return this._ir({ secao: "pacote", ddPasta: ds.ddPasta, busca: "" });
+    if (ds.guardado) return this._abrirDoServidor(ds.guardado);
+    if (ds.pacoteArquivo) return this._abrirDoServidor(ds.pacoteArquivo);
+    if (ds.dir) return this._ir({ pasta: ds.dir });
+    switch (ds.a) {
+      case "imagem": return escolherImagem();
+      case "pasta": return this._escolherPasta();
+      case "abrir-pacote": return this.element.querySelector(".ov-dd-arquivo")?.click();
+      case "guardar-pacote": return this._guardarPacote();
+      case "fechar-pacote": fecharPacote(this.pacoteId); return this._ir({ secao: "prontos", pacoteId: null, ddPasta: "", busca: "" });
+      case "subir-pasta": return this._ir({ pasta: this.pasta.replace(/\/$/, "").split("/").slice(0, -1).join("/") });
+      case "mais": this.limite += 240; return this.render();
+      case "recomecar": Object.assign(this, { secao: "prontos", pacoteId: null, ddPasta: "", busca: "", pasta: null }); return this.render();
+    }
+    if (ds.dd) return usarDoPacote(ds.pac, ds.dd);
+    if (ds.img) return encaixar({ img: ds.img });
+    if (ds.preset) return encaixar({ preset: ds.preset });
+    if (ds.salvo) { const o = meusObjetos().find(x => x.id === ds.salvo); if (o) encaixar({ salvo: o }); }
   }
-
-  async close(opcoes) { fecharPacote(); return super.close(opcoes); }
 
   _onFirstRender() {
     injetarEstilo();
@@ -1856,72 +2038,57 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
       if (!ev.target.matches?.(".ov-dd-arquivo")) return;
       const f = ev.target.files?.[0];
       if (f) this._abrirPacote(f, f.name);
+      ev.target.value = "";
     });
-    el.addEventListener("click", async ev => {
-      const alvo = ev.target.closest("[data-a], [data-aba], [data-preset], [data-salvo], [data-apagar], [data-dir], [data-img], [data-dd], [data-dd-pasta], [data-pacote]");
-      if (!alvo) return;
+    el.addEventListener("click", ev => {
+      const alvo = ev.target.closest?.("button, [data-dd], [data-img], [data-preset], [data-salvo]");
+      if (!alvo || !el.contains(alvo) || alvo.closest(".window-header")) return;
       ev.preventDefault();
-      const ds = alvo.dataset;
-      if (ds.apagar) {
-        ev.stopPropagation();
-        const ok = await foundry.applications.api.DialogV2.confirm({ window: { title: t("Bib.Meus") }, content: `<p>${t("Bib.ApagarPergunta")}</p>`, rejectClose: false });
-        if (ok) { await game.settings.set(ID, "biblioteca", meusObjetos().filter(o => o.id !== ds.apagar)); this.render(); }
-        return;
-      }
-      if (ds.a === "imagem") return escolherImagem();
-      if (ds.a === "pasta") return this._escolherPasta();
-      if (ds.a === "mais-assets") { this.limite += 120; return this.render(); }
-      if (ds.a === "abrir-pacote") return el.querySelector(".ov-dd-arquivo")?.click();
-      if (ds.a === "fechar-pacote") { fecharPacote(); this.limite = 120; return this.render(); }
-      if (ds.a === "dd-subir") { this.ddPasta = (this.ddPasta ?? "").split("/").slice(0, -1).join("/"); this.limite = 120; return this.render(); }
-      if (ds.ddPasta !== undefined) { this.ddPasta = ds.ddPasta; this.limite = 120; return this.render(); }
-      if (ds.dd) return usarDoPacote(ds.dd);
-      if (ds.pacote) {
-        try {
-          ui.notifications.info(t("DD.Abrindo", { nome: nomeDoArquivo(ds.pacote) }));
-          const r = await fetch(ds.pacote);
-          if (!r.ok) throw new Error(r.status);
-          return this._abrirPacote(await r.blob(), decodeURIComponent(ds.pacote.split("/").pop()));
-        } catch (err) { console.error(err); return ui.notifications.error(t("DD.ErroLer", { nome: nomeDoArquivo(ds.pacote) })); }
-      }
-      if (ds.a === "subir-pasta") { this.pasta = this.pasta.replace(/\/$/, "").split("/").slice(0, -1).join("/"); this.limite = 120; return this.render(); }
-      if (ds.aba) { this.aba = ds.aba; return this.render(); }
-      if (ds.dir) { this.pasta = ds.dir; this.limite = 120; return this.render(); }
-      if (ds.img) return encaixar({ img: ds.img });
-      if (ds.preset) return encaixar({ preset: ds.preset });
-      if (ds.salvo) { const o = meusObjetos().find(x => x.id === ds.salvo); if (o) encaixar({ salvo: o }); }
+      ev.stopPropagation();
+      this._aoClicar(alvo, ev).catch(err => { console.error(`${ID} |`, err); ui.notifications.error(t("Bib.Erro")); });
     });
-    // Busca na pasta aberta: só esconde o que não combina, sem redesenhar a janela
     el.addEventListener("input", ev => {
-      if (ev.target.matches?.(".ov-dd-busca")) {
-        this.ddBusca = ev.target.value;
+      if (!ev.target.matches?.(".ov-busca")) return;
+      if (ev.target.matches(".ov-busca-pacote")) {
+        // No pacote a busca procura em tudo: redesenha depois que a pessoa para de digitar
+        this.busca = ev.target.value;
         clearTimeout(this._tBusca);
         this._tBusca = setTimeout(async () => {
+          this.limite = 240;
           await this.render();
-          const campo = this.element.querySelector(".ov-dd-busca");
+          const campo = this.element?.querySelector(".ov-busca");
           if (campo) { campo.focus(); campo.setSelectionRange?.(campo.value.length, campo.value.length); }
         }, 300);
         return;
       }
-      if (!ev.target.matches?.(".ov-assets-busca")) return;
       const q = ev.target.value.trim().toLowerCase();
-      el.querySelectorAll("[data-nome]").forEach(b => { b.hidden = !!q && !b.dataset.nome.includes(q); });
+      el.querySelectorAll(".ov-bib-conteudo [data-nome]").forEach(b => {
+        const alvo = b.closest(".ov-com-apagar") ?? b;
+        alvo.hidden = !!q && !b.dataset.nome.includes(q);
+      });
     });
     el.addEventListener("dragstart", ev => {
       const item = ev.target.closest?.("[data-preset], [data-salvo], [data-img], [data-dd]");
       if (!item) return;
-      const dados = { type: "ObjetoVivo", preset: item.dataset.preset ?? null, salvo: item.dataset.salvo ?? null, img: item.dataset.img ?? null, dd: item.dataset.dd ?? null };
-      ev.dataTransfer.setData("text/plain", JSON.stringify(dados));
+      const d = item.dataset;
+      ev.dataTransfer.setData("text/plain", JSON.stringify({ type: "ObjetoVivo", preset: d.preset ?? null, salvo: d.salvo ?? null, img: d.img ?? null, dd: d.dd ?? null, pac: d.pac ?? null }));
     });
   }
 }
 
-function abrirBiblioteca() {
+// Abre a biblioteca; se uma janela anterior ficou presa por algum erro, descarta e abre outra
+async function abrirBiblioteca() {
   if (!game.user.isGM) return;
   injetarEstilo();
   const existente = foundry.applications.instances?.get?.(`${ID}-biblioteca`);
-  if (existente) return existente.render({ force: true });
-  new BibliotecaObjetos().render({ force: true });
+  if (existente) {
+    try {
+      if (existente.rendered !== false && existente.element?.isConnected !== false) return await existente.render({ force: true });
+    } catch (err) { console.warn(`${ID} | janela antiga da biblioteca com problema, abrindo outra`, err); }
+    try { await existente.close({ animate: false }); } catch {}
+    foundry.applications.instances?.delete?.(`${ID}-biblioteca`);
+  }
+  return new BibliotecaObjetos().render({ force: true });
 }
 
 // Botão "Objetos Vivos" na barra de ferramentas da esquerda (só para o mestre)
@@ -2015,6 +2182,8 @@ Hooks.once("init", () => {
   injetarEstilo();
   game.settings.register(ID, "biblioteca", { scope: "world", config: false, type: Array, default: [] });
   game.settings.register(ID, "pastaAssets", { scope: "client", config: false, type: Object, default: {} });
+  game.settings.register(ID, "pacotesGuardados", { scope: "world", config: false, type: Array, default: [] });
+  game.settings.register(ID, "tamMiniatura", { scope: "client", config: false, type: String, default: "m" });
 });
 
 Hooks.on("getSceneControlButtons", botaoNaBarra);
@@ -2025,7 +2194,7 @@ Hooks.on("renderTileHUD", botoesHud);
 // Arrastar da biblioteca para o mapa
 Hooks.on("dropCanvasData", (_canvas, dados) => {
   if (dados?.type !== "ObjetoVivo" || !game.user.isGM) return;
-  if (dados.dd) { usarDoPacote(dados.dd, { x: dados.x, y: dados.y }); return false; }
+  if (dados.dd) { usarDoPacote(dados.pac, dados.dd, { x: dados.x, y: dados.y }); return false; }
   const salvo = dados.salvo ? meusObjetos().find(o => o.id === dados.salvo) : null;
   criarObjeto({ preset: dados.img ? null : dados.preset, img: dados.img ?? null, salvo, x: dados.x, y: dados.y });
   return false;

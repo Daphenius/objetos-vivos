@@ -315,12 +315,21 @@
       "Prontos": "Prontos",
       "Meus": "Meus objetos",
       "MeusVazio": "Aqui ficam os objetos que você montar e salvar com \"Salvar na biblioteca\", prontos para usar em qualquer mapa.",
-      "Dica": "Clique para encaixar na cena (gire e ajuste o tamanho antes de colocar) ou arraste direto para o mapa.",
+      "Dica": "Clique num asset para encaixar na cena (roda gira, Ctrl+roda muda o tamanho) ou arraste direto para o mapa. A biblioteca continua aberta enquanto você monta a cena.",
       "ApagarPergunta": "Tirar este objeto de \"Meus objetos\"? Os que já estão nos mapas continuam lá.",
       "Salvar": "Salvar na biblioteca",
       "SalvarDica": "Guarda este objeto em \"Meus objetos\" para usar em outros mapas. Portas e objetos escolhidos nas ações ficam de fora, porque são deste mapa.",
       "Salvo": "\"{objeto}\" salvo em Meus objetos.",
-      "SemMapa": "Abra um mapa primeiro."
+      "SemMapa": "Abra um mapa primeiro.",
+      "Tamanho": "Tamanho das miniaturas",
+      "Tam": {
+        "p": "Miniaturas pequenas",
+        "m": "Miniaturas médias",
+        "g": "Miniaturas grandes"
+      },
+      "Erro": "Algo deu errado ao mostrar a biblioteca. Os detalhes estão no console (F12).",
+      "Recomecar": "Recomeçar a biblioteca",
+      "Buscar": "Buscar pelo nome"
     },
     "Controle": {
       "Titulo": "Objetos Vivos",
@@ -386,7 +395,12 @@
         "roofs": "Telhados",
         "tilesets": "Pisos",
         "decals": "Decalques"
-      }
+      },
+      "Guardar": "Guardar no Foundry",
+      "GuardarDica": "Copia o arquivo do pacote para o Foundry. Nas próximas sessões ele aparece na lista e abre com um clique, sem escolher o arquivo de novo.",
+      "Guardando": "Guardando “{nome}” no Foundry…",
+      "Guardado": "“{nome}” guardado. Ele vai aparecer na lista nas próximas sessões.",
+      "VerTodos": "Ver todos ({n})"
     },
     "Camaleao": {
       "Titulo": "Camaleão",

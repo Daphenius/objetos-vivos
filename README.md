@@ -37,6 +37,7 @@ Depois, ative o módulo no mundo em **Gerenciar Módulos**.
    - **Assets**: escolha a pasta onde você guarda seus assets (itens, móveis, objetos de cena, inclusive os baixados do Forgotten Adventures). Navegue pelas subpastas e busque pelo nome;
    - **Pacotes do Dungeondraft**: na aba Assets, abra um `.dungeondraft_pack` do seu computador (ou um que esteja na pasta de assets) e use os objetos dele sem extrair nada. Eles aparecem por categoria, com busca no pacote todo, e entram no tamanho certo da grade (256 px do Dungeondraft = 1 casa). Só a imagem que você usa é enviada para o Foundry, numa pasta `objetos-vivos/dungeondraft/<pacote>`;
    - **Meus objetos**: os que você montou e salvou para usar em qualquer mapa.
+   A biblioteca tem uma barra lateral com essas seções. Nos pacotes do Dungeondraft aparecem as categorias e subcategorias, com a quantidade de assets, e você escolhe o tamanho das miniaturas. Os pacotes continuam abertos mesmo se você fechar a janela, e **Guardar no Foundry** faz o pacote aparecer sozinho nas próximas sessões.
 3. **Clique** no objeto para **encaixá-lo na cena**: ele segue o mouse e você ajusta antes de colocar. Também dá para **arrastar** direto para o mapa.
 
 | Ao encaixar | O que faz |
