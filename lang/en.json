@@ -356,7 +356,11 @@
     "Encaixe": {
       "Dica": "click to place · mouse wheel rotates · Ctrl+wheel resizes · Shift ignores the grid · right click or Esc cancels",
       "Livre": "free",
-      "Grade": "on the grid"
+      "Grade": "on the grid",
+      "Teclas": "W/S tilt · A/D turn sideways · Q/E rotate · F mirror · R back to top view (with Shift, 5° steps)",
+      "Inclinar": "tilt {n}°",
+      "Lado": "side {n}°",
+      "Espelhado": "mirrored"
     },
     "Assets": {
       "Aba": "Assets",
@@ -413,6 +417,18 @@
       "Ver": "See it as players do",
       "VerParar": "Stop seeing it as players do",
       "SemProf": "While the object is camouflaged, depth, the hand cursor and the glow stay off so they don't give it away."
+    },
+    "Visao": {
+      "Titulo": "View (3D)",
+      "Dica": "Turns the object like a card in space, with perspective, to fit the map's view. The image stays flat: you can tilt and turn it, but the other side of the drawing doesn't appear.",
+      "cima": "Top view",
+      "frente": "From the front",
+      "esquerda": "From the left",
+      "direita": "From the right",
+      "X": "Tilt (front/back)",
+      "Y": "Turn (sideways)",
+      "Espelhar": "Mirror",
+      "EspelharDica": "Flips the image left to right"
     }
   }
 }

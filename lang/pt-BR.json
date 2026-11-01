@@ -356,7 +356,11 @@
     "Encaixe": {
       "Dica": "clique para colocar · roda do mouse gira · Ctrl+roda muda o tamanho · Shift solta do quadriculado · botão direito ou Esc cancela",
       "Livre": "solto",
-      "Grade": "no quadriculado"
+      "Grade": "no quadriculado",
+      "Teclas": "W/S inclina · A/D vira de lado · Q/E gira · F espelha · R volta à vista de cima (com Shift, de 5 em 5°)",
+      "Inclinar": "inclinação {n}°",
+      "Lado": "lado {n}°",
+      "Espelhado": "espelhado"
     },
     "Assets": {
       "Aba": "Assets",
@@ -413,6 +417,18 @@
       "Ver": "Ver como o jogador vê",
       "VerParar": "Parar de ver como jogador",
       "SemProf": "Enquanto o objeto está camuflado, a profundidade, a mãozinha e o brilho ficam desligados para não entregar onde ele está."
+    },
+    "Visao": {
+      "Titulo": "Visão (3D)",
+      "Dica": "Gira o objeto como uma carta no espaço, com perspectiva, para encaixar na vista do mapa. A imagem continua plana: dá para inclinar e virar, mas não aparece o outro lado do desenho.",
+      "cima": "Vista de cima",
+      "frente": "De frente",
+      "esquerda": "Pelo lado esquerdo",
+      "direita": "Pelo lado direito",
+      "X": "Inclinar (frente/trás)",
+      "Y": "Virar (para os lados)",
+      "Espelhar": "Espelhar",
+      "EspelharDica": "Inverte a imagem da esquerda para a direita"
     }
   }
 }

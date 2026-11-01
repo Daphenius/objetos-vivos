@@ -14,6 +14,8 @@ const emitir = data => game.socket.emit(SOCKET, data);
 const souMestreAtivo = () => game.user === game.users.activeGM;
 const comparar = (a, b) => String(a).localeCompare(String(b), game.i18n.lang);
 const novoId = () => foundry.utils.randomID(8);
+// Nomes de arquivo podem ter "%" e outros caracteres que quebram decodeURIComponent: nunca deixa estourar
+const decodificar = texto => { try { return decodeURIComponent(String(texto ?? "")); } catch { return String(texto ?? ""); } };
 const clone = x => foundry.utils.deepClone(x);
 const navegador = () => { const m = game.modules.get("navegador-mapas"); return m?.active ? m.api : null; };
 
@@ -519,6 +521,85 @@ function refazerCamuflagens() {
   }, 150);
 }
 
+// Visão (3D): a imagem vira uma "carta" que pode inclinar para frente/trás (eixo X) e virar
+// para os lados (eixo Y), com perspectiva. O giro normal (eixo Z) continua sendo a rotação do tile.
+// A carta é desenhada numa imagem do tamanho do tile; o documento guarda só os ângulos.
+const VISAO_SEG = 14;
+const VISAO_MAX = 80;
+const VISOES = { cima: { x: 0, y: 0 }, frente: { x: 55, y: 0 }, esquerda: { x: 0, y: -55 }, direita: { x: 0, y: 55 } };
+const temVisao = v => !!v && (Math.abs(Number(v.x) || 0) >= 1 || Math.abs(Number(v.y) || 0) >= 1 || !!v.espelho);
+function visaoDe(tile) {
+  if (camuflado(tile)) return null;
+  const v = tile?._ovPrevia3d ?? cfgDe(tile?.document)?.visao;
+  return temVisao(v) ? v : null;
+}
+
+// Pontos da carta girada, já encaixados dentro de W×H (sem sair do tamanho do tile)
+function projetarCarta(W, H, v, seg = VISAO_SEG) {
+  const ax = Math.max(-VISAO_MAX, Math.min(VISAO_MAX, Number(v.x) || 0)) * Math.PI / 180;
+  const ay = Math.max(-VISAO_MAX, Math.min(VISAO_MAX, Number(v.y) || 0)) * Math.PI / 180;
+  const d = 2.2 * Math.max(W, H);
+  const pts = [];
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (let i = 0; i < seg * seg; i++) {
+    const u = (i % seg) / (seg - 1), w = Math.floor(i / seg) / (seg - 1);
+    const x = (u - 0.5) * W * (v.espelho ? -1 : 1), y = (w - 0.5) * H;
+    const y1r = y * Math.cos(ax), z1 = y * Math.sin(ax);
+    const x2 = x * Math.cos(ay) + z1 * Math.sin(ay), z2 = -x * Math.sin(ay) + z1 * Math.cos(ay);
+    const k = d / (d - z2);
+    const px = x2 * k, py = y1r * k;
+    pts.push(px, py);
+    x0 = Math.min(x0, px); x1 = Math.max(x1, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py);
+  }
+  const f = Math.min(1, W / Math.max(1, x1 - x0), H / Math.max(1, y1 - y0));
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  for (let i = 0; i < pts.length; i += 2) { pts[i] = W / 2 + (pts[i] - cx) * f; pts[i + 1] = H / 2 + (pts[i + 1] - cy) * f; }
+  return pts;
+}
+
+function desenharVisao(textura, W, H, v) {
+  W = Math.max(1, Math.round(W)); H = Math.max(1, Math.round(H));
+  const plano = new PIXI.SimplePlane(textura, VISAO_SEG, VISAO_SEG);
+  const buf = plano.geometry.getBuffer("aVertexPosition");
+  const pts = projetarCarta(W, H, v);
+  for (let i = 0; i < pts.length; i++) buf.data[i] = pts[i];
+  buf.update();
+  const rt = PIXI.RenderTexture.create({ width: W, height: H, resolution: 2 });
+  canvas.app.renderer.render(plano, { renderTexture: rt, clear: true });
+  plano.destroy({ children: true, texture: false, baseTexture: false });
+  return rt;
+}
+
+function aplicarVisao(tile) {
+  const mesh = tile?.mesh;
+  if (!mesh || mesh.destroyed || !globalThis.PIXI?.SimplePlane) return;
+  const v = visaoDe(tile);
+  const atual = tile._ov3d;
+  if (!v) {
+    if (atual) {
+      tile._ov3d = null;
+      if (mesh.texture === atual.rt && tile.texture) mesh.texture = tile.texture;
+      atual.rt?.destroy?.(true);
+      tile.renderFlags?.set?.({ refreshMesh: true, refreshSize: true });
+    }
+    return;
+  }
+  const doc = tile.document;
+  const tex = tile.texture;
+  if (!tex) return;
+  const chave = JSON.stringify([Number(v.x) || 0, Number(v.y) || 0, !!v.espelho, doc.width, doc.height]);
+  if (!atual || atual.tex !== tex || atual.chave !== chave) {
+    try {
+      const rt = desenharVisao(tex, doc.width, doc.height, v);
+      atual?.rt?.destroy?.(true);
+      tile._ov3d = { rt, tex, chave };
+    } catch (err) { console.warn(`${ID} | visão 3D falhou`, err); return; }
+  }
+  mesh.texture = tile._ov3d.rt;
+  mesh.width = doc.width;
+  mesh.height = doc.height;
+}
+
 // O que vale para este tile agora (a prévia do editor aberto tem prioridade)
 function profDe(tile) {
   if (camuflado(tile)) return null;
@@ -885,6 +966,7 @@ fieldset.ov-secao .ov-botoes { display: flex; gap: 6px; } fieldset.ov-secao .ov-
   background: #17151cf0; border: 1px solid #f0a03c; color: #ece8f1; font-family: Signika, system-ui, sans-serif; font-size: 13px; pointer-events: none;
   box-shadow: 0 8px 24px rgba(0,0,0,.5); max-width: 90vw; text-align: center; }
 .ov-encaixe-valores { display: block; margin-top: 4px; color: #ffd09a; font-weight: 600; }
+.ov-encaixe-teclas { display: block; margin-top: 2px; color: #cfc8da; }
 body.ov-encaixando #board { cursor: crosshair !important; }
 .ov-bib-dica { margin: 0; padding: 10px 14px; border-top: 1px solid #343041; font-size: 12px; color: #a8a1b4; flex: none; }
 `;
@@ -1011,7 +1093,7 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
           <input type="text" data-estado="nome" value="${esc(e.nome)}" aria-label="${esc(t("Editor.NomeEstado"))}">
           ${d.estados.length > 2 ? `<button type="button" class="ov-btn ov-icone ov-perigo" data-a="estado-remover" aria-label="${esc(t("Editor.RemoverEstado"))}">${icone("fa-trash")}</button>` : ""}</div>
         <div class="ov-linha">${e.img ? `<img class="ov-mini" src="${esc(e.img)}" alt="">` : `<span class="ov-mini">${icone("fa-image")}</span>`}
-          <span class="ov-arquivo" data-tooltip="${esc(e.img)}">${esc(e.img ? decodeURIComponent(e.img.split("/").pop()) : t("Editor.SemImagem"))}</span>
+          <span class="ov-arquivo" data-tooltip="${esc(e.img)}">${esc(e.img ? decodificar(e.img.split("/").pop()) : t("Editor.SemImagem"))}</span>
           <button type="button" class="ov-btn" data-a="estado-img">${t("Editor.TrocarImagem")}</button></div>
         ${i === 0 ? `<span style="font-size:11px;color:#a8a1b4">${t("Editor.Inicial")}</span>` : ""}
       </div>`).join("")}
@@ -1033,7 +1115,17 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
       const faixa = (campo, max, sufixo = "") => `<div class="ov-faixa ov-faixa-linha"><b>${t(`Prof.${campo}`)}</b>
         <input type="range" min="0" max="${max}" step="1" data-prof="${campo}" value="${Number(p[campo]) || 0}" aria-label="${esc(t(`Prof.${campo}`))}">
         <span class="ov-valor">${Number(p[campo]) || 0}${sufixo}</span></div>`;
+      const v = d.visao ?? { x: 0, y: 0, espelho: false };
+      const vpreset = Object.entries(VISOES).find(([, a]) => a.x === (Number(v.x) || 0) && a.y === (Number(v.y) || 0))?.[0];
+      const faixaV = (eixo, nome) => `<div class="ov-faixa ov-faixa-linha"><b>${t(nome)}</b>
+        <input type="range" min="-${VISAO_MAX}" max="${VISAO_MAX}" step="1" data-visao="${eixo}" value="${Number(v[eixo]) || 0}" aria-label="${esc(t(nome))}">
+        <span class="ov-valor">${Number(v[eixo]) || 0}°</span></div>`;
       return `
+      <section style="display:flex;flex-direction:column;gap:8px"><h2>${icone("fa-cube")} ${t("Visao.Titulo")}</h2><p class="ov-dica">${t("Visao.Dica")}</p>
+        <div class="ov-pilulas">${Object.keys(VISOES).map(n =>
+          `<button type="button" class="ov-pilula ${vpreset === n ? "ov-on" : ""}" data-visao-preset="${n}">${t(`Visao.${n}`)}</button>`).join("")}</div>
+        ${faixaV("x", "Visao.X")}${faixaV("y", "Visao.Y")}
+        ${chave(!!v.espelho, "espelho", t("Visao.Espelhar"), t("Visao.EspelharDica"))}</section>
       <section style="display:flex;flex-direction:column;gap:8px"><h2>${t("Prof.Titulo")}</h2><p class="ov-dica">${t("Prof.Dica")}</p>
         <div class="ov-pilulas">${Object.keys(PROFS).map(n =>
           `<button type="button" class="ov-pilula ${p.preset === n ? "ov-on" : ""}" data-prof-preset="${n}">${t(`Prof.${n}`)}</button>`).join("")}</div>
@@ -1114,10 +1206,11 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
 
   // A prévia do editor imita a profundidade do mapa
   _estiloPrevia() {
-    const p = this.dados.prof;
-    if (!p) return "";
+    const p = this.dados.prof ?? {};
+    const v = this.dados.visao ?? {};
     const s = Number(p.sombra) || 0, a = Number(p.altura) || 0, i = Number(p.incl) || 0;
-    return `transform: perspective(500px) rotateX(${i}deg) translateY(${-a}px); transform-origin: 50% 90%;`
+    const vx = Number(v.x) || 0, vy = Number(v.y) || 0;
+    return `transform: perspective(500px) translateY(${-a}px) rotateX(${i + vx}deg) rotateY(${vy}deg)${v.espelho ? " scaleX(-1)" : ""}; transform-origin: 50% 50%;`
       + (s ? ` filter: drop-shadow(${Math.round(a * 0.5 + 3)}px ${Math.round(a + 5)}px ${Math.round(2 + s / 15)}px rgba(0,0,0,${(s / 100 * 0.85).toFixed(2)}));` : "");
   }
 
@@ -1127,6 +1220,8 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
     const tile = this.doc.object;
     if (!tile) return;
     tile._ovPrevia = clone(this.dados.prof ?? profPadrao("plano"));
+    tile._ovPrevia3d = clone(this.dados.visao ?? { x: 0, y: 0, espelho: false });
+    aplicarVisao(tile);
     aplicarProfundidade(tile);
     const img = this.element?.querySelector(".ov-previa");
     if (img) img.setAttribute("style", this._estiloPrevia());
@@ -1146,8 +1241,9 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
   async close(opcoes) {
     const tile = this.tile ? this.doc.object : null;
     if (tile) {
-      delete tile._ovPrevia; delete tile._ovPreviaCamo; delete tile._ovVerCamo;
+      delete tile._ovPrevia; delete tile._ovPreviaCamo; delete tile._ovVerCamo; delete tile._ovPrevia3d;
       aplicarCamaleao(tile);
+      aplicarVisao(tile);
       aplicarProfundidade(tile);
     }
     return super.close(opcoes);
@@ -1262,6 +1358,15 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
   _aoDigitar(ev, valor, mudou = false) {
     const alvo = ev.target, d = this.dados;
     if (alvo.dataset.geral) { d[alvo.dataset.geral] = valor(alvo); return; }
+    if (alvo.dataset.visao) {
+      d.visao = { x: 0, y: 0, espelho: false, ...(d.visao ?? {}) };
+      d.visao[alvo.dataset.visao] = Number(alvo.value) || 0;
+      this.element?.querySelectorAll("[data-visao-preset]").forEach(b => b.classList.toggle("ov-on", false));
+      const rotulo = alvo.nextElementSibling;
+      if (rotulo) rotulo.textContent = `${alvo.value}°`;
+      this._previaNoMapa();
+      return;
+    }
     if (alvo.dataset.prof) {
       d.prof ??= profPadrao("plano");
       d.prof[alvo.dataset.prof] = Number(alvo.value) || 0;
@@ -1320,12 +1425,18 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
     if (ds.interacao) { d.interacao = ds.interacao; return this.render(); }
     if (ds.quem) { d.quem = ds.quem; return this.render(); }
     if (ds.momento) { this.momento = ds.momento; return this.render(); }
+    if (ds.visaoPreset) {
+      d.visao = { ...VISOES[ds.visaoPreset], espelho: !!d.visao?.espelho };
+      this.render();
+      return this._previaNoMapa();
+    }
     if (ds.profPreset) {
       d.prof = { ...profPadrao(ds.profPreset), parallax: d.prof?.parallax ?? ds.profPreset !== "plano" };
       this.render();
       return this._previaNoMapa();
     }
     if (ds.chave) {
+      if (ds.chave === "espelho") { d.visao = { x: 0, y: 0, ...(d.visao ?? {}), espelho: !d.visao?.espelho }; this.render(); return this._previaNoMapa(); }
       if (ds.chave === "parallax") { d.prof ??= profPadrao("plano"); d.prof.parallax = !d.prof.parallax; this.render(); return this._previaNoMapa(); }
       if (ds.chave === "camaleao" || ds.chave === "revelarAoUsar") {
         d[ds.chave] = !d[ds.chave];
@@ -1468,7 +1579,7 @@ async function prepararObjeto({ preset = null, img = null, salvo = null, pxPorCa
   const src = cfg.estados?.[0]?.img;
   return src ? { cfg, src, w, h, rotacao: salvo?.rotacao ?? 0 } : null;
 }
-const nomeDoArquivo = caminho => decodeURIComponent(String(caminho).split("/").pop().replace(/\.[a-z0-9]+$/i, "")).replace(/[-_]+/g, " ").trim();
+const nomeDoArquivo = caminho => decodificar(String(caminho).split("/").pop().replace(/\.[a-z0-9]+$/i, "")).replace(/[-_]+/g, " ").trim();
 
 // Onde o centro do objeto cai: objetos de casas inteiras ocupam casas; os outros encaixam a cada meia casa
 function centroEncaixado(x, y, w, h, livre = false) {
@@ -1481,12 +1592,13 @@ function centroEncaixado(x, y, w, h, livre = false) {
   return { x: Math.round(x / meia) * meia, y: Math.round(y / meia) * meia };
 }
 
-async function criarObjeto({ preset = null, img = null, salvo = null, pxPorCasa = null, x = null, y = null, rotacao = null, escala = 1, livre = false, pronto = null } = {}) {
+async function criarObjeto({ preset = null, img = null, salvo = null, pxPorCasa = null, x = null, y = null, rotacao = null, escala = 1, livre = false, pronto = null, visao = null } = {}) {
   if (!game.user.isGM) return;
   const cena = canvas.scene;
   if (!cena) return ui.notifications.warn(t("Bib.SemMapa"));
   const p = pronto ?? await prepararObjeto({ preset, img, salvo, pxPorCasa });
   if (!p) return;
+  if (visao) p.cfg.visao = temVisao(visao) ? { x: Math.round(visao.x || 0), y: Math.round(visao.y || 0), espelho: !!visao.espelho } : null;
   const w = Math.max(10, Math.round(p.w * escala)), h = Math.max(10, Math.round(p.h * escala));
   const c = centroEncaixado(x ?? canvas.stage.pivot.x, y ?? canvas.stage.pivot.y, w, h, livre);
   const [doc] = await cena.createEmbeddedDocuments("Tile", [{
@@ -1507,6 +1619,7 @@ function cancelarEncaixe() {
   encaixe = null;
   for (const [nome, fn] of e.ouvintes) window.removeEventListener(nome, fn, { capture: true });
   e.spr?.destroy?.();
+  e.rt?.destroy?.(true);
   e.aviso?.remove?.();
   document.body.classList.remove("ov-encaixando");
 }
@@ -1528,7 +1641,9 @@ async function encaixar(opcoes = {}) {
   spr.alpha = 0.75;
   spr.eventMode = "none";
   (canvas.controls ?? canvas.interface).addChild(spr);
-  const e = { p, spr, rot: p.rotacao ?? 0, escala: 1, x: canvas.stage.pivot.x, y: canvas.stage.pivot.y, livre: false, ouvintes: [] };
+  const v0 = p.cfg.visao ?? {};
+  const e = { p, spr, tex, rot: p.rotacao ?? 0, escala: 1, x: canvas.stage.pivot.x, y: canvas.stage.pivot.y, livre: false, ouvintes: [],
+    vx: Number(v0.x) || 0, vy: Number(v0.y) || 0, esp: !!v0.espelho, rt: null, chave: "" };
   encaixe = e;
   injetarEstilo();
   e.aviso = document.createElement("div");
@@ -1540,11 +1655,22 @@ async function encaixar(opcoes = {}) {
   const desenhar = () => {
     const w = p.w * e.escala, h = p.h * e.escala;
     const c = centroEncaixado(e.x, e.y, w, h, e.livre);
+    // Prévia da visão 3D: só redesenha quando os ângulos mudam
+    const v = { x: e.vx, y: e.vy, espelho: e.esp };
+    const chave = `${e.vx}|${e.vy}|${e.esp}`;
+    if (chave !== e.chave) {
+      e.chave = chave;
+      e.rt?.destroy?.(true); e.rt = null;
+      if (temVisao(v) && globalThis.PIXI?.SimplePlane) { try { e.rt = desenharVisao(e.tex, p.w, p.h, v); } catch (err) { console.warn(`${ID} |`, err); } }
+      spr.texture = e.rt ?? e.tex;
+    }
     spr.width = w; spr.height = h;
     spr.position.set(c.x, c.y);
     spr.rotation = e.rot * Math.PI / 180;
     e.aviso.innerHTML = `<b>${esc(p.cfg.nome || t(`Preset.${p.cfg.preset}.Nome`))}</b> · ${t("Encaixe.Dica")}
-      <span class="ov-encaixe-valores">${Math.round(e.rot)}° · ${Math.round(e.escala * 100)}% · ${t(e.livre ? "Encaixe.Livre" : "Encaixe.Grade")}</span>`;
+      <span class="ov-encaixe-teclas">${t("Encaixe.Teclas")}</span>
+      <span class="ov-encaixe-valores">${Math.round(e.rot)}° · ${Math.round(e.escala * 100)}% · ${t(e.livre ? "Encaixe.Livre" : "Encaixe.Grade")}
+        · ${t("Encaixe.Inclinar", { n: e.vx })} · ${t("Encaixe.Lado", { n: e.vy })}${e.esp ? ` · ${t("Encaixe.Espelhado")}` : ""}</span>`;
   };
   const noMapa = ev => ev.target === view;
   const ouvir = (nome, fn) => { e.ouvintes.push([nome, fn]); window.addEventListener(nome, fn, { capture: true, passive: false }); };
@@ -1571,17 +1697,36 @@ async function encaixar(opcoes = {}) {
     if (ev.button === 2) return cancelarEncaixe();
     if (ev.button !== 0) return;
     const q = pontoDoMouse(ev.clientX, ev.clientY);
-    const dados = { pronto: p, x: q.x, y: q.y, rotacao: e.rot, escala: e.escala, livre: ev.shiftKey };
+    const dados = { pronto: p, x: q.x, y: q.y, rotacao: e.rot, escala: e.escala, livre: ev.shiftKey, visao: { x: e.vx, y: e.vy, espelho: e.esp } };
     cancelarEncaixe();
     criarObjeto(dados);
   });
   // O Foundry também escuta soltar e o menu do botão direito: enquanto encaixa, eles ficam com a gente
   for (const nome of ["pointerup", "contextmenu"]) ouvir(nome, ev => { if (noMapa(ev)) { ev.preventDefault(); ev.stopImmediatePropagation(); } });
+  // Teclas: W/S inclinam, A/D viram de lado, Q/E giram, F espelha, R volta à vista de cima, Esc cancela.
+  // Elas ficam com o encaixe (senão o Foundry moveria a câmera com WASD).
+  const limite = n => Math.max(-VISAO_MAX, Math.min(VISAO_MAX, n));
   ouvir("keydown", ev => {
-    if (ev.key !== "Escape") return;
+    if (ev.target?.closest?.("input, textarea, select, [contenteditable]")) return;
+    const passo = ev.shiftKey ? 5 : 15;
+    const acoes = {
+      Escape: () => cancelarEncaixe(),
+      KeyW: () => { e.vx = limite(e.vx + passo); }, KeyS: () => { e.vx = limite(e.vx - passo); },
+      KeyA: () => { e.vy = limite(e.vy - passo); }, KeyD: () => { e.vy = limite(e.vy + passo); },
+      KeyQ: () => { e.rot = (e.rot - passo + 360) % 360; }, KeyE: () => { e.rot = (e.rot + passo) % 360; },
+      KeyF: () => { e.esp = !e.esp; }, KeyR: () => { e.vx = 0; e.vy = 0; e.esp = false; }
+    };
+    const fn = acoes[ev.code] ?? (ev.key === "Escape" ? acoes.Escape : null);
+    if (!fn) return;
     ev.preventDefault();
     ev.stopImmediatePropagation();
-    cancelarEncaixe();
+    fn();
+    if (encaixe === e) desenhar();
+  });
+  ouvir("keyup", ev => {
+    if (["KeyW", "KeyS", "KeyA", "KeyD", "KeyQ", "KeyE", "KeyF", "KeyR"].includes(ev.code) && !ev.target?.closest?.("input, textarea, select, [contenteditable]")) {
+      ev.preventDefault(); ev.stopImmediatePropagation();
+    }
   });
   desenhar();
 }
@@ -1705,7 +1850,7 @@ async function enviarDoPacote(pac, a) {
       try { await FP.createDirectory(fonte, atual); } catch {}
     }
   }
-  const ja = existentes.find(f => decodeURIComponent(f.split("/").pop()) === arquivo);
+  const ja = existentes.find(f => decodificar(f.split("/").pop()) === arquivo);
   if (ja) { pac.enviados.set(a.rel, ja); return ja; }
   const file = new File([pac.cortar(a)], arquivo, { type: tipoImagem(arquivo) });
   const r = await FP.upload(fonte, pasta, file, {}, { notify: false });
@@ -1793,7 +1938,7 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
     let h = `<div class="ov-lado-grupo">
       ${this._item({ attrs: 'data-secao="prontos"', iconeNome: "fa-shapes", nome: t("Bib.Prontos"), conta: PRONTOS.length, ativo: this.secao === "prontos" })}
       ${this._item({ attrs: 'data-secao="meus"', iconeNome: "fa-bookmark", nome: t("Bib.Meus"), conta: meus.length, ativo: this.secao === "meus" })}
-      ${this._item({ attrs: 'data-secao="pasta"', iconeNome: "fa-folder-open", nome: salva.pasta ? decodeURIComponent(salva.pasta.replace(/\/$/, "").split("/").pop()) : t("Assets.Aba"), ativo: this.secao === "pasta" })}
+      ${this._item({ attrs: 'data-secao="pasta"', iconeNome: "fa-folder-open", nome: salva.pasta ? decodificar(salva.pasta.replace(/\/$/, "").split("/").pop()) : t("Assets.Aba"), ativo: this.secao === "pasta" })}
       </div><div class="ov-lado-titulo">${icone("fa-box-open")} Dungeondraft</div><div class="ov-lado-grupo">`;
     for (const pac of pacotes.values()) {
       const ativo = this.secao === "pacote" && this.pacoteId === pac.id;
@@ -1844,12 +1989,12 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
     const arquivos = l.files.slice(0, this.limite);
     return `<div class="ov-sec-cab">
         ${podeSubir ? `<button type="button" class="ov-btn ov-icone" data-a="subir-pasta" aria-label="${esc(t("Assets.Voltar"))}">${icone("fa-arrow-left")}</button>` : ""}
-        <h2 class="ov-sec-titulo" data-tooltip="${esc(atual)}">${icone("fa-folder-open")} ${esc(decodeURIComponent(atual.split("/").pop() || atual))}</h2>
+        <h2 class="ov-sec-titulo" data-tooltip="${esc(atual)}">${icone("fa-folder-open")} ${esc(decodificar(atual.split("/").pop() || atual))}</h2>
         <button type="button" class="ov-btn" data-a="pasta">${t("Assets.Trocar")}</button></div>
       ${l.erro ? `<p class="ov-vazio">${t("Assets.Erro")}</p>` : ""}
       ${(l.dirs.length || l.pacotes.length) ? `<div class="ov-pastas">
         ${l.pacotes.map(f => `<button type="button" class="ov-pasta-chip ov-dd-chip" data-pacote-arquivo="${esc(f)}" data-nome="${esc(nomeDoArquivo(f).toLowerCase())}">${icone("fa-box-open")} ${esc(nomeDoArquivo(f))}</button>`).join("")}
-        ${l.dirs.map(d => `<button type="button" class="ov-pasta-chip" data-dir="${esc(d)}" data-nome="${esc(nomeDoArquivo(d).toLowerCase())}">${icone("fa-folder")} ${esc(decodeURIComponent(d.replace(/\/$/, "").split("/").pop()))}</button>`).join("")}</div>` : ""}
+        ${l.dirs.map(d => `<button type="button" class="ov-pasta-chip" data-dir="${esc(d)}" data-nome="${esc(nomeDoArquivo(d).toLowerCase())}">${icone("fa-folder")} ${esc(decodificar(d.replace(/\/$/, "").split("/").pop()))}</button>`).join("")}</div>` : ""}
       <div class="ov-grade-assets">${arquivos.map(f => this._cartao({ attrs: `data-img="${esc(f)}"`, src: f, nome: nomeDoArquivo(f), video: ehVideo(f) })).join("")}</div>
       ${l.files.length > this.limite ? `<button type="button" class="ov-btn ov-mais-largo" data-a="mais">${t("Assets.Mais", { n: l.files.length - this.limite })}</button>` : ""}
       ${!l.erro && !l.files.length && !l.dirs.length && !l.pacotes.length ? `<p class="ov-vazio">${t("Assets.Vazia")}</p>` : ""}`;
@@ -1958,7 +2103,7 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
     try {
       const r = await fetch(caminho);
       if (!r.ok) throw new Error(r.status);
-      return this._abrirPacote(await r.blob(), decodeURIComponent(caminho.split("/").pop()), caminho);
+      return this._abrirPacote(await r.blob(), decodificar(caminho.split("/").pop()), caminho);
     } catch (err) {
       console.error(err);
       ui.notifications.error(t("DD.ErroLer", { nome: nomeDoArquivo(caminho) }));
@@ -2203,6 +2348,7 @@ Hooks.on("dropCanvasData", (_canvas, dados) => {
 // Profundidade: reaplica sempre que o Foundry redesenha o tile ou a câmera anda
 Hooks.on("refreshTile", tile => {
   if (tile._ovCamo || camuflado(tile) || camoMestre(tile)) aplicarCamaleao(tile);
+  if (tile._ov3d || visaoDe(tile)) aplicarVisao(tile);
   if (tile._ovSombra || profDe(tile)) aplicarProfundidade(tile);
 });
 for (const h of ["createTile", "deleteTile"]) Hooks.on(h, doc => { if (doc.parent?.id === canvas.scene?.id) refazerCamuflagens(); });
@@ -2218,7 +2364,7 @@ Hooks.on("updateToken", aoMoverToken);
 Hooks.on("controlToken", () => atualizarBrilho());
 Hooks.on("updateTile", (doc, mud) => {
   if (doc.parent?.id !== canvas.scene?.id) return;
-  if (foundry.utils.hasProperty(mud, `flags.${ID}`)) { aplicarCamaleao(doc.object); aplicarProfundidade(doc.object); }
+  if (foundry.utils.hasProperty(mud, `flags.${ID}`)) { aplicarCamaleao(doc.object); aplicarVisao(doc.object); aplicarProfundidade(doc.object); }
   // Mexeu a posição, o tamanho ou a imagem de um tile: o que está atrás dos camaleões mudou
   if (["x", "y", "width", "height", "rotation", "sort", "elevation", "texture", "hidden"].some(k => k in mud)) refazerCamuflagens();
   if (foundry.utils.hasProperty(mud, `flags.${ID}.objeto.estado`)) animar(doc.object, cfgDe(doc)?.anim);

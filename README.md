@@ -47,6 +47,11 @@ Depois, ative o módulo no mundo em **Gerenciar Módulos**.
 | Ctrl + roda | Aumenta ou diminui o tamanho |
 | Segurar Shift | Solta do quadriculado, para colocar em qualquer lugar |
 | Botão direito ou Esc | Cancela |
+| W / S | Inclina para frente ou para trás (visão 3D) |
+| A / D | Vira para os lados (visão 3D) |
+| Q / E | Gira, como a roda |
+| F | Espelha |
+| R | Volta à vista de cima |
 
 O editor abre sozinho. Ele tem três passos:
 
@@ -59,6 +64,10 @@ O editor abre sozinho. Ele tem três passos:
 À esquerda do editor ficam as **aparências** (por exemplo Desligada e Ligada), cada uma com nome e imagem. O botão **Testar** mostra a troca. Tudo o que você muda na profundidade aparece no mapa na hora.
 
 O botão **Salvar na biblioteca** guarda o objeto em **Meus objetos**. Portas e objetos escolhidos nas ações ficam de fora, porque pertencem ao mapa onde foram escolhidos.
+
+## Visão (3D)
+
+No passo **Aparência**, a seção **Visão (3D)** gira o objeto como uma carta no espaço, com perspectiva, para encaixar na vista do mapa: **Vista de cima**, **De frente**, **Pelo lado esquerdo**, **Pelo lado direito**, barras para inclinar e virar, e **Espelhar**. O mapa mostra a mudança na hora. A imagem continua plana: dá para inclinar e virar, mas não aparece o outro lado do desenho.
 
 ## Camaleão
 

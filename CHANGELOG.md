@@ -1,5 +1,16 @@
 # Changelog
 
+## v2.4.0
+
+### Novidades
+- **Visão (3D)**: gire o objeto como uma carta no espaço, com perspectiva, para encaixar na vista do mapa. Inclinar para frente/trás, virar para os lados e espelhar, além do giro normal.
+  - **Ao encaixar**: W/S inclina, A/D vira de lado, Q/E gira, F espelha e R volta à vista de cima (com Shift, de 5 em 5 graus). A prévia no mouse já mostra o resultado.
+  - **No editor** (passo Aparência): atalhos Vista de cima, De frente, Pelo lado esquerdo e Pelo lado direito, barras de ajuste e Espelhar, com prévia ao vivo no mapa.
+  - A imagem continua plana: dá para inclinar e virar, mas não aparece o outro lado do desenho. Camuflado (Camaleão), o objeto não aparece girado, para não entregar onde está.
+
+### Correções
+- Corrigido o erro "Algo deu errado ao mostrar a biblioteca" (`URIError: malformed URI sequence`) ao abrir pacotes do Dungeondraft com assets que têm `%` ou outros caracteres especiais no nome. Agora esses nomes aparecem normalmente, na biblioteca, na busca e na pasta de assets.
+
 ## v2.3.0
 
 ### Biblioteca nova
