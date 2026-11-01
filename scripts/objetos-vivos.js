@@ -605,10 +605,9 @@ const estadosPorta = new Map();
 function lembrarPortas(cena) { for (const w of cena?.walls ?? []) if (w.door > 0) estadosPorta.set(w.uuid, w.ds); }
 
 function ouvirTentativas() {
-  const DC = foundry.canvas?.containers?.DoorControl ?? globalThis.DoorControl;
-  const original = DC?.prototype?._onMouseDown;
-  if (!original) return console.warn(`${ID} | não achei o controle de portas; "ao tentar abrir trancada" desligado`);
-  DC.prototype._onMouseDown = function (event) {
+  // Só "escuta" o clique: não bloqueia o Foundry nem outros módulos (Gazua da Mesa, Arm's Reach).
+  // Com o libWrapper, usa o tipo LISTENER, que nunca gera aviso de conflito.
+  const ouvirClique = function (event) {
     try {
       const w = this.wall?.document;
       if (w && ehObjeto(w) && w.ds === CONST.WALL_DOOR_STATES.LOCKED && (event?.button ?? 0) === 0 && !game.user.isGM) {
@@ -616,8 +615,17 @@ function ouvirTentativas() {
         else emitir({ acao: "parede", uuid: w.uuid, momento: "tentativa", userId: game.user.id });
       }
     } catch (err) { console.warn(`${ID} |`, err); }
-    return original.call(this, event);
   };
+  const ALVO = "foundry.canvas.containers.DoorControl.prototype._onMouseDown";
+  if (globalThis.libWrapper) {
+    if ("LISTENER" in libWrapper) libWrapper.register(ID, ALVO, function (event) { ouvirClique.call(this, event); }, libWrapper.LISTENER);
+    else libWrapper.register(ID, ALVO, function (wrapped, event, ...rest) { ouvirClique.call(this, event); return wrapped(event, ...rest); }, "WRAPPER");
+    return;
+  }
+  const DC = foundry.canvas?.containers?.DoorControl;
+  const original = DC?.prototype?._onMouseDown;
+  if (!original) return console.warn(`${ID} | não achei o controle de portas; "ao tentar abrir trancada" desligado`);
+  DC.prototype._onMouseDown = function (event, ...rest) { ouvirClique.call(this, event); return original.call(this, event, ...rest); };
 }
 
 // Editor do objeto

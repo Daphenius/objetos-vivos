@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.1
+- Corrigido o aviso do libWrapper ("Objetos Vivos e Gazua da Mesa, Arms Reach modificam a mesma funcionalidade"). O clique em portas voltou a ser registrado pelo libWrapper, agora como ouvinte: o Objetos Vivos só percebe a tentativa de abrir a porta trancada e não bloqueia nenhum outro módulo. Sem o libWrapper, funciona como antes.
+- libWrapper entrou como módulo recomendado.
+
 ## v2.0.0
 
 O módulo ficou mais simples de achar e de usar.
