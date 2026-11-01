@@ -17,15 +17,22 @@ const novoId = () => foundry.utils.randomID(8);
 const clone = x => foundry.utils.deepClone(x);
 const navegador = () => { const m = game.modules.get("navegador-mapas"); return m?.active ? m.api : null; };
 
-// Modelos prontos
+// Modelos prontos (a biblioteca usa estes, com as imagens da pasta assets/)
+const ASSETS = `modules/${ID}/assets`;
 const PRESETS = {
-  alavanca: { estados: ["Est.Desligada", "Est.Ligada"], anim: "girar", interacao: "clicar", voltar: 0 },
-  botao:    { estados: ["Est.Solto", "Est.Apertado"], anim: "pulsar", interacao: "clicar", voltar: 1 },
-  bau:      { estados: ["Est.Fechado", "Est.Aberto"], anim: "virar", interacao: "clicar", voltar: 0 },
-  placa:    { estados: ["Est.Solta", "Est.Pressionada"], anim: "pulsar", interacao: "pisar", voltar: 3 },
-  runa:     { estados: ["Est.Apagada", "Est.Acesa"], anim: "pulsar", interacao: "clicar", voltar: 0 },
-  livre:    { estados: ["Est.Estado1", "Est.Estado2"], anim: "nenhuma", interacao: "clicar", voltar: 0 }
+  alavanca: { estados: ["Est.Desligada", "Est.Ligada"], imgs: ["alavanca-desligada", "alavanca-ligada"], anim: "girar", interacao: "clicar", voltar: 0, prof: "medio" },
+  botao:    { estados: ["Est.Solto", "Est.Apertado"], imgs: ["botao-solto", "botao-apertado"], anim: "pulsar", interacao: "clicar", voltar: 1, prof: "leve" },
+  bau:      { estados: ["Est.Fechado", "Est.Aberto"], imgs: ["bau-fechado", "bau-aberto"], anim: "pulsar", interacao: "clicar", voltar: 0, prof: "medio" },
+  placa:    { estados: ["Est.Solta", "Est.Pressionada"], imgs: ["placa-solta", "placa-pressionada"], anim: "nenhuma", interacao: "pisar", voltar: 3, prof: "plano" },
+  runa:     { estados: ["Est.Apagada", "Est.Acesa"], imgs: ["runa-apagada", "runa-acesa"], anim: "pulsar", interacao: "perto", voltar: 0, prof: "leve" },
+  livre:    { estados: ["Est.Estado1", "Est.Estado2"], imgs: null, anim: "deslizar", interacao: "clicar", voltar: 0, prof: "medio" }
 };
+const PRONTOS = ["alavanca", "botao", "bau", "placa", "runa"];
+const imgPreset = (p, i) => PRESETS[p]?.imgs ? `${ASSETS}/${PRESETS[p].imgs[i]}.svg` : "";
+
+// Profundidade (efeito 3D): sombra, altura (o quanto "salta" do mapa) e inclinação
+const PROFS = { plano: { sombra: 0, altura: 0, incl: 0 }, leve: { sombra: 40, altura: 5, incl: 8 }, medio: { sombra: 60, altura: 12, incl: 16 }, alto: { sombra: 85, altura: 22, incl: 28 } };
+const profPadrao = nome => ({ preset: nome, ...PROFS[nome], parallax: nome !== "plano" });
 const ANIMS = ["nenhuma", "girar", "deslizar", "virar", "pulsar", "sumir"];
 const INTERACOES = ["clicar", "pisar", "perto", "mestre"];
 const QUEM = ["todos", "jogadores", "npcs", "ator"];
@@ -54,14 +61,17 @@ const cfgDe = doc => doc?.getFlag?.(ID, "objeto") ?? null;
 const ehObjeto = doc => !!cfgDe(doc);
 const ehTile = doc => doc?.documentName === "Tile";
 
-function padrao(doc) {
+// Configuração inicial de um objeto. Sem doc (objeto ainda não criado) é sempre um tile.
+function padrao(doc, preset = null, img = null) {
   const base = { quem: "todos", ator: "", usos: 0, usados: 0, confirmar: false, acoes: {} };
-  if (!ehTile(doc)) return base;
-  const img = doc.texture?.src ?? "";
-  const p = PRESETS.alavanca;
+  if (doc && !ehTile(doc)) return base;
+  const nome = preset ?? "livre";
+  const p = PRESETS[nome];
+  const imagem = img ?? doc?.texture?.src ?? "";
   return {
-    ...base, preset: "alavanca", estados: p.estados.map(n => ({ id: novoId(), nome: t(n), img })), estado: 0,
-    anim: p.anim, som: "", interacao: p.interacao, distancia: 1, mao: true, brilho: true, voltar: p.voltar, trancado: false
+    ...base, preset: nome, estados: p.estados.map((n, i) => ({ id: novoId(), nome: t(n), img: imgPreset(nome, i) || imagem })), estado: 0,
+    anim: p.anim, som: "", interacao: p.interacao, distancia: 1, mao: true, brilho: true, voltar: p.voltar, trancado: false,
+    prof: profPadrao(p.prof)
   };
 }
 
@@ -382,11 +392,117 @@ function animar(tile, tipo) {
   requestAnimationFrame(passo);
 }
 
+// Profundidade: sombra desenhada por um filtro na imagem do tile, mais altura, inclinação
+// e um leve movimento (parallax) quando a câmera anda. Só mexe no desenho, nunca no documento.
+const SOMBRA_FRAG = `
+varying vec2 vTextureCoord;
+uniform sampler2D uSampler;
+uniform vec4 inputSize;
+uniform vec2 uDesloc;
+uniform float uForca;
+uniform float uBorrao;
+void main(void) {
+  vec4 cor = texture2D(uSampler, vTextureCoord);
+  vec2 px = inputSize.zw;
+  float a = 0.0;
+  for (int x = -2; x <= 2; x++) {
+    for (int y = -2; y <= 2; y++) {
+      a += texture2D(uSampler, vTextureCoord - uDesloc * px + vec2(float(x), float(y)) * uBorrao * px).a;
+    }
+  }
+  a = a / 25.0 * uForca;
+  gl_FragColor = cor + vec4(0.0, 0.0, 0.0, a) * (1.0 - cor.a);
+}`;
+let ClasseSombra = null;
+function novaSombra() {
+  if (!globalThis.PIXI?.Filter) return null;
+  ClasseSombra ??= class extends PIXI.Filter {
+    constructor() { super(undefined, SOMBRA_FRAG, { uDesloc: new Float32Array([0, 0]), uForca: 0.5, uBorrao: 1 }); }
+  };
+  return new ClasseSombra();
+}
+
+// O que vale para este tile agora (a prévia do editor aberto tem prioridade)
+function profDe(tile) {
+  const p = tile?._ovPrevia ?? cfgDe(tile?.document)?.prof;
+  return p && (p.sombra > 0 || p.altura > 0 || p.incl > 0) ? p : null;
+}
+
+function aplicarProfundidade(tile) {
+  const mesh = tile?.mesh;
+  if (!mesh || mesh.destroyed) return;
+  const p = profDe(tile);
+  const m = tile._ovMarca;
+  // Descobre a posição "de verdade" do Foundry: se ele redesenhou, o valor mudou desde a nossa última marca
+  const base = tile._ovBase ?? { y: mesh.position.y, x: mesh.position.x, sy: mesh.scale.y };
+  if (!m || mesh.position.y !== m.y) base.y = mesh.position.y;
+  if (!m || mesh.position.x !== m.x) base.x = mesh.position.x;
+  if (!m || mesh.scale.y !== m.sy) base.sy = mesh.scale.y;
+  tile._ovBase = base;
+
+  const filtros = (mesh.filters ?? []).filter(f => f !== tile._ovSombra);
+  if (!p) {
+    mesh.position.set(base.x, base.y);
+    mesh.scale.y = base.sy;
+    mesh.filters = filtros.length ? filtros : null;
+    tile._ovMarca = { x: base.x, y: base.y, sy: base.sy };
+    return;
+  }
+  const gs = canvas.dimensions?.size ?? 100;
+  const k = gs / 100;
+  const zoom = canvas.stage?.scale?.x ?? 1;
+  const res = canvas.app?.renderer?.resolution ?? 1;
+  const alt = (Number(p.altura) || 0) * k;
+  // Parallax: quanto mais alto, mais o objeto "acompanha" a câmera
+  let px = 0, py = 0;
+  if (p.parallax && alt > 0 && canvas.stage?.pivot) {
+    const doc = tile.document;
+    px = (doc.x + doc.width / 2 - canvas.stage.pivot.x) * alt * 0.0012;
+    py = (doc.y + doc.height / 2 - canvas.stage.pivot.y) * alt * 0.0012;
+  }
+  const incl = Math.min(45, Math.max(0, Number(p.incl) || 0));
+  const fatorY = Math.cos(incl * Math.PI / 180);
+  const x = base.x + px, y = base.y - alt + py + (1 - fatorY) * (tile.document.height / 2);
+  mesh.position.set(x, y);
+  mesh.scale.y = base.sy * fatorY;
+
+  const sombra = Math.min(100, Math.max(0, Number(p.sombra) || 0));
+  if (sombra > 0) {
+    tile._ovSombra ??= novaSombra();
+    const f = tile._ovSombra;
+    if (f) {
+      const dx = (alt * 0.5 + 3 * k) * zoom * res, dy = (alt + 5 * k) * zoom * res;
+      f.uniforms.uDesloc[0] = dx;
+      f.uniforms.uDesloc[1] = dy;
+      f.uniforms.uForca = sombra / 100 * 0.85;
+      f.uniforms.uBorrao = (1 + sombra / 40) * zoom * res;
+      f.padding = Math.ceil((Math.abs(dx) + Math.abs(dy)) / res + f.uniforms.uBorrao * 3);
+      filtros.push(f);
+    }
+  }
+  mesh.filters = filtros.length ? filtros : null;
+  tile._ovMarca = { x, y, sy: mesh.scale.y };
+}
+function atualizarProfundidades() {
+  for (const tile of canvas.tiles?.placeables ?? []) if (tile._ovSombra || profDe(tile)) aplicarProfundidade(tile);
+}
+
 // No mapa: clique, mãozinha e brilho
+const CONTROLE = "objetos-vivos";
+// A ferramenta "Objetos Vivos" está aberta na barra da esquerda? (aí o clique edita em vez de usar)
+const naFerramenta = () => (ui.controls?.control?.name ?? ui.controls?.activeControl) === CONTROLE;
+// O mestre usa os objetos com um clique simples quando está na camada de tokens (como os jogadores)
+const mestrePodeUsar = () => !!canvas.tokens?.active;
 const usaveis = () => (canvas.tiles?.placeables ?? []).filter(o => {
   const c = cfgDe(o.document);
-  return c && !o.document.hidden && (c.interacao === "clicar" || (game.user.isGM && c.interacao === "mestre"));
+  if (!c) return false;
+  if (game.user.isGM) return true;
+  return !o.document.hidden && c.interacao === "clicar";
 });
+const objetoNoPonto = p => {
+  const lista = usaveis().filter(o => noTile(o.document, p));
+  return lista.sort((a, b) => (b.document.sort ?? 0) - (a.document.sort ?? 0))[0] ?? null;
+};
 const pontoDoMouse = (x, y) => canvas.canvasCoordinatesFromClient?.({ x, y }) ?? canvas.stage.worldTransform.applyInverse({ x, y });
 function meusTokens() {
   return (canvas.tokens?.placeables ?? []).filter(tk => tk.isOwner && (game.user.isGM ? tk.controlled : true));
@@ -408,18 +524,20 @@ function ligarMapa() {
     const i = ini;
     ini = null;
     if (!i || ev.button !== 0 || Math.hypot(ev.clientX - i.x, ev.clientY - i.y) > 6 || Date.now() - i.t > 500) return;
-    // O mestre usa objetos com Alt+clique (senão atrapalharia a edição do mapa)
-    if (game.user.isGM && !ev.altKey) return;
     const p = pontoDoMouse(ev.clientX, ev.clientY);
-    for (const o of usaveis()) {
-      const doc = o.document;
-      if (!noTile(doc, p)) continue;
-      const c = cfgDe(doc);
-      const { perto, dist } = maisPerto(doc);
-      if (!game.user.isGM && c.distancia > 0 && dist > c.distancia) { ui.notifications.info(t("Aviso.Longe")); continue; }
-      pedirUso(doc, perto?.document.uuid ?? null);
-      break;
+    // Mestre: na ferramenta Objetos Vivos o clique abre o editor; na camada de tokens, usa o objeto
+    if (game.user.isGM) {
+      if (naFerramenta()) { const o = objetoNoPonto(p); if (o) abrirEditor(o.document); return; }
+      if (!mestrePodeUsar() || ev.altKey || ev.shiftKey || ev.ctrlKey) return;
     }
+    // Clique em cima de um token é para o token, não para o objeto embaixo dele
+    if ((canvas.tokens?.placeables ?? []).some(tk => tk.visible && tk.bounds?.contains?.(p.x, p.y))) return;
+    const o = objetoNoPonto(p);
+    if (!o) return;
+    const doc = o.document, c = cfgDe(doc);
+    const { perto, dist } = maisPerto(doc);
+    if (!game.user.isGM && c.distancia > 0 && dist > c.distancia) return ui.notifications.info(t("Aviso.Longe"));
+    pedirUso(doc, perto?.document.uuid ?? null);
   });
   let quadro = 0;
   view.addEventListener("pointermove", ev => {
@@ -427,7 +545,8 @@ function ligarMapa() {
     quadro = requestAnimationFrame(() => {
       quadro = 0;
       const p = pontoDoMouse(ev.clientX, ev.clientY);
-      const sobre = usaveis().some(o => cfgDe(o.document).mao !== false && noTile(o.document, p) && (!game.user.isGM || ev.altKey));
+      const o = (!game.user.isGM || naFerramenta() || mestrePodeUsar()) ? objetoNoPonto(p) : null;
+      const sobre = !!o && (game.user.isGM || cfgDe(o.document).mao !== false);
       document.body.classList.toggle("ov-mao", sobre);
     });
   });
@@ -486,7 +605,10 @@ const estadosPorta = new Map();
 function lembrarPortas(cena) { for (const w of cena?.walls ?? []) if (w.door > 0) estadosPorta.set(w.uuid, w.ds); }
 
 function ouvirTentativas() {
-  const aoClicarPorta = function (wrapped, event) {
+  const DC = foundry.canvas?.containers?.DoorControl ?? globalThis.DoorControl;
+  const original = DC?.prototype?._onMouseDown;
+  if (!original) return console.warn(`${ID} | não achei o controle de portas; "ao tentar abrir trancada" desligado`);
+  DC.prototype._onMouseDown = function (event) {
     try {
       const w = this.wall?.document;
       if (w && ehObjeto(w) && w.ds === CONST.WALL_DOOR_STATES.LOCKED && (event?.button ?? 0) === 0 && !game.user.isGM) {
@@ -494,18 +616,7 @@ function ouvirTentativas() {
         else emitir({ acao: "parede", uuid: w.uuid, momento: "tentativa", userId: game.user.id });
       }
     } catch (err) { console.warn(`${ID} |`, err); }
-    return wrapped(event);
-  };
-  // Com o libWrapper ativo, registra por ele (convive com Arm's Reach e outros); sem ele, envolve direto.
-  if (globalThis.libWrapper) {
-    libWrapper.register(ID, "foundry.canvas.containers.DoorControl.prototype._onMouseDown", aoClicarPorta, "WRAPPER");
-    return;
-  }
-  const DC = foundry.canvas?.containers?.DoorControl;
-  const original = DC?.prototype?._onMouseDown;
-  if (!original) return console.warn(`${ID} | não achei o controle de portas; "ao tentar abrir trancada" desligado`);
-  DC.prototype._onMouseDown = function (event) {
-    return aoClicarPorta.call(this, ev => original.call(this, ev), event);
+    return original.call(this, event);
   };
 }
 
@@ -589,6 +700,32 @@ fieldset.ov-secao legend { padding: 0 6px; font-weight: bold; }
 fieldset.ov-secao p { font-size: 12px; margin: 0 0 8px; opacity: .85; }
 fieldset.ov-secao .ov-botoes { display: flex; gap: 6px; } fieldset.ov-secao .ov-botoes button { flex: 1; }
 .ov-narracao { font-style: italic; }
+.ov-faixa.ov-faixa-linha { display: grid; grid-template-columns: 110px minmax(0, 1fr) 52px; padding: 8px 14px; }
+.ov-faixa-linha b { font-size: 13px; } .ov-faixa-linha input[type=range] { width: 100%; accent-color: #f0a03c; }
+.ov-btn.ov-mais { align-self: flex-start; }
+.ov-previa { transition: transform .25s, filter .25s; }
+.ov-biblioteca .window-content { padding: 0; background: #17151c; color: #ece8f1; }
+.ov-bib { display: flex; flex-direction: column; height: 100%; font-family: Signika, system-ui, sans-serif; }
+.ov-bib button { font-family: inherit; }
+.ov-bib-topo { padding: 14px; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #343041; flex: none; }
+.ov-minha { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 2px dashed #f0a03c; background: rgba(240,160,60,.08);
+  color: #ece8f1; text-align: left; cursor: pointer; width: 100%; height: auto; line-height: 1.25; }
+.ov-minha i { font-size: 24px; color: #f0a03c; } .ov-minha b { display: block; font-size: 14px; } .ov-minha span { font-size: 12px; color: #d9c4a6; }
+.ov-bib-abas { display: flex; gap: 6px; }
+.ov-bib-aba { flex: 1; height: 34px; border-radius: 8px; border: 1px solid #343041; background: transparent; color: #a8a1b4; font-size: 13px; font-weight: 600; cursor: pointer; }
+.ov-bib-aba.ov-on { background: #f0a03c; border-color: #f0a03c; color: #1a1408; }
+.ov-bib-corpo { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; }
+.ov-bib-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ov-bib-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px 10px; border-radius: 12px; border: 1px solid #343041;
+  background: #221f29; color: #ece8f1; cursor: grab; width: 100%; height: auto; line-height: 1.25; }
+.ov-bib-item:hover { border-color: #f0a03c; }
+.ov-bib-item img { width: 64px; height: 64px; object-fit: contain; border: none; filter: drop-shadow(4px 8px 5px rgba(0,0,0,.6)); pointer-events: none; }
+.ov-bib-item b { font-size: 13px; } .ov-bib-item span { font-size: 11px; color: #a8a1b4; }
+.ov-bib-linha { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; border: 1px solid #343041; background: #221f29; margin-bottom: 8px; cursor: grab; }
+.ov-bib-linha:hover { border-color: #f0a03c; }
+.ov-bib-linha img { width: 48px; height: 48px; object-fit: contain; border: none; pointer-events: none; }
+.ov-bib-linha .ov-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; } .ov-bib-linha .ov-txt b { font-size: 13px; } .ov-bib-linha .ov-txt span { font-size: 11px; color: #a8a1b4; }
+.ov-bib-dica { margin: 0; padding: 10px 14px; border-top: 1px solid #343041; font-size: 12px; color: #a8a1b4; flex: none; }
 `;
 function injetarEstilo() {
   if (document.getElementById("ov-estilo")) return;
@@ -629,7 +766,7 @@ function resumoAcao(a) {
 class EditorObjeto extends foundry.applications.api.ApplicationV2 {
   static DEFAULT_OPTIONS = {
     classes: ["ov-editor"],
-    position: { width: 1000, height: 720 },
+    position: { width: 940, height: 700 },
     window: { icon: "fa-solid fa-wand-sparkles", resizable: true }
   };
 
@@ -656,6 +793,7 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
           `<button type="button" class="ov-aba ${this.aba === id ? "ov-on" : ""}" data-aba="${id}"><span class="ov-n">${i + 1}</span>${esc(nome)}</button>`).join("")}</nav>
         <div class="ov-corpo">${this._htmlAba()}</div>
         <footer class="ov-rodape"><span class="ov-resumo">${esc(this._resumo())}</span>
+          ${this.tile ? `<button type="button" class="ov-btn" data-a="biblioteca" data-tooltip="${esc(t("Bib.SalvarDica"))}">${icone("fa-bookmark")} ${t("Bib.Salvar")}</button>` : ""}
           <button type="button" class="ov-btn" data-a="cancelar">${t("Editor.Cancelar")}</button>
           <button type="button" class="ov-btn ov-primario" data-a="salvar">${icone("fa-floppy-disk")} ${t("Editor.Salvar")}</button></footer>
       </section>`;
@@ -671,8 +809,8 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
 
   _abas() {
     return this.tile
-      ? [["aparencia", t("Aba.Aparencia")], ["uso", t("Aba.Uso")], ["acoes", t("Aba.Acoes")], ["regras", t("Aba.Regras")]]
-      : [["acoes", t("Aba.Acoes")], ["regras", t("Aba.Regras")]];
+      ? [["aparencia", t("Aba.Aparencia")], ["uso", t("Aba.Uso")], ["acoes", t("Aba.Acoes")]]
+      : [["acoes", t("Aba.Acoes")]];
   }
 
   _resumo() {
@@ -697,7 +835,7 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
     const atual = d.estados[this.previa] ?? d.estados[0];
     const img = atual?.img || this.doc.texture?.src || "";
     return `<aside class="ov-lado">
-      <div class="ov-palco">${img ? `<img class="ov-previa" src="${esc(img)}" alt="">` : `<span class="ov-porta">${icone("fa-image")}</span>`}
+      <div class="ov-palco">${img ? `<img class="ov-previa" src="${esc(img)}" alt="" style="${this._estiloPrevia()}">` : `<span class="ov-porta">${icone("fa-image")}</span>`}
         <span class="ov-chip">${esc(atual?.nome ?? "")}</span></div>
       <button type="button" class="ov-btn ov-forte" data-a="testar">${icone("fa-play")} ${t("Editor.Testar")}</button>
       <div class="ov-campo"><label for="ov-nome">${t("Editor.Nome")}</label></div>
@@ -723,10 +861,17 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
       <button type="button" class="ov-btn ov-icone" data-menos="${campo}" aria-label="−">−</button><span class="ov-valor">${esc(texto)}</span>
       <button type="button" class="ov-btn ov-icone" data-mais="${campo}" aria-label="+">+</button></div>`;
 
-    if (this.aba === "aparencia") return `
-      <section><h2>${t("Aparencia.Titulo")}</h2><p class="ov-dica">${t("Aparencia.Dica")}</p>
-        <div class="ov-grade" style="margin-top:8px">${Object.keys(PRESETS).map(p =>
-          `<button type="button" class="ov-cartao ${d.preset === p ? "ov-on" : ""}" data-preset="${p}"><b>${t(`Preset.${p}.Nome`)}</b><span>${t(`Preset.${p}.Desc`)}</span></button>`).join("")}</div></section>
+    if (this.aba === "aparencia") {
+      const p = d.prof ?? profPadrao("plano");
+      const faixa = (campo, max, sufixo = "") => `<div class="ov-faixa ov-faixa-linha"><b>${t(`Prof.${campo}`)}</b>
+        <input type="range" min="0" max="${max}" step="1" data-prof="${campo}" value="${Number(p[campo]) || 0}" aria-label="${esc(t(`Prof.${campo}`))}">
+        <span class="ov-valor">${Number(p[campo]) || 0}${sufixo}</span></div>`;
+      return `
+      <section style="display:flex;flex-direction:column;gap:8px"><h2>${t("Prof.Titulo")}</h2><p class="ov-dica">${t("Prof.Dica")}</p>
+        <div class="ov-pilulas">${Object.keys(PROFS).map(n =>
+          `<button type="button" class="ov-pilula ${p.preset === n ? "ov-on" : ""}" data-prof-preset="${n}">${t(`Prof.${n}`)}</button>`).join("")}</div>
+        ${faixa("sombra", 100)}${faixa("altura", 30)}${faixa("incl", 40, "°")}
+        ${chave(!!p.parallax, "parallax", t("Prof.Parallax"), t("Prof.ParallaxDica"))}</section>
       <section><h2>${t("Aparencia.Anim")}</h2>
         <div class="ov-pilulas">${ANIMS.map(a => `<button type="button" class="ov-pilula ${d.anim === a ? "ov-on" : ""}" data-anim="${a}">${t(`Anim.${a}`)}</button>`).join("")}</div>
         <p class="ov-dica" style="margin-top:6px">${t("Aparencia.AnimDica")}</p></section>
@@ -735,6 +880,7 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
           <button type="button" class="ov-btn" data-a="som-escolher">${t("Editor.Escolher")}</button>
           <button type="button" class="ov-btn ov-icone" data-a="som-ouvir" aria-label="${esc(t("Editor.Ouvir"))}">${icone("fa-play")}</button></div>
         <p class="ov-dica" style="margin-top:6px">${t("Aparencia.SomDica")}</p></section>`;
+    }
 
     if (this.aba === "uso") return `
       <section><h2>${t("Uso.Titulo")}</h2>
@@ -742,6 +888,11 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
           `<button type="button" class="ov-cartao ${d.interacao === i ? "ov-on" : ""}" data-interacao="${i}" aria-pressed="${d.interacao === i}"><b>${t(`Uso.${i}.Nome`)}</b><span>${t(`Uso.${i}.Desc`)}</span></button>`).join("")}</div></section>
       ${d.interacao === "clicar" || d.interacao === "perto" ? passo("distancia", d.distancia > 0 ? t("Valor.Casas", { n: d.distancia }) : t("Valor.Qualquer"),
           t("Uso.Distancia"), t(d.interacao === "perto" ? "Uso.DistanciaPerto" : "Uso.DistanciaClicar")) : ""}
+      ${this._htmlQuem()}
+      <section style="display:flex;flex-direction:column;gap:8px">
+        ${chave(d.voltar > 0, "voltar", t("Regras.Voltar"), t("Regras.VoltarDica"))}
+        ${d.voltar > 0 ? passo("voltar", t("Valor.Segundos", { n: d.voltar }), t("Regras.VoltarTempo"), t("Regras.VoltarTempoDica")) : ""}
+      </section>
       <section style="display:flex;flex-direction:column;gap:8px"><h2>${t("Uso.Ajudas")}</h2>
         ${chave(d.mao !== false, "mao", t("Uso.Mao"), t("Uso.MaoDica"))}
         ${chave(d.brilho !== false, "brilho", t("Uso.Brilho"), t("Uso.BrilhoDica"))}
@@ -764,23 +915,52 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
         <div class="ov-grade ov-4" style="margin-top:8px">${Object.keys(ACOES).map(k => {
           const bloqueada = k === "mover" && !temNav;
           return `<button type="button" class="ov-cartao" data-nova="${k}" ${bloqueada ? "disabled" : ""}><b>${icone(ICONES[k])} ${t(`Acao.${k}`)}</b><span>${t(bloqueada ? "Acoes.PrecisaNavegador" : `AcaoDesc.${k}`)}</span></button>`;
-        }).join("")}</div></section>`;
-    }
-
-    // Regras
-    return `
-      <section><h2>${t("Regras.Quem")}</h2>
-        <div class="ov-pilulas">${QUEM.map(q => `<button type="button" class="ov-pilula ${d.quem === q ? "ov-on" : ""}" data-quem="${q}">${t(`Quem.${q}`)}</button>`).join("")}</div>
-        ${d.quem === "ator" ? `<div class="ov-campo" style="margin-top:8px"><input type="text" data-geral="ator" data-drop="Actor" value="${esc(d.ator)}" placeholder="${esc(t("Regras.ArrasteAtor"))}" aria-label="${esc(t("Quem.ator"))}">
-          ${d.ator ? `<span style="font-size:12px;color:#a8a1b4">${esc(nomeDoc(d.ator))}</span>` : ""}</div>` : ""}</section>
-      ${passo("usos", d.usos > 0 ? t("Valor.Vezes", { n: d.usos }) : t("Valor.SemLimite"), t("Regras.Usos"), t("Regras.UsosDica", { n: d.usados ?? 0 }))}
-      ${d.usados ? `<button type="button" class="ov-btn" data-a="zerar" style="align-self:flex-start">${icone("fa-rotate-left")} ${t("Regras.Zerar")}</button>` : ""}
+        }).join("")}</div></section>
       <section style="display:flex;flex-direction:column;gap:8px">
-        ${this.tile ? chave(d.voltar > 0, "voltar", t("Regras.Voltar"), t("Regras.VoltarDica")) : ""}
-        ${this.tile && d.voltar > 0 ? passo("voltar", t("Valor.Segundos", { n: d.voltar }), t("Regras.VoltarTempo"), t("Regras.VoltarTempoDica")) : ""}
-        ${chave(!!d.confirmar, "confirmar", t("Regras.Confirmar"), t("Regras.ConfirmarDica"))}
-        ${this.tile ? chave(!!d.trancado, "trancado", t("Regras.Trancado"), t("Regras.TrancadoDica")) : ""}
+        <button type="button" class="ov-btn ov-mais" data-a="mais" aria-expanded="${!!this.mais}">${icone(this.mais ? "fa-chevron-up" : "fa-chevron-down")} ${t("Mais.Titulo")}</button>
+        ${this.mais ? `
+          ${this.tile ? "" : this._htmlQuem()}
+          ${passo("usos", d.usos > 0 ? t("Valor.Vezes", { n: d.usos }) : t("Valor.SemLimite"), t("Regras.Usos"), t("Regras.UsosDica", { n: d.usados ?? 0 }))}
+          ${d.usados ? `<button type="button" class="ov-btn" data-a="zerar" style="align-self:flex-start">${icone("fa-rotate-left")} ${t("Regras.Zerar")}</button>` : ""}
+          ${chave(!!d.confirmar, "confirmar", t("Regras.Confirmar"), t("Regras.ConfirmarDica"))}
+          ${this.tile ? chave(!!d.trancado, "trancado", t("Regras.Trancado"), t("Regras.TrancadoDica")) : ""}` : ""}
       </section>`;
+    }
+    return "";
+  }
+
+  _htmlQuem() {
+    const d = this.dados;
+    return `<section><h2>${t("Regras.Quem")}</h2>
+      <div class="ov-pilulas">${QUEM.map(q => `<button type="button" class="ov-pilula ${d.quem === q ? "ov-on" : ""}" data-quem="${q}">${t(`Quem.${q}`)}</button>`).join("")}</div>
+      ${d.quem === "ator" ? `<div class="ov-campo" style="margin-top:8px"><input type="text" data-geral="ator" data-drop="Actor" value="${esc(d.ator)}" placeholder="${esc(t("Regras.ArrasteAtor"))}" aria-label="${esc(t("Quem.ator"))}">
+        ${d.ator ? `<span style="font-size:12px;color:#a8a1b4">${esc(nomeDoc(d.ator))}</span>` : ""}</div>` : ""}</section>`;
+  }
+
+  // A prévia do editor imita a profundidade do mapa
+  _estiloPrevia() {
+    const p = this.dados.prof;
+    if (!p) return "";
+    const s = Number(p.sombra) || 0, a = Number(p.altura) || 0, i = Number(p.incl) || 0;
+    return `transform: perspective(500px) rotateX(${i}deg) translateY(${-a}px); transform-origin: 50% 90%;`
+      + (s ? ` filter: drop-shadow(${Math.round(a * 0.5 + 3)}px ${Math.round(a + 5)}px ${Math.round(2 + s / 15)}px rgba(0,0,0,${(s / 100 * 0.85).toFixed(2)}));` : "");
+  }
+
+  // Mostra no mapa, ao vivo, a profundidade que está sendo escolhida
+  _previaNoMapa() {
+    if (!this.tile) return;
+    const tile = this.doc.object;
+    if (!tile) return;
+    tile._ovPrevia = clone(this.dados.prof ?? profPadrao("plano"));
+    aplicarProfundidade(tile);
+    const img = this.element?.querySelector(".ov-previa");
+    if (img) img.setAttribute("style", this._estiloPrevia());
+  }
+
+  async close(opcoes) {
+    const tile = this.tile ? this.doc.object : null;
+    if (tile) { delete tile._ovPrevia; aplicarProfundidade(tile); }
+    return super.close(opcoes);
   }
 
   _htmlAcao(a, i) {
@@ -889,6 +1069,18 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
   _aoDigitar(ev, valor, mudou = false) {
     const alvo = ev.target, d = this.dados;
     if (alvo.dataset.geral) { d[alvo.dataset.geral] = valor(alvo); return; }
+    if (alvo.dataset.prof) {
+      d.prof ??= profPadrao("plano");
+      d.prof[alvo.dataset.prof] = Number(alvo.value) || 0;
+      if (d.prof.preset) {
+        d.prof.preset = "";
+        this.element?.querySelectorAll("[data-prof-preset]").forEach(b => b.classList.remove("ov-on"));
+      }
+      const rotulo = alvo.nextElementSibling;
+      if (rotulo) rotulo.textContent = `${alvo.value}${alvo.dataset.prof === "incl" ? "°" : ""}`;
+      this._previaNoMapa();
+      return;
+    }
     if (alvo.dataset.estado) {
       const i = Number(alvo.closest("[data-e]").dataset.e);
       d.estados[i][alvo.dataset.estado] = alvo.value;
@@ -935,7 +1127,13 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
     if (ds.interacao) { d.interacao = ds.interacao; return this.render(); }
     if (ds.quem) { d.quem = ds.quem; return this.render(); }
     if (ds.momento) { this.momento = ds.momento; return this.render(); }
+    if (ds.profPreset) {
+      d.prof = { ...profPadrao(ds.profPreset), parallax: d.prof?.parallax ?? ds.profPreset !== "plano" };
+      this.render();
+      return this._previaNoMapa();
+    }
     if (ds.chave) {
+      if (ds.chave === "parallax") { d.prof ??= profPadrao("plano"); d.prof.parallax = !d.prof.parallax; this.render(); return this._previaNoMapa(); }
       if (ds.chave === "voltar") d.voltar = d.voltar > 0 ? 0 : 3;
       else d[ds.chave] = !(d[ds.chave] ?? (ds.chave === "mao" || ds.chave === "brilho"));
       return this.render();
@@ -958,6 +1156,8 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
     switch (ds.a) {
       case "salvar": return this._salvar();
       case "cancelar": return this.close();
+      case "mais": this.mais = !this.mais; break;
+      case "biblioteca": return salvarNaBiblioteca(this.doc, this.dados);
       case "testar":
         this.previa = (this.previa + 1) % d.estados.length;
         this.render();
@@ -1040,6 +1240,162 @@ function abrirEditor(doc) {
   new EditorObjeto(doc).render({ force: true });
 }
 
+// Criar um objeto no mapa: de um modelo pronto, de uma imagem do mestre ou de "Meus objetos"
+async function tamanhoDaImagem(src, gs) {
+  try {
+    const carregar = foundry.canvas?.loadTexture ?? globalThis.loadTexture;
+    const tex = await carregar(src);
+    const w = tex?.width || gs, h = tex?.height || gs;
+    const escala = (gs * 1.5) / Math.max(w, h);
+    return { w: Math.round(w * escala), h: Math.round(h * escala) };
+  } catch { return { w: gs, h: gs }; }
+}
+
+async function criarObjeto({ preset = null, img = null, salvo = null, x = null, y = null } = {}) {
+  if (!game.user.isGM) return;
+  const cena = canvas.scene;
+  if (!cena) return ui.notifications.warn(t("Bib.SemMapa"));
+  const gs = canvas.dimensions.size;
+  let cfg, w = gs, h = gs;
+  if (salvo) {
+    cfg = clone(salvo.cfg);
+    cfg.estado = 0; cfg.usados = 0;
+    w = Math.round((salvo.w || 1) * gs); h = Math.round((salvo.h || 1) * gs);
+  } else if (img) {
+    cfg = padrao(null, "livre", img);
+    cfg.nome = decodeURIComponent(img.split("/").pop().replace(/\.[a-z0-9]+$/i, "")).replace(/[-_]+/g, " ");
+    ({ w, h } = await tamanhoDaImagem(img, gs));
+  } else cfg = padrao(null, preset ?? "alavanca");
+  const src = cfg.estados?.[0]?.img;
+  if (!src) return;
+  // Onde: no ponto em que soltou ou no centro da tela; modelos de 1 casa encaixam no quadriculado
+  const cx = x ?? canvas.stage.pivot.x, cy = y ?? canvas.stage.pivot.y;
+  let tx = cx - w / 2, ty = cy - h / 2;
+  if (w % gs === 0 && h % gs === 0) { tx = Math.floor((tx + gs / 2) / gs) * gs; ty = Math.floor((ty + gs / 2) / gs) * gs; }
+  const [doc] = await cena.createEmbeddedDocuments("Tile", [{
+    texture: { src }, x: tx, y: ty, width: w, height: h,
+    flags: { [ID]: { objeto: cfg } }
+  }]);
+  if (doc) abrirEditor(doc);
+  return doc;
+}
+
+function escolherImagem() {
+  const FP = foundry.applications.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
+  new FP({ type: "image", callback: caminho => criarObjeto({ img: caminho }) }).render(true);
+}
+
+// "Meus objetos": objetos que o mestre salvou para reaproveitar em qualquer mapa
+const meusObjetos = () => game.settings.get(ID, "biblioteca") ?? [];
+async function salvarNaBiblioteca(doc, dados) {
+  const gs = doc.parent?.dimensions?.size ?? canvas.dimensions.size;
+  const cfg = clone(dados);
+  cfg.estado = 0; cfg.usados = 0;
+  // Portas, objetos e regiões escolhidos nas ações são deste mapa; em outro mapa não valeriam
+  for (const lista of Object.values(cfg.acoes ?? {})) for (const a of lista ?? []) {
+    if (Array.isArray(a.portas)) a.portas = [];
+    if (Array.isArray(a.alvos)) a.alvos = [];
+    if (a.tipo === "camera") a.regiao = "";
+  }
+  const nome = (cfg.nome || nomeObjeto(doc)).trim();
+  const lista = meusObjetos().filter(o => o.nome !== nome);
+  lista.unshift({ id: novoId(), nome, img: cfg.estados?.[0]?.img ?? doc.texture?.src ?? "", w: doc.width / gs, h: doc.height / gs, cfg });
+  await game.settings.set(ID, "biblioteca", lista);
+  ui.notifications.info(t("Bib.Salvo", { objeto: nome }));
+  foundry.applications.instances?.get?.(`${ID}-biblioteca`)?.render();
+}
+
+class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
+  static DEFAULT_OPTIONS = {
+    id: `${ID}-biblioteca`,
+    classes: ["ov-biblioteca"],
+    position: { width: 340, height: 600, left: 120, top: 70 },
+    window: { icon: "fa-solid fa-cube", resizable: true }
+  };
+  aba = "prontos";
+
+  get title() { return t("Bib.Titulo"); }
+
+  async _renderHTML() {
+    const meus = meusObjetos();
+    const div = document.createElement("div");
+    div.className = "ov-bib";
+    const corpo = this.aba === "prontos"
+      ? `<div class="ov-bib-grade">${PRONTOS.map(p => `<button type="button" class="ov-bib-item" draggable="true" data-preset="${p}">
+          <img src="${imgPreset(p, 0)}" alt=""><b>${t(`Preset.${p}.Nome`)}</b><span>${t(`Preset.${p}.Desc`)}</span></button>`).join("")}</div>`
+      : meus.length
+        ? meus.map(o => `<div class="ov-bib-linha" draggable="true" data-salvo="${o.id}" role="button" tabindex="0">
+            <img src="${esc(o.img)}" alt=""><span class="ov-txt"><b>${esc(o.nome)}</b><span>${esc(t(`Uso.${o.cfg?.interacao ?? "clicar"}.Resumo`))}</span></span>
+            <button type="button" class="ov-btn ov-icone ov-perigo" data-apagar="${o.id}" aria-label="${esc(t("Editor.Remover"))}">${icone("fa-trash")}</button></div>`).join("")
+        : `<p class="ov-vazio">${t("Bib.MeusVazio")}</p>`;
+    div.innerHTML = `<div class="ov-bib-topo">
+        <button type="button" class="ov-minha" data-a="imagem">${icone("fa-image")}<span><b>${t("Bib.Minha")}</b><span>${t("Bib.MinhaDica")}</span></span></button>
+        <div class="ov-bib-abas" role="tablist">
+          <button type="button" role="tab" class="ov-bib-aba ${this.aba === "prontos" ? "ov-on" : ""}" data-aba="prontos">${t("Bib.Prontos")}</button>
+          <button type="button" role="tab" class="ov-bib-aba ${this.aba === "meus" ? "ov-on" : ""}" data-aba="meus">${t("Bib.Meus")} (${meus.length})</button>
+        </div></div>
+      <div class="ov-bib-corpo">${corpo}</div>
+      <p class="ov-bib-dica">${t("Bib.Dica")}</p>`;
+    return div;
+  }
+
+  _replaceHTML(result, content) { content.replaceChildren(result); }
+
+  _onFirstRender() {
+    injetarEstilo();
+    const el = this.element;
+    el.addEventListener("click", async ev => {
+      const alvo = ev.target.closest("[data-a], [data-aba], [data-preset], [data-salvo], [data-apagar]");
+      if (!alvo) return;
+      ev.preventDefault();
+      const ds = alvo.dataset;
+      if (ds.apagar) {
+        ev.stopPropagation();
+        const ok = await foundry.applications.api.DialogV2.confirm({ window: { title: t("Bib.Meus") }, content: `<p>${t("Bib.ApagarPergunta")}</p>`, rejectClose: false });
+        if (ok) { await game.settings.set(ID, "biblioteca", meusObjetos().filter(o => o.id !== ds.apagar)); this.render(); }
+        return;
+      }
+      if (ds.a === "imagem") return escolherImagem();
+      if (ds.aba) { this.aba = ds.aba; return this.render(); }
+      if (ds.preset) return criarObjeto({ preset: ds.preset });
+      if (ds.salvo) { const o = meusObjetos().find(x => x.id === ds.salvo); if (o) criarObjeto({ salvo: o }); }
+    });
+    el.addEventListener("dragstart", ev => {
+      const item = ev.target.closest?.("[data-preset], [data-salvo]");
+      if (!item) return;
+      const dados = { type: "ObjetoVivo", preset: item.dataset.preset ?? null, salvo: item.dataset.salvo ?? null };
+      ev.dataTransfer.setData("text/plain", JSON.stringify(dados));
+    });
+  }
+}
+
+function abrirBiblioteca() {
+  if (!game.user.isGM) return;
+  injetarEstilo();
+  const existente = foundry.applications.instances?.get?.(`${ID}-biblioteca`);
+  if (existente) return existente.render({ force: true });
+  new BibliotecaObjetos().render({ force: true });
+}
+
+// Botão "Objetos Vivos" na barra de ferramentas da esquerda (só para o mestre)
+function botaoNaBarra(controles) {
+  if (!game.user.isGM) return;
+  const ferramentas = {
+    select: { name: "select", order: 1, title: "OV.Controle.Editar", icon: "fa-solid fa-hand-pointer" },
+    biblioteca: { name: "biblioteca", order: 2, title: "OV.Controle.Biblioteca", icon: "fa-solid fa-shapes", button: true, onChange: () => abrirBiblioteca() },
+    imagem: { name: "imagem", order: 3, title: "OV.Controle.Imagem", icon: "fa-solid fa-image", button: true, onChange: () => escolherImagem() }
+  };
+  const base = { name: CONTROLE, title: "OV.Controle.Titulo", icon: "fa-solid fa-cube", layer: "tiles", visible: true, activeTool: "select" };
+  if (Array.isArray(controles)) {
+    controles.push({ ...base, tools: Object.values(ferramentas).map(f => ({ ...f, onClick: f.onChange })) });
+    return;
+  }
+  controles[CONTROLE] = {
+    ...base, order: (controles.tiles?.order ?? 3) + 0.5, tools: ferramentas,
+    onChange: (ev, ativo) => { if (ativo) abrirBiblioteca(); }
+  };
+}
+
 // Seção "Objeto Vivo" na configuração de tiles e paredes
 function resumoSecao(doc) {
   const c = cfgDe(doc);
@@ -1108,19 +1464,36 @@ function botoesHud(hud, html) {
 }
 
 // Registro
-Hooks.once("init", () => injetarEstilo());
+Hooks.once("init", () => {
+  injetarEstilo();
+  game.settings.register(ID, "biblioteca", { scope: "world", config: false, type: Array, default: [] });
+});
 
+Hooks.on("getSceneControlButtons", botaoNaBarra);
 Hooks.on("renderTileConfig", injetarSecao);
 Hooks.on("renderWallConfig", injetarSecao);
 Hooks.on("renderTileHUD", botoesHud);
 
-Hooks.on("canvasReady", () => { ligarMapa(); lembrarPosicoes(canvas.scene); atualizarBrilho(); });
+// Arrastar da biblioteca para o mapa
+Hooks.on("dropCanvasData", (_canvas, dados) => {
+  if (dados?.type !== "ObjetoVivo" || !game.user.isGM) return;
+  const salvo = dados.salvo ? meusObjetos().find(o => o.id === dados.salvo) : null;
+  criarObjeto({ preset: dados.preset, salvo, x: dados.x, y: dados.y });
+  return false;
+});
+
+// Profundidade: reaplica sempre que o Foundry redesenha o tile ou a câmera anda
+Hooks.on("refreshTile", tile => { if (tile._ovSombra || profDe(tile)) aplicarProfundidade(tile); });
+Hooks.on("canvasPan", () => atualizarProfundidades());
+
+Hooks.on("canvasReady", () => { ligarMapa(); lembrarPosicoes(canvas.scene); atualizarBrilho(); atualizarProfundidades(); });
 Hooks.on("createToken", tk => posicoes.set(tk.uuid, centroToken(tk)));
 Hooks.on("deleteToken", tk => posicoes.delete(tk.uuid));
 Hooks.on("updateToken", aoMoverToken);
 Hooks.on("controlToken", () => atualizarBrilho());
 Hooks.on("updateTile", (doc, mud) => {
   if (doc.parent?.id !== canvas.scene?.id) return;
+  if (foundry.utils.hasProperty(mud, `flags.${ID}`)) aplicarProfundidade(doc.object);
   if (foundry.utils.hasProperty(mud, `flags.${ID}.objeto.estado`)) animar(doc.object, cfgDe(doc)?.anim);
   atualizarBrilho();
 });
@@ -1155,6 +1528,8 @@ Hooks.once("ready", () => {
 
   // API para macros e outros módulos
   game.modules.get(ID).api = {
+    biblioteca: () => abrirBiblioteca(),
+    criar: (opcoes = {}) => criarObjeto(opcoes),
     editar: async uuid => abrirEditor(await fromUuid(uuid)),
     usar: async (uuid, tokenUuid = null) => { const d = await fromUuid(uuid); if (d && ehObjeto(d)) pedirUso(d, tokenUuid); },
     mudarEstado: async (uuid, indice) => { if (!game.user.isGM) return; const d = await fromUuid(uuid); if (cfgDe(d)) mudarEstado(d, indice, { cena: d.parent, token: null, userId: game.user.id, fonte: d, profundidade: 0 }); },

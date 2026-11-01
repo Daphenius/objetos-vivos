@@ -18,9 +18,9 @@
       "Pressionada": "Pressed",
       "Apagada": "Dark",
       "Acesa": "Lit",
-      "Estado1": "State 1",
-      "Estado2": "State 2",
-      "Novo": "State {n}"
+      "Estado1": "Normal",
+      "Estado2": "Used",
+      "Novo": "Look {n}"
     },
     "Preset": {
       "alavanca": {
@@ -41,7 +41,7 @@
       },
       "runa": {
         "Nome": "Rune / crystal",
-        "Desc": "Lights up and goes dark"
+        "Desc": "Lights up when someone comes close"
       },
       "livre": {
         "Nome": "Custom",
@@ -58,7 +58,7 @@
     },
     "Mom": {
       "AoFicar": "When it becomes: {estado}",
-      "sempreTile": "Whenever it changes",
+      "sempreTile": "Every time it is used",
       "sempreParede": "Always (open, close, lock...)",
       "abrir": "When opens",
       "fechar": "When closes",
@@ -68,8 +68,8 @@
       "atravessar": "When someone walks through"
     },
     "Aba": {
-      "Aparencia": "Appearance",
-      "Uso": "How players use it",
+      "Aparencia": "Look",
+      "Uso": "How to use",
       "Acoes": "What happens",
       "Regras": "Rules"
     },
@@ -78,19 +78,19 @@
       "Etapas": "Steps",
       "Cancelar": "Cancel",
       "Salvar": "Save object",
-      "ResumoTile": "{estados} states · {n} action(s) · {uso}",
+      "ResumoTile": "{estados} looks · {n} action(s) · {uso}",
       "ResumoParede": "{n} action(s)",
       "PortaDica": "The door still opens and closes the normal Foundry way. Here you choose what else happens at each moment.",
       "ParedeDica": "A plain wall only has the \"When someone walks through\" moment. Tip: a wall that doesn't block movement becomes an invisible tripwire.",
-      "Testar": "Test: change state",
+      "Testar": "Test: switch look",
       "Nome": "Name",
-      "Estados": "Object states",
-      "NomeEstado": "State name",
-      "ImagemEstado": "Image for this state",
+      "Estados": "How it can look",
+      "NomeEstado": "Look name",
+      "ImagemEstado": "Image for this look",
       "Escolher": "Browse",
-      "Inicial": "Initial state",
-      "RemoverEstado": "Remove state",
-      "AdicionarEstado": "Add state",
+      "Inicial": "How it starts on the map",
+      "RemoverEstado": "Remove look",
+      "AdicionarEstado": "Add another look",
       "Arquivo": "file path",
       "Ouvir": "Listen",
       "Subir": "Move up",
@@ -102,13 +102,13 @@
     "Aparencia": {
       "Titulo": "What is this object?",
       "Dica": "Pick a template. It comes with states, animation and how it's used, and you can change anything.",
-      "Anim": "How it moves when it changes state",
-      "AnimDica": "Besides the animation, each state can have its own image (on the left). Click \"Test\" to see it.",
-      "Som": "Sound when it changes state",
-      "SomDica": "Plays for everyone on this map whenever the object changes state."
+      "Anim": "Movement when the look changes",
+      "AnimDica": "Each look can have its own image (on the left). Click \"Test\" to see it.",
+      "Som": "Sound when the look changes",
+      "SomDica": "Plays for everyone on this map whenever the object changes its look."
     },
     "Uso": {
-      "Titulo": "How do players use the object?",
+      "Titulo": "Players use this object…",
       "clicar": {
         "Nome": "Click the object",
         "Desc": "The player clicks it on the map",
@@ -137,7 +137,7 @@
       "MaoDica": "Shows the object can be used",
       "Brilho": "Glow when someone is close",
       "BrilhoDica": "A pulsing outline when the player's token is in reach",
-      "MestreDica": "The GM uses any object with Alt+click on the map, or with the button on the tile HUD."
+      "MestreDica": "You, the GM, use any object with a plain click on the token layer, just like players. To edit, open the Living Objects tool on the left bar and click the object."
     },
     "Acoes": {
       "Titulo": "What happens",
@@ -152,10 +152,10 @@
       "Usos": "How many times it can be used",
       "UsosDica": "After that the object stops responding. Used {n}x so far.",
       "Zerar": "Reset count",
-      "Voltar": "Springs back to the initial state",
+      "Voltar": "Goes back to its first look by itself",
       "VoltarDica": "Like a button or a pressure plate",
       "VoltarTempo": "Time to spring back",
-      "VoltarTempoDica": "After this time the object returns to state 1",
+      "VoltarTempoDica": "After this time the object goes back to how it started",
       "Confirmar": "Ask the GM to confirm",
       "ConfirmarDica": "The GM approves before the actions happen",
       "Trancado": "Locked",
@@ -188,8 +188,8 @@
       "alternar": "Toggle",
       "mostrar": "Show",
       "esconder": "Hide",
-      "proximo": "Go to the next state",
-      "inicial": "Back to the initial state",
+      "proximo": "Switch to the next look",
+      "inicial": "Go back to the first look",
       "narrador": "Narration (everyone sees)",
       "sussurro": "Whisper to whoever used it",
       "soMestre": "GM only",
@@ -282,15 +282,15 @@
     "Secao": {
       "NaoETile": "This tile is not a living object yet.",
       "NaoEParede": "This wall has no actions yet.",
-      "ResumoTile": "Current state: {estado} · {n} action(s) · {uso}",
+      "ResumoTile": "Now: {estado} · {n} action(s) · {uso}",
       "ResumoParede": "{n} action(s) set up",
       "Transformar": "Make it a living object",
       "Editar": "Edit living object",
       "Remover": "Remove living object",
-      "RemoverPergunta": "Remove the living object? Its states and actions will be lost (the tile or wall stays on the map)."
+      "RemoverPergunta": "Remove the living object? Its looks and actions will be lost (the tile or wall stays on the map)."
     },
     "Hud": {
-      "Alternar": "Change state (GM test)"
+      "Alternar": "Switch look (GM test)"
     },
     "Aviso": {
       "SalvePrimeiro": "Save the tile or wall first.",
@@ -301,6 +301,42 @@
       "Confirmar": "<strong>{quem}</strong> wants to use <strong>{objeto}</strong>. Allow?",
       "ErroAcao": "\"{objeto}\": the \"{acao}\" action failed. Check the console (F12).",
       "SemNavegador": "\"Move to another map\" needs the World Navigator module active."
+    },
+    "Bib": {
+      "Titulo": "Living Objects",
+      "Minha": "Use one of my images",
+      "MinhaDica": "The image becomes an object with depth on the map",
+      "Prontos": "Ready-made",
+      "Meus": "My objects",
+      "MeusVazio": "Objects you build and save with \"Save to library\" show up here, ready to use on any map.",
+      "Dica": "Click to place it in the middle of the screen, or drag it to the right spot on the map.",
+      "ApagarPergunta": "Remove this object from \"My objects\"? The ones already on maps stay there.",
+      "Salvar": "Save to library",
+      "SalvarDica": "Keeps this object in \"My objects\" to use on other maps. Doors and objects picked in the actions are left out, since they belong to this map.",
+      "Salvo": "\"{objeto}\" saved to My objects.",
+      "SemMapa": "Open a map first."
+    },
+    "Controle": {
+      "Titulo": "Living Objects",
+      "Editar": "Click an object to edit it",
+      "Biblioteca": "Object library",
+      "Imagem": "Use one of my images"
+    },
+    "Prof": {
+      "Titulo": "Depth (3D effect)",
+      "Dica": "Makes the object \"pop\" off the map with shadow, height and tilt. Your changes show on the map right away.",
+      "plano": "Flat",
+      "leve": "Light",
+      "medio": "Medium",
+      "alto": "High",
+      "sombra": "Shadow",
+      "altura": "Height",
+      "incl": "Tilt",
+      "Parallax": "Move slightly with the camera",
+      "ParallaxDica": "When the camera moves, the object shifts a little, as if it were closer"
+    },
+    "Mais": {
+      "Titulo": "More options (uses, confirmation, locked)"
     }
   }
 }

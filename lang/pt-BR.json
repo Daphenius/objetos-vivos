@@ -18,9 +18,9 @@
       "Pressionada": "Pressionada",
       "Apagada": "Apagada",
       "Acesa": "Acesa",
-      "Estado1": "Estado 1",
-      "Estado2": "Estado 2",
-      "Novo": "Estado {n}"
+      "Estado1": "Normal",
+      "Estado2": "Usado",
+      "Novo": "Aparência {n}"
     },
     "Preset": {
       "alavanca": {
@@ -41,7 +41,7 @@
       },
       "runa": {
         "Nome": "Runa / cristal",
-        "Desc": "Acende e apaga"
+        "Desc": "Acende quando chegam perto"
       },
       "livre": {
         "Nome": "Personalizado",
@@ -57,8 +57,8 @@
       "sumir": "Piscar"
     },
     "Mom": {
-      "AoFicar": "Ao ficar: {estado}",
-      "sempreTile": "Sempre que mudar",
+      "AoFicar": "Quando ficar: {estado}",
+      "sempreTile": "Sempre que for usado",
       "sempreParede": "Sempre (abrir, fechar, trancar...)",
       "abrir": "Ao abrir",
       "fechar": "Ao fechar",
@@ -69,7 +69,7 @@
     },
     "Aba": {
       "Aparencia": "Aparência",
-      "Uso": "Como o jogador usa",
+      "Uso": "Como usar",
       "Acoes": "O que acontece",
       "Regras": "Regras"
     },
@@ -78,19 +78,19 @@
       "Etapas": "Etapas",
       "Cancelar": "Cancelar",
       "Salvar": "Salvar objeto",
-      "ResumoTile": "{estados} estados · {n} ação(ões) · {uso}",
+      "ResumoTile": "{estados} aparências · {n} ação(ões) · {uso}",
       "ResumoParede": "{n} ação(ões)",
       "PortaDica": "A porta continua sendo aberta e fechada do jeito normal do Foundry. Aqui você escolhe o que mais acontece em cada momento.",
       "ParedeDica": "Uma parede comum só tem o momento \"Ao alguém atravessar\". Dica: uma parede que não bloqueia movimento vira um fio de armadilha invisível.",
-      "Testar": "Testar: mudar de estado",
+      "Testar": "Testar: trocar a aparência",
       "Nome": "Nome",
-      "Estados": "Estados do objeto",
-      "NomeEstado": "Nome do estado",
-      "ImagemEstado": "Imagem deste estado",
+      "Estados": "Como ele pode ficar",
+      "NomeEstado": "Nome da aparência",
+      "ImagemEstado": "Imagem desta aparência",
       "Escolher": "Escolher",
-      "Inicial": "Estado inicial",
-      "RemoverEstado": "Remover estado",
-      "AdicionarEstado": "Adicionar estado",
+      "Inicial": "Como começa no mapa",
+      "RemoverEstado": "Remover aparência",
+      "AdicionarEstado": "Adicionar outra aparência",
       "Arquivo": "caminho do arquivo",
       "Ouvir": "Ouvir",
       "Subir": "Subir",
@@ -102,13 +102,13 @@
     "Aparencia": {
       "Titulo": "O que é este objeto?",
       "Dica": "Escolha um modelo. Ele já vem com estados, animação e jeito de usar prontos, e você muda o que quiser.",
-      "Anim": "Como ele se mexe ao mudar de estado",
-      "AnimDica": "Além da animação, cada estado pode ter sua própria imagem (à esquerda). Clique em \"Testar\" para ver.",
-      "Som": "Som ao mudar de estado",
-      "SomDica": "Toca para todos que estão neste mapa sempre que o objeto muda de estado."
+      "Anim": "Movimento ao trocar de aparência",
+      "AnimDica": "Cada aparência pode ter sua própria imagem (à esquerda). Clique em \"Testar\" para ver.",
+      "Som": "Som ao trocar de aparência",
+      "SomDica": "Toca para todos que estão neste mapa sempre que o objeto troca de aparência."
     },
     "Uso": {
-      "Titulo": "Como o jogador usa o objeto?",
+      "Titulo": "Os jogadores usam este objeto…",
       "clicar": {
         "Nome": "Clicar no objeto",
         "Desc": "O jogador clica nele no mapa",
@@ -137,7 +137,7 @@
       "MaoDica": "Mostra que o objeto pode ser usado",
       "Brilho": "Brilho quando alguém está perto",
       "BrilhoDica": "Um contorno que pulsa quando o token do jogador está no alcance",
-      "MestreDica": "O mestre usa qualquer objeto com Alt+clique no mapa, ou pelo botão no HUD do tile."
+      "MestreDica": "Você, mestre, usa qualquer objeto com um clique simples na camada de tokens, como os jogadores. Para editar, abra a ferramenta Objetos Vivos na barra da esquerda e clique no objeto."
     },
     "Acoes": {
       "Titulo": "O que acontece",
@@ -152,10 +152,10 @@
       "Usos": "Quantas vezes pode ser usado",
       "UsosDica": "Depois disso o objeto para de responder. Já usado {n}x.",
       "Zerar": "Zerar contagem",
-      "Voltar": "Volta sozinho ao estado inicial",
+      "Voltar": "Volta sozinho à primeira aparência",
       "VoltarDica": "Como um botão ou uma placa de pressão",
       "VoltarTempo": "Tempo para voltar",
-      "VoltarTempoDica": "Depois desse tempo o objeto volta ao estado 1",
+      "VoltarTempoDica": "Depois desse tempo o objeto volta a como começou",
       "Confirmar": "Pedir confirmação ao mestre",
       "ConfirmarDica": "O mestre aprova antes de as ações acontecerem",
       "Trancado": "Trancado",
@@ -188,8 +188,8 @@
       "alternar": "Alternar",
       "mostrar": "Mostrar",
       "esconder": "Esconder",
-      "proximo": "Mudar para o próximo estado",
-      "inicial": "Voltar ao estado inicial",
+      "proximo": "Trocar para a próxima aparência",
+      "inicial": "Voltar à primeira aparência",
       "narrador": "Narração (todos veem)",
       "sussurro": "Sussurro para quem usou",
       "soMestre": "Só para o mestre",
@@ -282,15 +282,15 @@
     "Secao": {
       "NaoETile": "Este tile ainda não é um objeto vivo.",
       "NaoEParede": "Esta parede ainda não tem ações.",
-      "ResumoTile": "Estado atual: {estado} · {n} ação(ões) · {uso}",
+      "ResumoTile": "Agora: {estado} · {n} ação(ões) · {uso}",
       "ResumoParede": "{n} ação(ões) configurada(s)",
       "Transformar": "Transformar em objeto vivo",
       "Editar": "Editar objeto vivo",
       "Remover": "Remover objeto vivo",
-      "RemoverPergunta": "Remover o objeto vivo? Os estados e as ações configuradas serão perdidos (o tile ou a parede continua no mapa)."
+      "RemoverPergunta": "Remover o objeto vivo? As aparências e as ações configuradas serão perdidas (o tile ou a parede continua no mapa)."
     },
     "Hud": {
-      "Alternar": "Mudar de estado (teste do mestre)"
+      "Alternar": "Trocar a aparência (teste do mestre)"
     },
     "Aviso": {
       "SalvePrimeiro": "Salve o tile ou a parede primeiro.",
@@ -301,6 +301,42 @@
       "Confirmar": "<strong>{quem}</strong> quer usar <strong>{objeto}</strong>. Deixar?",
       "ErroAcao": "\"{objeto}\": a ação \"{acao}\" falhou. Veja o console (F12).",
       "SemNavegador": "\"Levar a outro mapa\" precisa do módulo Navegador de Mundos ativo."
+    },
+    "Bib": {
+      "Titulo": "Objetos Vivos",
+      "Minha": "Usar uma imagem minha",
+      "MinhaDica": "A imagem vira um objeto com profundidade no mapa",
+      "Prontos": "Prontos",
+      "Meus": "Meus objetos",
+      "MeusVazio": "Aqui ficam os objetos que você montar e salvar com \"Salvar na biblioteca\", prontos para usar em qualquer mapa.",
+      "Dica": "Clique para pôr no centro da tela ou arraste para o lugar certo do mapa.",
+      "ApagarPergunta": "Tirar este objeto de \"Meus objetos\"? Os que já estão nos mapas continuam lá.",
+      "Salvar": "Salvar na biblioteca",
+      "SalvarDica": "Guarda este objeto em \"Meus objetos\" para usar em outros mapas. Portas e objetos escolhidos nas ações ficam de fora, porque são deste mapa.",
+      "Salvo": "\"{objeto}\" salvo em Meus objetos.",
+      "SemMapa": "Abra um mapa primeiro."
+    },
+    "Controle": {
+      "Titulo": "Objetos Vivos",
+      "Editar": "Clicar em um objeto para editar",
+      "Biblioteca": "Biblioteca de objetos",
+      "Imagem": "Usar uma imagem minha"
+    },
+    "Prof": {
+      "Titulo": "Profundidade (efeito 3D)",
+      "Dica": "Faz o objeto \"saltar\" do mapa com sombra, altura e inclinação. O que você muda já aparece no mapa.",
+      "plano": "Plano",
+      "leve": "Leve",
+      "medio": "Médio",
+      "alto": "Alto",
+      "sombra": "Sombra",
+      "altura": "Altura",
+      "incl": "Inclinação",
+      "Parallax": "Mexer de leve com a câmera",
+      "ParallaxDica": "Quando a câmera anda, o objeto se desloca um pouco, como se estivesse mais perto"
+    },
+    "Mais": {
+      "Titulo": "Mais opções (usos, confirmação, trancado)"
     }
   }
 }

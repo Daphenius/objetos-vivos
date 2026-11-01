@@ -13,7 +13,7 @@ Se encontrar bugs ou tiver sugestões, abra uma issue. Todo retorno é bem-vindo
 
 ---
 
-Transforme tiles e assets do **Foundry VTT** em **objetos vivos**: alavancas que descem, botões que voltam sozinhos, baús que abrem, placas de pressão, runas que acendem. Cada objeto tem **estados** (com uma imagem para cada um), uma **animação** ao mudar e uma lista de **ações** para cada momento. Portas e paredes do Foundry também podem ter ações.
+Coloque no mapa do **Foundry VTT** objetos que os jogadores podem usar: alavancas que descem, botões que voltam sozinhos, baús que abrem, placas de pressão, runas que acendem, ou **qualquer imagem sua**. Cada objeto ganha **profundidade** (sombra, altura e inclinação, como se saltasse do mapa), **aparências** que trocam quando ele é usado e uma lista do **que acontece** em cada momento. Portas e paredes do Foundry também podem ter ações.
 
 > **Testado no Foundry VTT v14 com o sistema D&D 5e**, nas minhas próprias sessões.
 > Textos em português (Brasil) e inglês.
@@ -28,22 +28,32 @@ https://github.com/Daphenius/objetos-vivos/releases/latest/download/module.json
 
 Depois, ative o módulo no mundo em **Gerenciar Módulos**.
 
-## Como criar um objeto
+## Como colocar um objeto no mapa
 
-1. Coloque no mapa o tile ou asset que vai virar objeto (a alavanca, o baú...).
-2. Abra a configuração dele (clique duplo na camada de Tiles) ou clique com o botão direito e use o botão de varinha no HUD.
-3. Clique em **Transformar em objeto vivo**. O editor abre.
+1. Na barra de ferramentas da esquerda, clique no botão **Objetos Vivos** (ícone de cubo). A **biblioteca** abre.
+2. Escolha um objeto:
+   - **Prontos**: alavanca, botão, baú, placa de pressão e runa, já com as imagens de cada aparência;
+   - **Usar uma imagem minha**: escolha qualquer imagem do seu Foundry e ela vira um objeto com profundidade;
+   - **Meus objetos**: os que você montou e salvou para usar em qualquer mapa.
+3. **Clique** no objeto para colocá-lo no centro da tela, ou **arraste** para o lugar certo do mapa.
 
-O editor tem quatro etapas:
+O editor abre sozinho. Ele tem três passos:
 
-| Etapa | O que você escolhe |
+| Passo | O que você escolhe |
 |---|---|
-| **Aparência** | Um modelo (alavanca, botão, baú, placa de pressão, runa ou personalizado), a animação (girar, deslizar, virar, pulsar, piscar) e o som ao mudar |
-| **Como o jogador usa** | Clicar no objeto, pisar em cima, chegar perto ou só o mestre aciona; a distância; a mãozinha e o brilho quando alguém está perto |
-| **O que acontece** | As ações para cada estado ("Ao ficar: Ligada", "Ao ficar: Desligada") e para "Sempre que mudar" |
-| **Regras** | Quem pode usar, limite de usos, voltar sozinho ao estado inicial, confirmação do mestre e trancado |
+| **Aparência** | Profundidade (Plano, Leve, Médio, Alto, ou ajuste sombra, altura e inclinação), se o objeto mexe de leve quando a câmera anda, o movimento ao trocar de aparência e o som |
+| **Como usar** | Clicando, pisando em cima, chegando perto ou só o mestre; a distância; quem pode usar; se volta sozinho; a mãozinha e o brilho |
+| **O que acontece** | As ações para cada aparência ("Quando ficar: Ligada") e para "Sempre que for usado". Em **Mais opções**: limite de usos, confirmação do mestre e trancado |
 
-À esquerda ficam os **estados**: dê um nome e uma imagem para cada um (por exemplo `alavanca-cima.webp` e `alavanca-baixo.webp`). O botão **Testar** mostra a troca com a animação.
+À esquerda do editor ficam as **aparências** (por exemplo Desligada e Ligada), cada uma com nome e imagem. O botão **Testar** mostra a troca. Tudo o que você muda na profundidade aparece no mapa na hora.
+
+O botão **Salvar na biblioteca** guarda o objeto em **Meus objetos**. Portas e objetos escolhidos nas ações ficam de fora, porque pertencem ao mapa onde foram escolhidos.
+
+## Como usar no jogo
+
+- **Jogadores**: clicam no objeto (a mãozinha aparece, e ele brilha quando o token está perto o bastante), pisam em cima ou chegam perto, conforme você configurou.
+- **Mestre**: na camada de **tokens**, um clique simples usa o objeto, como os jogadores. Para **editar**, abra a ferramenta Objetos Vivos e clique no objeto.
+- Um tile já existente também pode virar objeto: abra a configuração dele, ou o HUD (clique direito), e use **Transformar em objeto vivo**.
 
 ## Portas e paredes
 
@@ -73,7 +83,7 @@ As ações são executadas pelo mestre conectado. Sem mestre online, os objetos 
 
 ## Dicas
 
-- O mestre usa qualquer objeto com **Alt+clique** no mapa (um clique normal continua editando o mapa), ou pelo botão de setas no HUD do tile.
+- O botão de setas no HUD do tile troca a aparência na hora, sem conferir distância nem regras (bom para testar).
 - Um tile **escondido** não pode ser usado pelos jogadores. Esconda e mostre objetos com a ação "Mostrar / esconder" para revelar alavancas secretas.
 - Para um objeto "invisível" que reage quando alguém pisa, use um tile com imagem transparente e "Pisar em cima".
 
@@ -81,9 +91,11 @@ As ações são executadas pelo mestre conectado. Sem mestre online, os objetos 
 
 ```js
 const api = game.modules.get("objetos-vivos").api;
+api.biblioteca();                 // abre a biblioteca
+api.criar({ preset: "bau", x, y }); // coloca um objeto pronto (ou { img: "caminho" }) no mapa
 api.editar(uuid);                 // abre o editor do objeto (tile ou parede)
 api.usar(uuid, tokenUuid);        // usa o objeto, como se o jogador tivesse clicado
-api.mudarEstado(uuid, indice);    // vai direto para um estado (0 = inicial)
+api.mudarEstado(uuid, indice);    // vai direto para uma aparência (0 = a primeira)
 api.trancar(uuid, true | false);  // tranca ou destranca
 ```
 
@@ -91,7 +103,7 @@ Ganchos (`Hooks`) para outros módulos: `objetosVivos.usado` (objeto usado) e `o
 
 ## English
 
-**Living Objects** *(in testing — not complete yet and may contain many bugs and AI quirks)* turns Foundry VTT tiles and assets into interactive objects (levers, buttons, chests, pressure plates, runes) with states, an image per state, an animation and a list of actions for each moment. Doors and walls can also run actions when they open, close, lock, unlock, are tried while locked, or are walked through. The interface is translated into English. Tested on Foundry VTT v14 with the D&D 5e system.
+**Living Objects** *(in testing — not complete yet and may contain many bugs and AI quirks)* places interactive objects on Foundry VTT maps (levers, buttons, chests, pressure plates, runes or your own images) from a library opened by its own button on the left bar. Objects get depth (shadow, height and tilt), looks that change when used, and a list of actions for each moment. Doors and walls can also run actions when they open, close, lock, unlock, are tried while locked, or are walked through. The interface is translated into English. Tested on Foundry VTT v14 with the D&D 5e system.
 
 ## Licença
 
