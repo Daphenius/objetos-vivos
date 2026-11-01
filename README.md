@@ -35,6 +35,7 @@ Depois, ative o módulo no mundo em **Gerenciar Módulos**.
    - **Prontos**: alavanca, botão, baú, placa de pressão e runa, já com as imagens de cada aparência;
    - **Usar uma imagem minha**: escolha qualquer imagem do seu Foundry e ela vira um objeto com profundidade;
    - **Assets**: escolha a pasta onde você guarda seus assets (itens, móveis, objetos de cena, inclusive os baixados do Forgotten Adventures). Navegue pelas subpastas e busque pelo nome;
+   - **Pacotes do Dungeondraft**: na aba Assets, abra um `.dungeondraft_pack` do seu computador (ou um que esteja na pasta de assets) e use os objetos dele sem extrair nada. Eles aparecem por categoria, com busca no pacote todo, e entram no tamanho certo da grade (256 px do Dungeondraft = 1 casa). Só a imagem que você usa é enviada para o Foundry, numa pasta `objetos-vivos/dungeondraft/<pacote>`;
    - **Meus objetos**: os que você montou e salvou para usar em qualquer mapa.
 3. **Clique** no objeto para **encaixá-lo na cena**: ele segue o mouse e você ajusta antes de colocar. Também dá para **arrastar** direto para o mapa.
 
@@ -57,6 +58,14 @@ O editor abre sozinho. Ele tem três passos:
 À esquerda do editor ficam as **aparências** (por exemplo Desligada e Ligada), cada uma com nome e imagem. O botão **Testar** mostra a troca. Tudo o que você muda na profundidade aparece no mapa na hora.
 
 O botão **Salvar na biblioteca** guarda o objeto em **Meus objetos**. Portas e objetos escolhidos nas ações ficam de fora, porque pertencem ao mapa onde foram escolhidos.
+
+## Camaleão
+
+No passo **Aparência**, ligue **Camuflar no mapa**: para os jogadores, o objeto passa a mostrar a mesma textura do chão ou dos tiles que estão atrás dele. É ideal para placas de pressão, botões e alavancas secretas.
+
+- Você, mestre, continua vendo o objeto meio transparente. O botão **Ver como o jogador vê** mostra a camuflagem na sua tela.
+- **Aparece depois de usado**: quando alguém usa (ou pisa), o objeto se revela para todos. **Esconder de novo** volta a camuflar.
+- Enquanto está camuflado, a profundidade, a mãozinha e o brilho ficam desligados para não entregar onde ele está.
 
 ## Como usar no jogo
 

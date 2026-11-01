@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.2.0
+
+### Novidades
+- **Pacotes do Dungeondraft**: a aba Assets abre arquivos `.dungeondraft_pack` direto, do computador ou da pasta de assets, sem extrair nada. Os objetos aparecem por categoria, com miniaturas e busca no pacote todo. Ao usar um asset, só aquela imagem é enviada para o Foundry, e ele entra no tamanho certo da grade (256 px do Dungeondraft = 1 casa).
+- **Camaleão**: o objeto (uma placa de pressão, um botão) fica com a mesma textura do chão ou dos tiles atrás dele para os jogadores. O mestre vê o objeto meio transparente e pode usar "Ver como o jogador vê". Com "Aparece depois de usado", ele se revela quando alguém usa, e "Esconder de novo" volta a camuflar.
+
 ## v2.1.0
 
 ### Novidades
@@ -14,6 +20,9 @@
 - As imagens das aparências viraram miniaturas com o botão **Trocar imagem**, no lugar do caminho do arquivo.
 - O editor avisa quando todas as aparências têm a mesma imagem (comum ao transformar um tile que já estava no mapa).
 - "Usar uma imagem minha" também aceita vídeos (webm/mp4), como os assets animados.
+
+## v2.0.2
+- **Aviso do libWrapper resolvido de vez**: o Objetos Vivos não mexe mais em nenhuma função do Foundry, nem pelo libWrapper. Ele só "ouve" o clique no ícone da porta para a ação "ao tentar abrir trancada", então nunca mais entra no aviso de conflito com o Arm's Reach ou a Gazua da Mesa. O libWrapper deixou de ser recomendado.
 
 ## v2.0.1
 - Corrigido o aviso do libWrapper ("Objetos Vivos e Gazua da Mesa, Arms Reach modificam a mesma funcionalidade"). O clique em portas voltou a ser registrado pelo libWrapper, agora como ouvinte: o Objetos Vivos só percebe a tentativa de abrir a porta trancada e não bloqueia nenhum outro módulo. Sem o libWrapper, funciona como antes.

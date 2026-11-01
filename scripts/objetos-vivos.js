@@ -344,6 +344,7 @@ async function usarObjeto(doc, { tokenUuid = null, userId = null, forcar = false
   }
   const ctx = { cena, token, userId, fonte: doc, profundidade: 0 };
   await mudarEstado(doc, (c.estado + 1) % c.estados.length, ctx);
+  if (c.camaleao && c.revelarAoUsar && !c.revelado) await doc.setFlag(ID, "objeto.revelado", true);
   Hooks.callAll("objetosVivos.usado", doc, { token, userId });
 }
 
@@ -429,8 +430,98 @@ function novaSombra() {
   return new ClasseSombra();
 }
 
+// Camaleão: para os jogadores o objeto mostra o que está atrás dele (o fundo do mapa e os
+// tiles de baixo). O mestre vê o objeto meio transparente. Só muda o desenho, nunca o documento.
+function camuflado(tile) {
+  const c = tile?._ovPreviaCamo ?? cfgDe(tile?.document);
+  if (!c?.camaleao || c.revelado) return false;
+  return !game.user.isGM || !!tile._ovVerCamo;
+}
+const camoMestre = tile => { const c = tile?._ovPreviaCamo ?? cfgDe(tile?.document); return game.user.isGM && !!c?.camaleao && !c.revelado && !tile._ovVerCamo; };
+
+// Copia o desenho de um objeto do mapa para dentro da imagem do camaleão
+function copiaDoDesenho(mesh, cx, cy) {
+  if (!mesh?.texture || mesh.destroyed || mesh.visible === false) return null;
+  const spr = new PIXI.Sprite(mesh.texture);
+  spr.anchor.set(mesh.anchor?.x ?? 0.5, mesh.anchor?.y ?? 0.5);
+  spr.position.set(mesh.position.x - cx, mesh.position.y - cy);
+  spr.scale.set(mesh.scale.x, mesh.scale.y);
+  spr.rotation = mesh.rotation ?? 0;
+  spr.alpha = mesh.alpha ?? 1;
+  return spr;
+}
+
+function montarCamuflagem(tile) {
+  const doc = tile.document;
+  const w = Math.max(1, Math.round(doc.width)), h = Math.max(1, Math.round(doc.height));
+  const cx = doc.x + doc.width / 2, cy = doc.y + doc.height / 2;
+  const grupo = new PIXI.Container();
+  const miolo = new PIXI.Container();
+  miolo.position.set(w / 2, h / 2);
+  miolo.rotation = -((doc.rotation ?? 0) * Math.PI / 180);
+  grupo.addChild(miolo);
+  // Cor de fundo do mapa, depois a imagem de fundo, depois os tiles que ficam embaixo deste
+  const fundo = new PIXI.Graphics();
+  const cor = Number(foundry.utils.Color?.from?.(canvas.scene?.backgroundColor ?? "#000000") ?? 0);
+  fundo.beginFill(cor).drawRect(-w, -h, w * 2, h * 2).endFill();
+  miolo.addChild(fundo);
+  const bg = copiaDoDesenho(canvas.primary?.background, cx, cy);
+  if (bg) miolo.addChild(bg);
+  const abaixo = (canvas.tiles?.placeables ?? []).filter(o => {
+    if (o === tile || o.document.hidden || !o.mesh?.texture) return false;
+    const d = o.document;
+    const el = d.elevation ?? 0, minha = doc.elevation ?? 0;
+    const embaixo = el < minha || (el === minha && (d.sort ?? 0) < (doc.sort ?? 0));
+    const toca = d.x < doc.x + doc.width && d.x + d.width > doc.x && d.y < doc.y + doc.height && d.y + d.height > doc.y;
+    return embaixo && toca && !camuflado(o);
+  }).sort((a, b) => ((a.document.elevation ?? 0) - (b.document.elevation ?? 0)) || ((a.document.sort ?? 0) - (b.document.sort ?? 0)));
+  for (const o of abaixo) { const spr = copiaDoDesenho(o.mesh, cx, cy); if (spr) miolo.addChild(spr); }
+  const rt = PIXI.RenderTexture.create({ width: w, height: h });
+  canvas.app.renderer.render(grupo, { renderTexture: rt, clear: true });
+  grupo.destroy({ children: true, texture: false, baseTexture: false });
+  return rt;
+}
+
+function aplicarCamaleao(tile) {
+  const mesh = tile?.mesh;
+  if (!mesh || mesh.destroyed || !globalThis.PIXI?.RenderTexture) return;
+  const ativo = camuflado(tile);
+  const atual = tile._ovCamo;
+  if (!ativo) {
+    if (atual) {
+      tile._ovCamo = null;
+      if (mesh.texture === atual.rt && tile.texture) mesh.texture = tile.texture;
+      atual.rt?.destroy?.(true);
+      tile.renderFlags?.set?.({ refreshMesh: true, refreshSize: true });
+    }
+    if (camoMestre(tile)) { mesh.alpha = Math.min(mesh.alpha ?? 1, 0.5); tile._ovMeio = true; }
+    else if (tile._ovMeio) { tile._ovMeio = false; tile.renderFlags?.set?.({ refreshState: true }); }
+    return;
+  }
+  if (!atual || atual.sujo) {
+    try {
+      const rt = montarCamuflagem(tile);
+      atual?.rt?.destroy?.(true);
+      tile._ovCamo = { rt, sujo: false };
+    } catch (err) { console.warn(`${ID} | camaleão falhou`, err); return; }
+  }
+  mesh.texture = tile._ovCamo.rt;
+  mesh.width = tile.document.width;
+  mesh.height = tile.document.height;
+}
+
+// O que está atrás pode mudar (outro tile mexido, fundo trocado): refaz as camuflagens
+let tCamo = 0;
+function refazerCamuflagens() {
+  clearTimeout(tCamo);
+  tCamo = setTimeout(() => {
+    for (const o of canvas.tiles?.placeables ?? []) if (o._ovCamo || camuflado(o)) { if (o._ovCamo) o._ovCamo.sujo = true; aplicarCamaleao(o); }
+  }, 150);
+}
+
 // O que vale para este tile agora (a prévia do editor aberto tem prioridade)
 function profDe(tile) {
+  if (camuflado(tile)) return null;
   const p = tile?._ovPrevia ?? cfgDe(tile?.document)?.prof;
   return p && (p.sombra > 0 || p.altura > 0 || p.incl > 0) ? p : null;
 }
@@ -438,6 +529,15 @@ function profDe(tile) {
 function aplicarProfundidade(tile) {
   const mesh = tile?.mesh;
   if (!mesh || mesh.destroyed) return;
+  // Camuflado: sem sombra, sem altura e sem mexer no tamanho (que o camaleão acabou de acertar)
+  if (camuflado(tile)) {
+    const m0 = tile._ovMarca, b0 = tile._ovBase;
+    if (m0 && b0 && mesh.position.x === m0.x && mesh.position.y === m0.y) mesh.position.set(b0.x, b0.y);
+    const resto = (mesh.filters ?? []).filter(f => f !== tile._ovSombra);
+    mesh.filters = resto.length ? resto : null;
+    tile._ovBase = null; tile._ovMarca = null;
+    return;
+  }
   const p = profDe(tile);
   const m = tile._ovMarca;
   // Descobre a posição "de verdade" do Foundry: se ele redesenhou, o valor mudou desde a nossa última marca
@@ -555,7 +655,7 @@ function ligarMapa() {
       quadro = 0;
       const p = pontoDoMouse(ev.clientX, ev.clientY);
       const o = (!game.user.isGM || naFerramenta() || mestrePodeUsar()) ? objetoNoPonto(p) : null;
-      const sobre = !!o && (game.user.isGM || cfgDe(o.document).mao !== false);
+      const sobre = !!o && (game.user.isGM || (cfgDe(o.document).mao !== false && !camuflado(o)));
       document.body.classList.toggle("ov-mao", sobre);
     });
   });
@@ -575,7 +675,7 @@ function atualizarBrilho() {
   if (game.user.isGM) return;
   for (const o of usaveis()) {
     const doc = o.document, c = cfgDe(doc);
-    if (c.brilho === false || c.trancado) continue;
+    if (c.brilho === false || c.trancado || camuflado(o)) continue;
     const alcance = c.distancia > 0 ? c.distancia : 1;
     if (maisPerto(doc).dist > alcance) continue;
     brilhos.lineStyle(4, 0xffc27a, 1).drawRoundedRect(doc.x - 4, doc.y - 4, doc.width + 8, doc.height + 8, 10);
@@ -759,6 +859,11 @@ fieldset.ov-secao .ov-botoes { display: flex; gap: 6px; } fieldset.ov-secao .ov-
 .ov-asset:hover { border-color: #f0a03c; }
 .ov-asset img, .ov-asset video { max-width: 100%; max-height: 100%; object-fit: contain; border: none; pointer-events: none; }
 .ov-asset[hidden], .ov-assets-dir[hidden] { display: none; }
+.ov-dd-abrir { width: 100%; }
+.ov-dd-cab { display: flex; align-items: center; gap: 10px; padding: 10px; margin-bottom: 10px; border-radius: 10px; background: rgba(240,160,60,.08); border: 1px solid #f0a03c66; }
+.ov-dd-cab > i { font-size: 20px; color: #f0a03c; }
+.ov-dd-cab .ov-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; } .ov-dd-cab .ov-txt b { font-size: 14px; } .ov-dd-cab .ov-txt span { font-size: 11px; color: #a8a1b4; }
+.ov-dd-tag { margin-left: auto; font-size: 10px; padding: 2px 6px; border-radius: 999px; background: #3a2a14; color: #ffc27a; }
 .ov-encaixe-aviso { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 10000; padding: 10px 16px; border-radius: 10px;
   background: #17151cf0; border: 1px solid #f0a03c; color: #ece8f1; font-family: Signika, system-ui, sans-serif; font-size: 13px; pointer-events: none;
   box-shadow: 0 8px 24px rgba(0,0,0,.5); max-width: 90vw; text-align: center; }
@@ -917,6 +1022,14 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
           `<button type="button" class="ov-pilula ${p.preset === n ? "ov-on" : ""}" data-prof-preset="${n}">${t(`Prof.${n}`)}</button>`).join("")}</div>
         ${faixa("sombra", 100)}${faixa("altura", 30)}${faixa("incl", 40, "°")}
         ${chave(!!p.parallax, "parallax", t("Prof.Parallax"), t("Prof.ParallaxDica"))}</section>
+      <section style="display:flex;flex-direction:column;gap:8px"><h2>${icone("fa-eye-slash")} ${t("Camaleao.Titulo")}</h2>
+        ${chave(!!d.camaleao, "camaleao", t("Camaleao.Ligar"), t("Camaleao.LigarDica"))}
+        ${d.camaleao ? `
+          ${chave(!!d.revelarAoUsar, "revelarAoUsar", t("Camaleao.Revelar"), t("Camaleao.RevelarDica"))}
+          ${d.revelado ? `<div class="ov-faixa"><div class="ov-txt"><b>${t("Camaleao.Revelado")}</b></div>
+            <button type="button" class="ov-btn" data-a="reesconder">${icone("fa-eye-slash")} ${t("Camaleao.Reesconder")}</button></div>` : ""}
+          <button type="button" class="ov-btn ${this.verCamo ? "ov-forte" : ""}" data-a="ver-camo" style="align-self:flex-start">${icone(this.verCamo ? "fa-eye" : "fa-user")} ${t(this.verCamo ? "Camaleao.VerParar" : "Camaleao.Ver")}</button>
+          <p class="ov-dica">${t("Camaleao.SemProf")}</p>` : ""}</section>
       <section><h2>${t("Aparencia.Anim")}</h2>
         <div class="ov-pilulas">${ANIMS.map(a => `<button type="button" class="ov-pilula ${d.anim === a ? "ov-on" : ""}" data-anim="${a}">${t(`Anim.${a}`)}</button>`).join("")}</div>
         <p class="ov-dica" style="margin-top:6px">${t("Aparencia.AnimDica")}</p></section>
@@ -1002,9 +1115,24 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
     if (img) img.setAttribute("style", this._estiloPrevia());
   }
 
+  // Mostra no mapa, ao vivo, o camaleão como está no editor (e "ver como o jogador vê")
+  _previaCamo() {
+    const tile = this.tile ? this.doc.object : null;
+    if (!tile) return;
+    tile._ovPreviaCamo = { camaleao: !!this.dados.camaleao, revelado: !!this.dados.revelado };
+    tile._ovVerCamo = !!this.verCamo;
+    if (tile._ovCamo) tile._ovCamo.sujo = true;
+    aplicarCamaleao(tile);
+    aplicarProfundidade(tile);
+  }
+
   async close(opcoes) {
     const tile = this.tile ? this.doc.object : null;
-    if (tile) { delete tile._ovPrevia; aplicarProfundidade(tile); }
+    if (tile) {
+      delete tile._ovPrevia; delete tile._ovPreviaCamo; delete tile._ovVerCamo;
+      aplicarCamaleao(tile);
+      aplicarProfundidade(tile);
+    }
     return super.close(opcoes);
   }
 
@@ -1182,6 +1310,12 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
     }
     if (ds.chave) {
       if (ds.chave === "parallax") { d.prof ??= profPadrao("plano"); d.prof.parallax = !d.prof.parallax; this.render(); return this._previaNoMapa(); }
+      if (ds.chave === "camaleao" || ds.chave === "revelarAoUsar") {
+        d[ds.chave] = !d[ds.chave];
+        if (ds.chave === "camaleao" && !d.camaleao) this.verCamo = false;
+        this.render();
+        return this._previaCamo();
+      }
       if (ds.chave === "voltar") d.voltar = d.voltar > 0 ? 0 : 3;
       else d[ds.chave] = !(d[ds.chave] ?? (ds.chave === "mao" || ds.chave === "brilho"));
       return this.render();
@@ -1205,6 +1339,8 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
       case "salvar": return this._salvar();
       case "cancelar": return this.close();
       case "mais": this.mais = !this.mais; break;
+      case "reesconder": d.revelado = false; this.render(); return this._previaCamo();
+      case "ver-camo": this.verCamo = !this.verCamo; this.render(); return this._previaCamo();
       case "biblioteca": return salvarNaBiblioteca(this.doc, this.dados);
       case "testar":
         this.previa = (this.previa + 1) % d.estados.length;
@@ -1289,18 +1425,18 @@ function abrirEditor(doc) {
 }
 
 // Criar um objeto no mapa: de um modelo pronto, de uma imagem do mestre ou de "Meus objetos"
-async function tamanhoDaImagem(src, gs) {
+async function tamanhoDaImagem(src, gs, pxPorCasa = null) {
   try {
     const carregar = foundry.canvas?.loadTexture ?? globalThis.loadTexture;
     const tex = await carregar(src);
     const w = tex?.width || gs, h = tex?.height || gs;
-    const escala = (gs * 1.5) / Math.max(w, h);
+    const escala = pxPorCasa ? gs / pxPorCasa : (gs * 1.5) / Math.max(w, h);
     return { w: Math.round(w * escala), h: Math.round(h * escala) };
   } catch { return { w: gs, h: gs }; }
 }
 
 // Monta a configuração, a imagem e o tamanho de um objeto novo
-async function prepararObjeto({ preset = null, img = null, salvo = null } = {}) {
+async function prepararObjeto({ preset = null, img = null, salvo = null, pxPorCasa = null } = {}) {
   const gs = canvas.dimensions.size;
   let cfg, w = gs, h = gs;
   if (salvo) {
@@ -1310,7 +1446,7 @@ async function prepararObjeto({ preset = null, img = null, salvo = null } = {}) 
   } else if (img) {
     cfg = padrao(null, "livre", img);
     cfg.nome = nomeDoArquivo(img);
-    ({ w, h } = await tamanhoDaImagem(img, gs));
+    ({ w, h } = await tamanhoDaImagem(img, gs, pxPorCasa));
   } else cfg = padrao(null, preset ?? "alavanca");
   const src = cfg.estados?.[0]?.img;
   return src ? { cfg, src, w, h, rotacao: salvo?.rotacao ?? 0 } : null;
@@ -1328,11 +1464,11 @@ function centroEncaixado(x, y, w, h, livre = false) {
   return { x: Math.round(x / meia) * meia, y: Math.round(y / meia) * meia };
 }
 
-async function criarObjeto({ preset = null, img = null, salvo = null, x = null, y = null, rotacao = null, escala = 1, livre = false, pronto = null } = {}) {
+async function criarObjeto({ preset = null, img = null, salvo = null, pxPorCasa = null, x = null, y = null, rotacao = null, escala = 1, livre = false, pronto = null } = {}) {
   if (!game.user.isGM) return;
   const cena = canvas.scene;
   if (!cena) return ui.notifications.warn(t("Bib.SemMapa"));
-  const p = pronto ?? await prepararObjeto({ preset, img, salvo });
+  const p = pronto ?? await prepararObjeto({ preset, img, salvo, pxPorCasa });
   if (!p) return;
   const w = Math.max(10, Math.round(p.w * escala)), h = Math.max(10, Math.round(p.h * escala));
   const c = centroEncaixado(x ?? canvas.stage.pivot.x, y ?? canvas.stage.pivot.y, w, h, livre);
@@ -1458,6 +1594,116 @@ async function salvarNaBiblioteca(doc, dados) {
   foundry.applications.instances?.get?.(`${ID}-biblioteca`)?.render();
 }
 
+// Pacotes do Dungeondraft (.dungeondraft_pack): são pacotes do motor Godot (formato "GDPC").
+// Lemos só o índice; cada imagem é recortada do arquivo quando precisa, sem carregar o pacote inteiro.
+const DD_PX_POR_CASA = 256;
+const EXT_DD = /\.(png|webp|jpe?g)$/i;
+let pacoteAberto = null;
+
+async function lerPacoteDD(blob, nomeArquivo = "") {
+  let buf = new Uint8Array(0), ini = 0, pos = 0;
+  const garantir = async n => {
+    if (pos + n <= ini + buf.length) return;
+    const fim = Math.min(blob.size, Math.max(pos + n, ini + buf.length + (1 << 20)));
+    buf = new Uint8Array(await blob.slice(pos, fim).arrayBuffer());
+    ini = pos;
+    if (pos + n > ini + buf.length) throw new Error("pacote cortado");
+  };
+  const u32 = async () => { await garantir(4); const v = new DataView(buf.buffer, buf.byteOffset + pos - ini, 4).getUint32(0, true); pos += 4; return v; };
+  const u64 = async () => { const lo = await u32(), hi = await u32(); return hi * 4294967296 + lo; };
+  const bytes = async n => { await garantir(n); const b = buf.slice(pos - ini, pos - ini + n); pos += n; return b; };
+
+  if (await u32() !== 0x43504447) throw new Error("não é um pacote do Dungeondraft");
+  const versao = await u32();
+  await u32(); await u32(); await u32();
+  let base = 0;
+  if (versao >= 2) {
+    const flags = await u32();
+    base = await u64();
+    if (flags & 1) throw new Error("pacote criptografado");
+  }
+  pos += 16 * 4;
+  const total = await u32();
+  if (total > 200000) throw new Error("índice inválido");
+  const texto = new TextDecoder();
+  const arquivos = [];
+  for (let i = 0; i < total; i++) {
+    const n = await u32();
+    const caminho = texto.decode(await bytes(n)).replace(/\0+$/, "").replace(/^res:\/\//, "");
+    const ofs = await u64(), tam = await u64();
+    pos += 16; // md5
+    if (versao >= 2) pos += 4; // flags do arquivo
+    arquivos.push({ caminho, ofs: ofs + base, tam });
+  }
+  const cortar = a => blob.slice(a.ofs, a.ofs + a.tam);
+
+  // Nome e autor: o pacote guarda um pack.json
+  let nome = nomeArquivo.replace(/\.dungeondraft_pack$/i, ""), autor = "";
+  const info = arquivos.find(a => /(^|\/)pack\.json$/i.test(a.caminho)) ?? arquivos.find(a => /^packs\/[^/]+\.json$/i.test(a.caminho));
+  if (info) {
+    try { const j = JSON.parse(await cortar(info).text()); nome = j.name || nome; autor = j.author || ""; } catch {}
+  }
+  // Só as imagens, com o caminho a partir de "textures/" (objects/, terrain/, walls/...)
+  const imagens = arquivos.filter(a => EXT_DD.test(a.caminho) && a.tam > 0 && a.ofs + a.tam <= blob.size).map(a => {
+    const i = a.caminho.indexOf("textures/");
+    return { ...a, rel: i >= 0 ? a.caminho.slice(i + 9) : a.caminho };
+  }).sort((a, b) => comparar(a.rel, b.rel));
+  if (!imagens.length) throw new Error("nenhuma imagem no pacote");
+  const slug = (nome || "pacote").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "pacote";
+  return { nome, autor, slug, blob, imagens, cortar, urls: new Map(), enviados: new Map() };
+}
+
+const tipoImagem = c => /\.webp$/i.test(c) ? "image/webp" : /\.jpe?g$/i.test(c) ? "image/jpeg" : "image/png";
+function urlDaMiniatura(pac, a) {
+  if (!pac.urls.has(a.rel)) pac.urls.set(a.rel, URL.createObjectURL(new Blob([pac.cortar(a)], { type: tipoImagem(a.rel) })));
+  return pac.urls.get(a.rel);
+}
+function fecharPacote() {
+  for (const u of pacoteAberto?.urls?.values?.() ?? []) URL.revokeObjectURL(u);
+  pacoteAberto = null;
+}
+
+// Manda para o Foundry só a imagem que vai ser usada (os jogadores precisam carregá-la do servidor)
+async function enviarDoPacote(pac, a) {
+  if (pac.enviados.has(a.rel)) return pac.enviados.get(a.rel);
+  const FP = foundry.applications.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
+  const fonte = game.settings.get(ID, "pastaAssets")?.fonte || "data";
+  const partes = a.rel.split("/");
+  const arquivo = partes.pop();
+  const pasta = ["objetos-vivos", "dungeondraft", pac.slug, ...partes].join("/");
+  // Já foi enviada antes (outra sessão)? Então só reaproveita
+  let existentes = [];
+  try { existentes = (await FP.browse(fonte, pasta)).files ?? []; } catch {
+    let atual = "";
+    for (const p of pasta.split("/")) {
+      atual = atual ? `${atual}/${p}` : p;
+      try { await FP.createDirectory(fonte, atual); } catch {}
+    }
+  }
+  const ja = existentes.find(f => decodeURIComponent(f.split("/").pop()) === arquivo);
+  if (ja) { pac.enviados.set(a.rel, ja); return ja; }
+  const file = new File([pac.cortar(a)], arquivo, { type: tipoImagem(arquivo) });
+  const r = await FP.upload(fonte, pasta, file, {}, { notify: false });
+  const caminho = r?.path ?? (r ? `${pasta}/${arquivo}` : null);
+  if (!caminho) throw new Error("envio recusado");
+  pac.enviados.set(a.rel, caminho);
+  return caminho;
+}
+
+async function usarDoPacote(rel, onde = null) {
+  const pac = pacoteAberto;
+  const a = pac?.imagens.find(x => x.rel === rel);
+  if (!a) return;
+  try {
+    const img = await enviarDoPacote(pac, a);
+    const opcoes = { img, pxPorCasa: DD_PX_POR_CASA };
+    return onde ? criarObjeto({ ...opcoes, ...onde }) : encaixar(opcoes);
+  } catch (err) {
+    console.error(`${ID} | não consegui usar o asset do pacote`, err);
+    ui.notifications.error(t("DD.ErroEnvio"));
+  }
+}
+
 const EXT_IMAGEM = /\.(png|jpe?g|webp|gif|svg|avif|webm|mp4)$/i;
 const ehVideo = c => /\.(webm|mp4)$/i.test(c);
 
@@ -1486,7 +1732,8 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
       const r = await this.FP.browse(salva.fonte || "data", this.pasta);
       this.lista = {
         dirs: (r.dirs ?? []).slice().sort(comparar),
-        files: (r.files ?? []).filter(f => EXT_IMAGEM.test(f)).sort(comparar)
+        files: (r.files ?? []).filter(f => EXT_IMAGEM.test(f)).sort(comparar),
+        pacotes: (r.files ?? []).filter(f => /\.dungeondraft_pack$/i.test(f)).sort(comparar)
       };
     } catch (err) {
       console.warn(`${ID} | não consegui abrir a pasta`, err);
@@ -1494,11 +1741,41 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
     }
   }
 
+  _htmlPacote() {
+    const pac = pacoteAberto;
+    const atual = this.ddPasta ?? "";
+    const prefixo = atual ? `${atual}/` : "";
+    const dentro = pac.imagens.filter(a => a.rel.startsWith(prefixo));
+    const subpastas = [...new Set(dentro.map(a => a.rel.slice(prefixo.length)).filter(r => r.includes("/")).map(r => r.split("/")[0]))]
+      .sort((a, b) => (a === "objects" ? -1 : b === "objects" ? 1 : comparar(a, b)));
+    const aqui = dentro.filter(a => !a.rel.slice(prefixo.length).includes("/"));
+    // A busca procura no pacote todo, não só na pasta aberta
+    const busca = (this.ddBusca ?? "").trim().toLowerCase();
+    const lista = busca ? pac.imagens.filter(a => nomeDoArquivo(a.rel).toLowerCase().includes(busca)) : aqui;
+    const mostrar = lista.slice(0, this.limite);
+    const nomePasta = p => t(`DD.Pasta.${p}`) === `OV.DD.Pasta.${p}` ? p.replace(/[-_]+/g, " ") : t(`DD.Pasta.${p}`);
+    return `<div class="ov-dd-cab">${icone("fa-box-open")}<span class="ov-txt"><b>${esc(pac.nome)}</b><span>${esc(pac.autor ? t("DD.De", { autor: pac.autor }) : "")} ${t("DD.Total", { n: pac.imagens.length })}</span></span>
+        <button type="button" class="ov-btn" data-a="fechar-pacote">${t("DD.Fechar")}</button></div>
+      <div class="ov-assets-topo">
+        ${atual && !busca ? `<button type="button" class="ov-btn ov-icone" data-a="dd-subir" aria-label="${esc(t("Assets.Voltar"))}">${icone("fa-arrow-left")}</button>` : ""}
+        <span class="ov-arquivo">${icone("fa-folder")} ${esc(busca ? t("DD.Resultados", { n: lista.length }) : atual ? atual.split("/").map(nomePasta).join(" › ") : t("DD.Inicio"))}</span></div>
+      <input type="search" class="ov-assets-busca ov-dd-busca" value="${esc(this.ddBusca ?? "")}" placeholder="${esc(t("DD.Buscar"))}" aria-label="${esc(t("DD.Buscar"))}">
+      ${busca ? "" : subpastas.map(d => `<button type="button" class="ov-assets-dir" data-dd-pasta="${esc(prefixo + d)}">${icone("fa-folder")} ${esc(nomePasta(d))}</button>`).join("")}
+      <div class="ov-assets-grade">${mostrar.map(a => `<button type="button" class="ov-asset" draggable="true" data-dd="${esc(a.rel)}" data-tooltip="${esc(nomeDoArquivo(a.rel))}">
+          <img src="${urlDaMiniatura(pac, a)}" alt="" loading="lazy"></button>`).join("")}</div>
+      ${lista.length > this.limite ? `<button type="button" class="ov-btn" data-a="mais-assets" style="width:100%;margin-top:8px">${t("Assets.Mais", { n: lista.length - this.limite })}</button>` : ""}
+      ${!lista.length && !subpastas.length ? `<p class="ov-vazio">${t("Assets.Vazia")}</p>` : ""}`;
+  }
+
   _htmlAssets() {
+    if (pacoteAberto) return this._htmlPacote();
     const salva = game.settings.get(ID, "pastaAssets") ?? {};
+    const abrirPacote = `<button type="button" class="ov-btn ov-dd-abrir" data-a="abrir-pacote">${icone("fa-box-open")} ${t("DD.Abrir")}</button>
+      <input type="file" class="ov-dd-arquivo" accept=".dungeondraft_pack" hidden>`;
     if (!salva.pasta) return `<div class="ov-bib-vazio">
         <p>${t("Assets.Explica")}</p>
-        <button type="button" class="ov-btn ov-forte" data-a="pasta">${icone("fa-folder-open")} ${t("Assets.Escolher")}</button></div>`;
+        <button type="button" class="ov-btn ov-forte" data-a="pasta">${icone("fa-folder-open")} ${t("Assets.Escolher")}</button>
+        <p>${t("DD.Explica")}</p>${abrirPacote}</div>`;
     const l = this.lista ?? { dirs: [], files: [] };
     const raiz = salva.pasta.replace(/\/$/, "");
     const atual = (this.pasta ?? raiz).replace(/\/$/, "");
@@ -1508,13 +1785,15 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
         ${podeSubir ? `<button type="button" class="ov-btn ov-icone" data-a="subir-pasta" aria-label="${esc(t("Assets.Voltar"))}">${icone("fa-arrow-left")}</button>` : ""}
         <span class="ov-arquivo" data-tooltip="${esc(atual)}">${icone("fa-folder")} ${esc(decodeURIComponent(atual.split("/").pop() || atual))}</span>
         <button type="button" class="ov-btn" data-a="pasta">${t("Assets.Trocar")}</button></div>
+      <div style="margin-bottom:8px">${abrirPacote}</div>
       <input type="search" class="ov-assets-busca" placeholder="${esc(t("Assets.Buscar"))}" aria-label="${esc(t("Assets.Buscar"))}">
       ${l.erro ? `<p class="ov-vazio">${t("Assets.Erro")}</p>` : ""}
+      ${(l.pacotes ?? []).map(f => `<button type="button" class="ov-assets-dir ov-dd-item" data-pacote="${esc(f)}" data-nome="${esc(nomeDoArquivo(f).toLowerCase())}">${icone("fa-box-open")} ${esc(nomeDoArquivo(f))} <span class="ov-dd-tag">Dungeondraft</span></button>`).join("")}
       ${l.dirs.map(d => `<button type="button" class="ov-assets-dir" data-dir="${esc(d)}" data-nome="${esc(nomeDoArquivo(d).toLowerCase())}">${icone("fa-folder")} ${esc(decodeURIComponent(d.replace(/\/$/, "").split("/").pop()))}</button>`).join("")}
       <div class="ov-assets-grade">${arquivos.map(f => `<button type="button" class="ov-asset" draggable="true" data-img="${esc(f)}" data-nome="${esc(nomeDoArquivo(f).toLowerCase())}" data-tooltip="${esc(nomeDoArquivo(f))}">
           ${ehVideo(f) ? `<video src="${esc(f)}" muted loop preload="metadata"></video>` : `<img src="${esc(f)}" alt="" loading="lazy">`}</button>`).join("")}</div>
       ${l.files.length > this.limite ? `<button type="button" class="ov-btn" data-a="mais-assets" style="width:100%;margin-top:8px">${t("Assets.Mais", { n: l.files.length - this.limite })}</button>` : ""}
-      ${!l.erro && !l.files.length && !l.dirs.length ? `<p class="ov-vazio">${t("Assets.Vazia")}</p>` : ""}`;
+      ${!l.erro && !l.files.length && !l.dirs.length && !(l.pacotes ?? []).length ? `<p class="ov-vazio">${t("Assets.Vazia")}</p>` : ""}`;
   }
 
   async _renderHTML() {
@@ -1554,11 +1833,32 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
     }).render(true);
   }
 
+  async _abrirPacote(blob, nome) {
+    ui.notifications.info(t("DD.Abrindo", { nome }));
+    try {
+      fecharPacote();
+      pacoteAberto = await lerPacoteDD(blob, nome);
+      this.ddPasta = pacoteAberto.imagens.some(a => a.rel.startsWith("objects/")) ? "objects" : "";
+      this.ddBusca = ""; this.limite = 120; this.aba = "assets";
+      this.render();
+    } catch (err) {
+      console.error(`${ID} | não consegui ler o pacote`, err);
+      ui.notifications.error(t("DD.ErroLer", { nome }));
+    }
+  }
+
+  async close(opcoes) { fecharPacote(); return super.close(opcoes); }
+
   _onFirstRender() {
     injetarEstilo();
     const el = this.element;
+    el.addEventListener("change", ev => {
+      if (!ev.target.matches?.(".ov-dd-arquivo")) return;
+      const f = ev.target.files?.[0];
+      if (f) this._abrirPacote(f, f.name);
+    });
     el.addEventListener("click", async ev => {
-      const alvo = ev.target.closest("[data-a], [data-aba], [data-preset], [data-salvo], [data-apagar], [data-dir], [data-img]");
+      const alvo = ev.target.closest("[data-a], [data-aba], [data-preset], [data-salvo], [data-apagar], [data-dir], [data-img], [data-dd], [data-dd-pasta], [data-pacote]");
       if (!alvo) return;
       ev.preventDefault();
       const ds = alvo.dataset;
@@ -1571,6 +1871,19 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
       if (ds.a === "imagem") return escolherImagem();
       if (ds.a === "pasta") return this._escolherPasta();
       if (ds.a === "mais-assets") { this.limite += 120; return this.render(); }
+      if (ds.a === "abrir-pacote") return el.querySelector(".ov-dd-arquivo")?.click();
+      if (ds.a === "fechar-pacote") { fecharPacote(); this.limite = 120; return this.render(); }
+      if (ds.a === "dd-subir") { this.ddPasta = (this.ddPasta ?? "").split("/").slice(0, -1).join("/"); this.limite = 120; return this.render(); }
+      if (ds.ddPasta !== undefined) { this.ddPasta = ds.ddPasta; this.limite = 120; return this.render(); }
+      if (ds.dd) return usarDoPacote(ds.dd);
+      if (ds.pacote) {
+        try {
+          ui.notifications.info(t("DD.Abrindo", { nome: nomeDoArquivo(ds.pacote) }));
+          const r = await fetch(ds.pacote);
+          if (!r.ok) throw new Error(r.status);
+          return this._abrirPacote(await r.blob(), decodeURIComponent(ds.pacote.split("/").pop()));
+        } catch (err) { console.error(err); return ui.notifications.error(t("DD.ErroLer", { nome: nomeDoArquivo(ds.pacote) })); }
+      }
       if (ds.a === "subir-pasta") { this.pasta = this.pasta.replace(/\/$/, "").split("/").slice(0, -1).join("/"); this.limite = 120; return this.render(); }
       if (ds.aba) { this.aba = ds.aba; return this.render(); }
       if (ds.dir) { this.pasta = ds.dir; this.limite = 120; return this.render(); }
@@ -1580,14 +1893,24 @@ class BibliotecaObjetos extends foundry.applications.api.ApplicationV2 {
     });
     // Busca na pasta aberta: só esconde o que não combina, sem redesenhar a janela
     el.addEventListener("input", ev => {
+      if (ev.target.matches?.(".ov-dd-busca")) {
+        this.ddBusca = ev.target.value;
+        clearTimeout(this._tBusca);
+        this._tBusca = setTimeout(async () => {
+          await this.render();
+          const campo = this.element.querySelector(".ov-dd-busca");
+          if (campo) { campo.focus(); campo.setSelectionRange?.(campo.value.length, campo.value.length); }
+        }, 300);
+        return;
+      }
       if (!ev.target.matches?.(".ov-assets-busca")) return;
       const q = ev.target.value.trim().toLowerCase();
       el.querySelectorAll("[data-nome]").forEach(b => { b.hidden = !!q && !b.dataset.nome.includes(q); });
     });
     el.addEventListener("dragstart", ev => {
-      const item = ev.target.closest?.("[data-preset], [data-salvo], [data-img]");
+      const item = ev.target.closest?.("[data-preset], [data-salvo], [data-img], [data-dd]");
       if (!item) return;
-      const dados = { type: "ObjetoVivo", preset: item.dataset.preset ?? null, salvo: item.dataset.salvo ?? null, img: item.dataset.img ?? null };
+      const dados = { type: "ObjetoVivo", preset: item.dataset.preset ?? null, salvo: item.dataset.salvo ?? null, img: item.dataset.img ?? null, dd: item.dataset.dd ?? null };
       ev.dataTransfer.setData("text/plain", JSON.stringify(dados));
     });
   }
@@ -1702,25 +2025,33 @@ Hooks.on("renderTileHUD", botoesHud);
 // Arrastar da biblioteca para o mapa
 Hooks.on("dropCanvasData", (_canvas, dados) => {
   if (dados?.type !== "ObjetoVivo" || !game.user.isGM) return;
+  if (dados.dd) { usarDoPacote(dados.dd, { x: dados.x, y: dados.y }); return false; }
   const salvo = dados.salvo ? meusObjetos().find(o => o.id === dados.salvo) : null;
   criarObjeto({ preset: dados.img ? null : dados.preset, img: dados.img ?? null, salvo, x: dados.x, y: dados.y });
   return false;
 });
 
 // Profundidade: reaplica sempre que o Foundry redesenha o tile ou a câmera anda
-Hooks.on("refreshTile", tile => { if (tile._ovSombra || profDe(tile)) aplicarProfundidade(tile); });
+Hooks.on("refreshTile", tile => {
+  if (tile._ovCamo || camuflado(tile) || camoMestre(tile)) aplicarCamaleao(tile);
+  if (tile._ovSombra || profDe(tile)) aplicarProfundidade(tile);
+});
+for (const h of ["createTile", "deleteTile"]) Hooks.on(h, doc => { if (doc.parent?.id === canvas.scene?.id) refazerCamuflagens(); });
+Hooks.on("updateScene", (cena, mud) => { if (cena.id === canvas.scene?.id && ("background" in mud || "backgroundColor" in mud)) refazerCamuflagens(); });
 Hooks.on("canvasPan", () => atualizarProfundidades());
 
 Hooks.on("drawWall", w => ouvirPorta(w.doorControl));
 Hooks.on("refreshWall", w => ouvirPorta(w.doorControl));
-Hooks.on("canvasReady", () => { ouvirTentativas(); ligarMapa(); lembrarPosicoes(canvas.scene); atualizarBrilho(); atualizarProfundidades(); });
+Hooks.on("canvasReady", () => { ouvirTentativas(); ligarMapa(); lembrarPosicoes(canvas.scene); atualizarBrilho(); atualizarProfundidades(); refazerCamuflagens(); });
 Hooks.on("createToken", tk => posicoes.set(tk.uuid, centroToken(tk)));
 Hooks.on("deleteToken", tk => posicoes.delete(tk.uuid));
 Hooks.on("updateToken", aoMoverToken);
 Hooks.on("controlToken", () => atualizarBrilho());
 Hooks.on("updateTile", (doc, mud) => {
   if (doc.parent?.id !== canvas.scene?.id) return;
-  if (foundry.utils.hasProperty(mud, `flags.${ID}`)) aplicarProfundidade(doc.object);
+  if (foundry.utils.hasProperty(mud, `flags.${ID}`)) { aplicarCamaleao(doc.object); aplicarProfundidade(doc.object); }
+  // Mexeu a posição, o tamanho ou a imagem de um tile: o que está atrás dos camaleões mudou
+  if (["x", "y", "width", "height", "rotation", "sort", "elevation", "texture", "hidden"].some(k => k in mud)) refazerCamuflagens();
   if (foundry.utils.hasProperty(mud, `flags.${ID}.objeto.estado`)) animar(doc.object, cfgDe(doc)?.anim);
   atualizarBrilho();
 });

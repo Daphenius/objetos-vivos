@@ -359,6 +359,46 @@
       "Erro": "Não consegui abrir esta pasta. Escolha outra.",
       "Vazia": "Nenhuma imagem nesta pasta.",
       "Mais": "Mostrar mais ({n})"
+    },
+    "DD": {
+      "Abrir": "Abrir pacote do Dungeondraft",
+      "Explica": "Também dá para abrir um pacote do Dungeondraft (.dungeondraft_pack) direto, sem extrair nada.",
+      "Abrindo": "Abrindo “{nome}”…",
+      "ErroLer": "Não consegui ler “{nome}”. Confira se é um pacote do Dungeondraft (.dungeondraft_pack).",
+      "ErroEnvio": "Não consegui enviar a imagem do pacote para o Foundry. Confira se você tem permissão para enviar arquivos.",
+      "Fechar": "Fechar pacote",
+      "De": "de {autor} ·",
+      "Total": "{n} imagens",
+      "Inicio": "Início do pacote",
+      "Buscar": "Buscar no pacote todo",
+      "Resultados": "{n} encontrados",
+      "Pasta": {
+        "objects": "Objetos",
+        "terrain": "Terreno",
+        "walls": "Paredes",
+        "paths": "Caminhos",
+        "portals": "Portas e janelas",
+        "patterns": "Padrões",
+        "materials": "Materiais",
+        "lights": "Luzes",
+        "caves": "Cavernas",
+        "simple_tiles": "Pisos",
+        "roofs": "Telhados",
+        "tilesets": "Pisos",
+        "decals": "Decalques"
+      }
+    },
+    "Camaleao": {
+      "Titulo": "Camaleão",
+      "Ligar": "Camuflar no mapa",
+      "LigarDica": "Para os jogadores, o objeto fica com a mesma textura do chão ou do que estiver atrás dele. Você continua vendo o objeto meio transparente.",
+      "Revelar": "Aparece depois de usado",
+      "RevelarDica": "Quando alguém usar (ou pisar), o objeto se revela para todos",
+      "Revelado": "Este objeto já foi revelado.",
+      "Reesconder": "Esconder de novo",
+      "Ver": "Ver como o jogador vê",
+      "VerParar": "Parar de ver como jogador",
+      "SemProf": "Enquanto o objeto está camuflado, a profundidade, a mãozinha e o brilho ficam desligados para não entregar onde ele está."
     }
   }
 }

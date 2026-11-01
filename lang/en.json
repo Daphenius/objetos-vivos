@@ -359,6 +359,46 @@
       "Erro": "Couldn't open this folder. Pick another one.",
       "Vazia": "No images in this folder.",
       "Mais": "Show more ({n})"
+    },
+    "DD": {
+      "Abrir": "Open Dungeondraft pack",
+      "Explica": "You can also open a Dungeondraft pack (.dungeondraft_pack) directly, no extracting needed.",
+      "Abrindo": "Opening “{nome}”…",
+      "ErroLer": "Couldn't read “{nome}”. Make sure it is a Dungeondraft pack (.dungeondraft_pack).",
+      "ErroEnvio": "Couldn't send the pack image to Foundry. Check that you are allowed to upload files.",
+      "Fechar": "Close pack",
+      "De": "by {autor} ·",
+      "Total": "{n} images",
+      "Inicio": "Pack home",
+      "Buscar": "Search the whole pack",
+      "Resultados": "{n} found",
+      "Pasta": {
+        "objects": "Objects",
+        "terrain": "Terrain",
+        "walls": "Walls",
+        "paths": "Paths",
+        "portals": "Doors and windows",
+        "patterns": "Patterns",
+        "materials": "Materials",
+        "lights": "Lights",
+        "caves": "Caves",
+        "simple_tiles": "Floors",
+        "roofs": "Roofs",
+        "tilesets": "Floors",
+        "decals": "Decals"
+      }
+    },
+    "Camaleao": {
+      "Titulo": "Chameleon",
+      "Ligar": "Camouflage on the map",
+      "LigarDica": "For players, the object takes the same texture as the floor or whatever is behind it. You still see the object, half transparent.",
+      "Revelar": "Shows up after being used",
+      "RevelarDica": "When someone uses it (or steps on it), the object is revealed to everyone",
+      "Revelado": "This object has already been revealed.",
+      "Reesconder": "Hide it again",
+      "Ver": "See it as players do",
+      "VerParar": "Stop seeing it as players do",
+      "SemProf": "While the object is camouflaged, depth, the hand cursor and the glow stay off so they don't give it away."
     }
   }
 }
