@@ -65,6 +65,24 @@ O editor abre sozinho. Ele tem três passos:
 
 O botão **Salvar na biblioteca** guarda o objeto em **Meus objetos**. Portas e objetos escolhidos nas ações ficam de fora, porque pertencem ao mapa onde foram escolhidos.
 
+## Teste, Consertar e Desarmar
+
+O passo **Teste** do editor faz o objeto pedir um teste:
+
+| Modo | Como funciona |
+|---|---|
+| **Teste para usar** | Toda vez que alguém usa, precisa passar (ex.: alavanca emperrada) |
+| **Consertar** | Começa *Quebrado*; quem passar no teste conserta, e ele vira *Consertado* (ex.: círculo mágico quebrado). Depois funciona normalmente ou fica parado |
+| **Desarmar (armadilha)** | Dispara do jeito normal; clicar nela oferece "Usar" ou "Tentar desarmar". Desarmada, para de disparar. Falhar pode dispará-la |
+
+**Como passar**: **rolagem** (perícia, ferramenta, atributo ou salvaguarda do D&D 5e, ou fórmula livre, com CD; o jogador rola na própria tela ou o mestre rola às cegas), **minijogo** ou **os dois**.
+
+**Minijogos** (a dificuldade acompanha a CD, com tempo limite):
+- **Girar os anéis**: a imagem do próprio objeto vem cortada em anéis tortos; clique para girar até o desenho ficar inteiro.
+- **Redesenhar a runa**: a runa é traçada entre pontos e some; refaça o traço na mesma ordem (3 erros é falha).
+
+Quem clica joga na própria tela. Se o objeto é acionado ao pisar ou chegar perto, o minijogo abre para o jogador dono do token. Use **Testar o minijogo** no editor para experimentar. Na falha, além da mensagem, rodam as ações de **Ao falhar no teste**; ao desarmar, as de **Ao ser desarmada**.
+
 ## Visão (3D)
 
 No passo **Aparência**, a seção **Visão (3D)** gira o objeto como uma carta no espaço, com perspectiva, para encaixar na vista do mapa: **Vista de cima**, **De frente**, **Pelo lado esquerdo**, **Pelo lado direito**, barras para inclinar e virar, e **Espelhar**. O mapa mostra a mudança na hora. A imagem continua plana: dá para inclinar e virar, mas não aparece o outro lado do desenho.
@@ -125,9 +143,10 @@ api.editar(uuid);                 // abre o editor do objeto (tile ou parede)
 api.usar(uuid, tokenUuid);        // usa o objeto, como se o jogador tivesse clicado
 api.mudarEstado(uuid, indice);    // vai direto para uma aparência (0 = a primeira)
 api.trancar(uuid, true | false);  // tranca ou destranca
+api.minijogo({ jogo: "aneis" | "runa", img, cd, tempo }); // abre um minijogo; devolve true, false ou null
 ```
 
-Ganchos (`Hooks`) para outros módulos: `objetosVivos.usado` (objeto usado) e `objetosVivos.trancado` (alguém tentou usar um objeto trancado).
+Ganchos (`Hooks`) para outros módulos: `objetosVivos.usado` (objeto usado), `objetosVivos.trancado` (alguém tentou usar um objeto trancado), `objetosVivos.teste` (resultado de um teste), `objetosVivos.falhou` (falhou no teste) e `objetosVivos.desarmado` (armadilha desarmada).
 
 ## English
 

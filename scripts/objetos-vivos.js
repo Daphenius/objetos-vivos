@@ -101,6 +101,8 @@ function momentosDe(doc, c = cfgDe(doc)) {
     ? (c?.estados ?? []).map(e => ({ id: `estado:${e.id}`, nome: t("Mom.AoFicar", { estado: e.nome || "?" }) }))
     : MOMENTOS_PAREDE.filter(m => doc.door > 0 || m === "atravessar").map(m => ({ id: m, nome: t(`Mom.${m}`) }));
   if (ehTile(doc) || doc.door > 0) lista.push({ id: "sempre", nome: t(ehTile(doc) ? "Mom.sempreTile" : "Mom.sempreParede") });
+  if (ehTile(doc) && (c?.teste?.modo ?? "nenhum") === "desarmar") lista.push({ id: "desarmar", nome: t("Mom.desarmar") });
+  if (ehTile(doc) && (c?.teste?.modo ?? "nenhum") !== "nenhum") lista.push({ id: "falha", nome: t("Mom.falha") });
   return lista;
 }
 
@@ -326,28 +328,464 @@ async function mudarEstado(doc, idx, ctx) {
   if (c.som) efeito(alvos("mapa", ctx), { tipo: "som", src: c.som, volume: 0.8 });
   clearTimeout(voltas.get(doc.uuid));
   await executarAcoes(doc, `estado:${e.id}`, ctx);
-  if (c.voltar > 0 && idx !== 0) voltas.set(doc.uuid, setTimeout(() => mudarEstado(doc, 0, { ...ctx, token: null }), c.voltar * 1000));
+  if (c.voltar > 0 && idx !== 0 && testeDe(c).modo !== "consertar") voltas.set(doc.uuid, setTimeout(() => mudarEstado(doc, 0, { ...ctx, token: null }), c.voltar * 1000));
 }
 
 // Alguém usou um objeto (tile)
-async function usarObjeto(doc, { tokenUuid = null, userId = null, forcar = false }) {
+// ---------- Teste (perícia, ferramenta, atributo, salvaguarda ou fórmula) e modo Consertar
+const TESTE_PADRAO = { modo: "nenhum", como: "rolagem", minijogo: "aneis", tempo: 45, qual: "skill:arc", formula: "1d20", cd: 15, mostrarCD: false, quemRola: "jogador", tentativas: 0, feitas: 0, msgFalha: "", depois: "acoes" };
+const testeDe = c => ({ ...TESTE_PADRAO, ...(c?.teste ?? {}) });
+// Precisa passar no teste agora? (no Consertar, só enquanto está quebrado = primeira aparência)
+function precisaTeste(c) {
+  const tt = testeDe(c);
+  if (tt.modo === "usar") return true;
+  if (tt.modo === "consertar") return (c?.estado ?? 0) === 0;
+  return false;
+}
+const consertado = c => testeDe(c).modo === "consertar" && (c?.estado ?? 0) !== 0;
+
+// Opções de teste do sistema D&D 5e (perícias, ferramentas, atributos, salvaguardas)
+function opcoesDeTeste() {
+  const D = CONFIG.DND5E;
+  if (game.system?.id !== "dnd5e" || !D) return [];
+  const loc = x => game.i18n.localize(typeof x === "string" ? x : x?.label ?? "");
+  const nomeFerr = k => {
+    try { const n = globalThis.dnd5e?.documents?.Trait?.keyLabel?.(`tool:${k}`); if (n && n !== k) return n; } catch {}
+    const n = t(`Teste.Ferr.${k}`);
+    return n.startsWith("OV.") ? k : n;
+  };
+  const ordenar = l => l.sort((a, b) => comparar(a.nome, b.nome));
+  return [
+    { nome: t("Teste.Grupo.skill"), itens: ordenar(Object.entries(D.skills ?? {}).map(([k, v]) => ({ valor: `skill:${k}`, nome: loc(v) }))) },
+    { nome: t("Teste.Grupo.tool"), itens: ordenar(Object.keys(D.tools ?? D.toolIds ?? {}).map(k => ({ valor: `tool:${k}`, nome: nomeFerr(k) }))) },
+    { nome: t("Teste.Grupo.ability"), itens: Object.entries(D.abilities ?? {}).map(([k, v]) => ({ valor: `ability:${k}`, nome: loc(v) })) },
+    { nome: t("Teste.Grupo.save"), itens: Object.entries(D.abilities ?? {}).map(([k, v]) => ({ valor: `save:${k}`, nome: loc(v) })) }
+  ];
+}
+function nomeDoTeste(tt) {
+  if (tt.qual === "formula" || game.system?.id !== "dnd5e") return tt.formula || "1d20";
+  for (const g of opcoesDeTeste()) { const i = g.itens.find(x => x.valor === tt.qual); if (i) return `${i.nome} (${g.nome})`; }
+  return tt.qual;
+}
+
+// Rola o teste com o personagem. Devolve o total, ou null se a pessoa cancelou.
+async function rolarTeste(ator, tt, { escondido = false } = {}) {
+  const [tipo, chave] = String(tt.qual ?? "skill:arc").split(":");
+  const modoRolagem = escondido ? (CONST.DICE_ROLL_MODES?.BLIND ?? "blindroll") : null;
+  let r;
+  try {
+    if (tipo === "formula" || game.system?.id !== "dnd5e") {
+      const roll = await new Roll(tt.formula || "1d20", ator?.getRollData?.() ?? {}).evaluate();
+      await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor: ator }), flavor: t("Teste.Titulo") }, modoRolagem ? { rollMode: modoRolagem } : {});
+      return roll.total;
+    }
+    const novo = foundry.utils.isNewerVersion(game.system.version, "3.99");
+    if (novo) {
+      const janela = { configure: !escondido };
+      const msg = modoRolagem ? { rollMode: modoRolagem } : {};
+      if (tipo === "skill") r = await ator.rollSkill({ skill: chave }, janela, msg);
+      else if (tipo === "tool") r = await ator.rollToolCheck({ tool: chave }, janela, msg);
+      else if (tipo === "ability") r = await ator.rollAbilityCheck({ ability: chave }, janela, msg);
+      else if (tipo === "save") r = await ator.rollSavingThrow({ ability: chave }, janela, msg);
+    } else {
+      const op = { fastForward: escondido, ...(modoRolagem ? { rollMode: modoRolagem } : {}) };
+      if (tipo === "skill") r = await ator.rollSkill(chave, op);
+      else if (tipo === "tool") r = await ator.rollToolCheck(chave, op);
+      else if (tipo === "ability") r = await ator.rollAbilityTest(chave, op);
+      else if (tipo === "save") r = await ator.rollAbilitySave(chave, op);
+    }
+  } catch (err) {
+    console.error(`${ID} | não consegui rolar o teste`, err);
+    ui.notifications.error(t("Teste.Erro"));
+    return null;
+  }
+  const roll = Array.isArray(r) ? r[0] : r;
+  return Number.isFinite(roll?.total) ? roll.total : null;
+}
+
+// ---------- Minijogos de conserto (abrem na tela de quem está consertando)
+// A dificuldade acompanha a CD: mais anéis/pontos e passos mais finos quanto maior a CD.
+function dificuldade(cd) {
+  const n = Math.max(1, Math.min(30, Number(cd) || 15));
+  return {
+    aneis: n <= 10 ? 2 : n <= 15 ? 3 : n <= 20 ? 4 : 5,
+    passo: n <= 15 ? 45 : 30,
+    pontos: Math.max(4, Math.min(8, 4 + Math.floor((n - 8) / 3)))
+  };
+}
+
+class MinijogoConserto extends foundry.applications.api.ApplicationV2 {
+  static DEFAULT_OPTIONS = {
+    classes: ["ov-minijogo"],
+    position: { width: 460, height: "auto" },
+    window: { icon: "fa-solid fa-wand-magic-sparkles", resizable: false }
+  };
+
+  constructor({ jogo = "aneis", img = "", nome = "", cd = 15, tempo = 45, titulo = "Mini.Titulo" } = {}) {
+    super({ id: `${ID}-minijogo-${foundry.utils.randomID(6)}` });
+    Object.assign(this, { jogo, img, nome, titulo, cd, tempo: Math.max(0, Number(tempo) || 0), dif: dificuldade(cd) });
+    this.resultado = new Promise(r => { this._resolver = r; });
+    this.fim = false;
+    this.erros = 0;
+  }
+
+  get title() { return t(this.titulo, { nome: this.nome }); }
+
+  async _renderHTML() {
+    const div = document.createElement("div");
+    div.className = "ov-mini-raiz";
+    div.innerHTML = `<p class="ov-mini-dica">${t(this.jogo === "runa" ? "Mini.DicaRuna" : "Mini.DicaAneis")}</p>
+      <canvas class="ov-mini-tela" width="400" height="400" aria-label="${esc(t(`Mini.Jogo.${this.jogo}`))}"></canvas>
+      ${this.tempo ? `<div class="ov-mini-tempo"><span class="ov-mini-barra"></span></div>` : ""}
+      <div class="ov-mini-rodape"><span class="ov-mini-status" role="status"></span>
+        <button type="button" class="ov-btn" data-a="desistir">${t("Mini.Desistir")}</button></div>`;
+    return div;
+  }
+  _replaceHTML(result, content) { content.replaceChildren(result); }
+
+  _terminar(passou) {
+    if (this.fim) return;
+    this.fim = true;
+    cancelAnimationFrame(this._quadro);
+    const st = this.element?.querySelector(".ov-mini-status");
+    if (st) st.textContent = t(passou ? "Mini.Conseguiu" : "Mini.Falhou");
+    this._resolver(passou);
+    setTimeout(() => this.close(), passou ? 900 : 700);
+  }
+
+  async close(opcoes) {
+    if (!this.fim) { this.fim = true; cancelAnimationFrame(this._quadro); this._resolver(null); }
+    return super.close(opcoes);
+  }
+
+  async _onFirstRender() {
+    injetarEstilo();
+    this.el = this.element.querySelector(".ov-mini-tela");
+    this.ctx = this.el.getContext("2d");
+    this.imagem = await new Promise(r => {
+      if (!this.img || /\.(webm|mp4)$/i.test(this.img)) return r(null);
+      const im = new Image();
+      im.onload = () => r(im); im.onerror = () => r(null);
+      im.src = this.img;
+    });
+    this.element.querySelector('[data-a="desistir"]')?.addEventListener("click", () => this._terminar(false));
+    this.inicio = performance.now();
+    if (this.jogo === "runa") this._iniciarRuna(); else this._iniciarAneis();
+    const laco = agora => {
+      if (this.fim) return;
+      if (this.tempo) {
+        const resta = Math.max(0, 1 - (agora - this.inicio) / (this.tempo * 1000));
+        const b = this.element?.querySelector(".ov-mini-barra");
+        if (b) { b.style.width = `${resta * 100}%`; b.classList.toggle("ov-pouco", resta < 0.25); }
+        if (resta <= 0) return this._terminar(false);
+      }
+      this._desenhar(agora);
+      this._quadro = requestAnimationFrame(laco);
+    };
+    this._quadro = requestAnimationFrame(laco);
+  }
+
+  _fundo(alpha = 1) {
+    const c = this.ctx;
+    c.clearRect(0, 0, 400, 400);
+    c.fillStyle = "#14121a"; c.fillRect(0, 0, 400, 400);
+    if (!this.imagem) return;
+    c.save(); c.globalAlpha = alpha;
+    const e = Math.min(360 / this.imagem.width, 360 / this.imagem.height);
+    c.drawImage(this.imagem, 200 - this.imagem.width * e / 2, 200 - this.imagem.height * e / 2, this.imagem.width * e, this.imagem.height * e);
+    c.restore();
+  }
+
+  // Desenho de reserva (sem imagem): um círculo rúnico, para o minijogo nunca ficar vazio
+  _circuloRunico(c) {
+    c.save(); c.translate(200, 200);
+    c.strokeStyle = "#8fd8ff"; c.lineWidth = 3;
+    for (const r of [170, 130, 90, 50]) { c.beginPath(); c.arc(0, 0, r, 0, Math.PI * 2); c.stroke(); }
+    for (let i = 0; i < 12; i++) {
+      c.rotate(Math.PI / 6);
+      c.beginPath(); c.moveTo(0, -170); c.lineTo(10, -150); c.lineTo(-8, -138); c.moveTo(0, -128); c.lineTo(0, -95); c.moveTo(-12, -112); c.lineTo(12, -100); c.stroke();
+    }
+    c.beginPath(); for (let i = 0; i <= 5; i++) { const a = i * 4 * Math.PI / 5 - Math.PI / 2; c.lineTo(Math.cos(a) * 88, Math.sin(a) * 88); } c.stroke();
+    c.restore();
+  }
+
+  // ---------- Girar os anéis
+  _iniciarAneis() {
+    const { aneis, passo } = this.dif;
+    const raioMax = 190, miolo = 40;
+    this.aneis = Array.from({ length: aneis }, (_, i) => {
+      const r0 = miolo + (raioMax - miolo) * i / aneis, r1 = miolo + (raioMax - miolo) * (i + 1) / aneis;
+      let giro = 0;
+      while (giro === 0) giro = passo * (1 + Math.floor(Math.random() * (360 / passo - 1)));
+      return { r0, r1, giro, mostra: giro };
+    });
+    // Fonte da imagem: a do objeto, ou o círculo rúnico de reserva
+    this.fonte = document.createElement("canvas");
+    this.fonte.width = 400; this.fonte.height = 400;
+    const fc = this.fonte.getContext("2d");
+    if (this.imagem) {
+      const e = Math.min(380 / this.imagem.width, 380 / this.imagem.height);
+      fc.drawImage(this.imagem, 200 - this.imagem.width * e / 2, 200 - this.imagem.height * e / 2, this.imagem.width * e, this.imagem.height * e);
+    } else this._circuloRunico(fc);
+    const anelNoPonto = ev => {
+      const r = this.el.getBoundingClientRect();
+      const x = (ev.clientX - r.left) * 400 / r.width - 200, y = (ev.clientY - r.top) * 400 / r.height - 200;
+      const d = Math.hypot(x, y);
+      return this.aneis.findIndex(a => d >= a.r0 && d < a.r1);
+    };
+    const girar = (ev, dir) => {
+      ev.preventDefault();
+      if (this.fim) return;
+      const i = anelNoPonto(ev);
+      if (i < 0) return;
+      const a = this.aneis[i];
+      a.giro = ((a.giro + dir * passo) % 360 + 360) % 360;
+      if (this.aneis.every(x => x.giro === 0)) setTimeout(() => this._terminar(true), 250);
+    };
+    this.el.addEventListener("click", ev => girar(ev, 1));
+    this.el.addEventListener("contextmenu", ev => girar(ev, -1));
+    this.el.addEventListener("pointermove", ev => { this.sobre = anelNoPonto(ev); });
+    this.el.addEventListener("pointerleave", () => { this.sobre = -1; });
+  }
+
+  _desenharAneis() {
+    const c = this.ctx;
+    c.clearRect(0, 0, 400, 400);
+    c.fillStyle = "#14121a"; c.fillRect(0, 0, 400, 400);
+    // Fora dos anéis e o miolo ficam parados
+    c.save(); c.globalAlpha = 0.35; c.drawImage(this.fonte, 0, 0); c.restore();
+    c.save(); c.beginPath(); c.arc(200, 200, this.aneis[0].r0, 0, Math.PI * 2); c.clip(); c.drawImage(this.fonte, 0, 0); c.restore();
+    this.aneis.forEach((a, i) => {
+      // animação suave até o ângulo novo
+      let dif = ((a.giro - a.mostra + 540) % 360) - 180;
+      a.mostra = Math.abs(dif) < 0.5 ? a.giro : a.mostra + dif * 0.25;
+      c.save();
+      c.beginPath(); c.arc(200, 200, a.r1, 0, Math.PI * 2); c.arc(200, 200, a.r0, 0, Math.PI * 2, true); c.clip();
+      c.fillStyle = "#14121a"; c.fillRect(0, 0, 400, 400);
+      c.translate(200, 200); c.rotate(a.mostra * Math.PI / 180); c.translate(-200, -200);
+      c.drawImage(this.fonte, 0, 0);
+      c.restore();
+      c.save();
+      c.strokeStyle = i === this.sobre && !this.fim ? "#ffc27a" : "rgba(240,160,60,.35)";
+      c.lineWidth = i === this.sobre ? 3 : 1.5;
+      c.beginPath(); c.arc(200, 200, a.r1 - 1, 0, Math.PI * 2); c.stroke();
+      c.restore();
+    });
+  }
+
+  // ---------- Redesenhar a runa
+  _iniciarRuna() {
+    const n = this.dif.pontos;
+    this.pontos = Array.from({ length: n }, (_, i) => {
+      const a = (i / n) * Math.PI * 2 - Math.PI / 2 + (Math.random() - 0.5) * 0.35;
+      const r = 120 + Math.random() * 40;
+      return { x: 200 + Math.cos(a) * r, y: 200 + Math.sin(a) * r };
+    });
+    this.pontos.push({ x: 200 + (Math.random() - 0.5) * 40, y: 200 + (Math.random() - 0.5) * 40 });
+    // Ordem da runa: passa por todos os pontos, numa ordem embaralhada
+    const ordem = this.pontos.map((_, i) => i);
+    for (let i = ordem.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ordem[i], ordem[j]] = [ordem[j], ordem[i]]; }
+    this.ordem = ordem;
+    this.feito = [];
+    this.mostrarAte = performance.now() + 900 + ordem.length * 450 + 1200;
+    this.inicio = this.mostrarAte; // o tempo só começa a contar depois de ver a runa
+    const st = this.element.querySelector(".ov-mini-status");
+    if (st) st.textContent = t("Mini.Memorize");
+    this.el.addEventListener("click", ev => {
+      if (this.fim || performance.now() < this.mostrarAte) return;
+      const r = this.el.getBoundingClientRect();
+      const x = (ev.clientX - r.left) * 400 / r.width, y = (ev.clientY - r.top) * 400 / r.height;
+      const i = this.pontos.findIndex(p => Math.hypot(p.x - x, p.y - y) < 22);
+      if (i < 0 || this.feito.includes(i)) return;
+      if (i === this.ordem[this.feito.length]) {
+        this.feito.push(i);
+        if (this.feito.length === this.ordem.length) setTimeout(() => this._terminar(true), 250);
+      } else {
+        this.erros++;
+        this.erroAte = performance.now() + 450;
+        this.feito = [];
+        const st2 = this.element.querySelector(".ov-mini-status");
+        if (st2) st2.textContent = t("Mini.Erros", { n: this.erros, max: 3 });
+        if (this.erros >= 3) this._terminar(false);
+      }
+    });
+  }
+
+  _desenharRuna(agora) {
+    const c = this.ctx;
+    this._fundo(0.28);
+    const mostrando = agora < this.mostrarAte;
+    if (!mostrando && this._avisou !== true) {
+      this._avisou = true;
+      const st = this.element.querySelector(".ov-mini-status");
+      if (st && !this.erros) st.textContent = t("Mini.Sua");
+    }
+    const linha = (lista, cor, largura) => {
+      if (lista.length < 2) return;
+      c.save(); c.strokeStyle = cor; c.lineWidth = largura; c.lineCap = "round"; c.lineJoin = "round";
+      c.shadowColor = cor; c.shadowBlur = 14;
+      c.beginPath(); lista.forEach((i, k) => { const p = this.pontos[i]; k ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y); }); c.stroke(); c.restore();
+    };
+    if (mostrando) {
+      const quantos = Math.min(this.ordem.length, 1 + Math.floor(Math.max(0, agora - (this.mostrarAte - 1200 - this.ordem.length * 450)) / 450));
+      linha(this.ordem.slice(0, quantos), "#8fd8ff", 5);
+    } else linha(this.feito, this.erroAte > agora ? "#ff8a7a" : "#ffc27a", 5);
+    this.pontos.forEach((p, i) => {
+      const ativo = this.feito.includes(i);
+      c.save();
+      c.fillStyle = ativo ? "#ffc27a" : "#2a2532"; c.strokeStyle = ativo ? "#fff3dd" : "#8fd8ff"; c.lineWidth = 2;
+      c.shadowColor = "#8fd8ff"; c.shadowBlur = ativo ? 16 : 8;
+      c.beginPath(); c.arc(p.x, p.y, 11, 0, Math.PI * 2); c.fill(); c.stroke();
+      c.restore();
+    });
+  }
+
+  _desenhar(agora) { if (this.jogo === "runa") this._desenharRuna(agora); else this._desenharAneis(); }
+}
+
+// Abre o minijogo e espera: true = conseguiu, false = falhou/acabou o tempo, null = fechou a janela
+async function jogarMinijogo(doc, tt, { desarmar = false } = {}) {
+  const c = cfgDe(doc);
+  const app = new MinijogoConserto({
+    jogo: tt.minijogo || "aneis",
+    img: tt._img || c?.estados?.[0]?.img || doc.texture?.src || "",
+    nome: nomeObjeto(doc), cd: tt.cd, tempo: tt.tempo, titulo: desarmar ? "Mini.TituloDesarmar" : tt.modo === "consertar" ? "Mini.Titulo" : "Mini.TituloTeste"
+  });
+  await app.render({ force: true });
+  return app.resultado;
+}
+const usaRolagem = tt => (tt.como ?? "rolagem") !== "minijogo";
+const usaMinijogo = tt => (tt.como ?? "rolagem") !== "rolagem";
+
+// Falhou: conta a tentativa, avisa, roda "Ao falhar no teste" e trava se acabaram as tentativas
+async function falhouTeste(doc, c, ctx, total, { desarmar = false } = {}) {
+  const tt = testeDe(c);
+  const feitas = (Number(tt.feitas) || 0) + 1;
+  const max = Number(tt.tentativas) || 0;
+  const travou = max > 0 && feitas >= max;
+  const upd = { [`flags.${ID}.objeto.teste.feitas`]: feitas };
+  // Acabaram as tentativas: trava (na armadilha, trava só as tentativas de desarmar; ela continua disparando)
+  if (travou) upd[`flags.${ID}.objeto.trancado`] = true;
+  await doc.update(upd);
+  const cd = Number(tt.cd) || 10;
+  let texto = tt.msgFalha?.trim() || t(desarmar ? "Teste.FalhouDesarmar" : tt.modo === "consertar" ? "Teste.FalhouConsertar" : "Teste.Falhou", { objeto: nomeObjeto(doc) });
+  if (tt.mostrarCD && total != null) texto += ` (${total} × CD ${cd})`;
+  if (travou) texto += ` ${t("Teste.Travou")}`;
+  efeito(alvos("disparou", ctx), { tipo: "aviso", texto });
+  for (const a of c.acoes?.falha ?? []) {
+    try { await rodarAcao(a, ctx); } catch (err) { console.error(`${ID} |`, err); }
+  }
+  Hooks.callAll("objetosVivos.falhou", doc, { token: ctx.token, userId: ctx.userId, total, cd });
+}
+
+// Faz o teste (rolagem e/ou minijogo) e devolve "passou", "falhou" ou null (esperando alguém jogar,
+// cancelado ou sem personagem). Na falha já conta a tentativa e roda "Ao falhar no teste".
+async function avaliarTeste(doc, c, { token, userId, rolagem, desarmar = false }) {
+  const tt = testeDe(c);
+  const ctxT = { cena: doc.parent, token, userId, fonte: doc, profundidade: 0 };
+  let total = Number.isFinite(rolagem?.total) ? rolagem.total : null;
+  let mini = typeof rolagem?.minijogo === "boolean" ? rolagem.minijogo : undefined;
+  // Minijogo: quem clicou já jogou na própria tela. Se ninguém jogou ainda, o mestre joga (se foi ele
+  // quem usou) ou o minijogo abre na tela do jogador dono do token (pisou ou chegou perto).
+  if (usaMinijogo(tt) && mini === undefined) {
+    if (userId && userId === game.user.id) {
+      mini = await jogarMinijogo(doc, tt, { desarmar });
+      if (mini === null) return null;
+    } else {
+      const donos = token?.actor
+        ? game.users.filter(u => u.active && !u.isGM && token.actor.testUserPermission?.(u, "OWNER")).map(u => u.id)
+        : (userId && !game.users.get(userId)?.isGM ? [userId] : []);
+      if (donos.length) { emitir({ acao: "jogar", uuid: doc.uuid, tokenUuid: token?.uuid ?? null, userIds: [donos[0]], desarmar }); return null; }
+      ui.notifications.info(t("Mini.SemJogador", { objeto: nomeObjeto(doc) }));
+      return null;
+    }
+  }
+  if (usaRolagem(tt) && total === null) {
+    // Ninguém rolou ainda (mestre clicou, alguém pisou ou chegou perto, ou o mestre rola escondido)
+    const ator = token?.actor ?? game.users.get(userId)?.character ?? null;
+    if (!ator) {
+      if (game.users.get(userId)?.isGM) ui.notifications.info(t("Teste.SemTokenMestre"));
+      else { if (userId) efeito([userId], { tipo: "aviso", texto: t("Teste.SemPersonagem") }); return null; }
+    } else {
+      total = await rolarTeste(ator, tt, { escondido: tt.quemRola === "mestre" });
+      if (total === null) return null;
+    }
+  }
+  const cd = Number(tt.cd) || 10;
+  const passouRolagem = !usaRolagem(tt) || total === null || total >= cd;
+  const passouMini = !usaMinijogo(tt) || mini === true;
+  const passou = passouRolagem && passouMini;
+  Hooks.callAll("objetosVivos.teste", doc, { token, userId, total, cd, minijogo: mini, passou, desarmar });
+  if (!passou) { await falhouTeste(doc, c, ctxT, passouRolagem ? null : total, { desarmar }); return "falhou"; }
+  const msg = desarmar ? "Teste.Desarmou" : tt.modo === "consertar" ? "Teste.Consertou" : "Teste.Passou";
+  if (userId) efeito([userId], { tipo: "aviso", texto: t(msg, { objeto: nomeObjeto(doc) }) + (tt.mostrarCD && total !== null ? ` (${total} × CD ${cd})` : "") });
+  return "passou";
+}
+
+// Dispara o objeto do jeito normal (troca a aparência e roda as ações)
+async function dispararObjeto(doc, c, ctx) {
+  await mudarEstado(doc, (c.estado + 1) % c.estados.length, ctx);
+  if (c.camaleao && c.revelarAoUsar && !c.revelado) await doc.setFlag(ID, "objeto.revelado", true);
+  Hooks.callAll("objetosVivos.usado", doc, { token: ctx.token, userId: ctx.userId });
+}
+
+async function usarObjeto(doc, { tokenUuid = null, userId = null, forcar = false, rolagem = null, desarmar = false }) {
   if (!game.user.isGM) return;
   const c = cfgDe(doc);
   if (!c || !ehTile(doc)) return;
   const cena = doc.parent;
   const token = (tokenUuid ? await fromUuid(tokenUuid) : null) ?? tokenDoUsuario(userId, cena);
+  const ctx = { cena, token, userId, fonte: doc, profundidade: 0 };
+  const tt = testeDe(c);
   if (!forcar) {
+    // Armadilha: desarmada não dispara mais; a tentativa de desarmar é um teste à parte
+    if (tt.modo === "desarmar") {
+      if (c.desarmado) {
+        if (userId && desarmar) efeito([userId], { tipo: "aviso", texto: t("Teste.JaDesarmada", { objeto: nomeObjeto(doc) }) });
+        return;
+      }
+      if (desarmar) {
+        if (c.trancado) { if (userId) efeito([userId], { tipo: "aviso", texto: t("Teste.SemTentativas", { objeto: nomeObjeto(doc) }) }); return; }
+        if (!await podeAgir(doc, c, token, userId, "desarmar")) return;
+        const r = await avaliarTeste(doc, c, { token, userId, rolagem, desarmar: true });
+        if (r === "passou") {
+          const upd = { [`flags.${ID}.objeto.desarmado`]: true };
+          if (c.camaleao && !c.revelado) upd[`flags.${ID}.objeto.revelado`] = true;
+          await doc.update(upd);
+          for (const a of c.acoes?.desarmar ?? []) { try { await rodarAcao(a, ctx); } catch (err) { console.error(`${ID} |`, err); } }
+          Hooks.callAll("objetosVivos.desarmado", doc, { token, userId });
+        } else if (r === "falhou" && tt.falhaDispara !== false) {
+          await dispararObjeto(doc, cfgDe(doc), ctx);
+        }
+        return;
+      }
+      // Disparar a armadilha (pisou, clicou em "Usar", chegou perto): sem teste
+      if (!await podeAgir(doc, c, token, userId, "usar")) return;
+      return dispararObjeto(doc, c, ctx);
+    }
     if (c.trancado) {
       if (userId) efeito([userId], { tipo: "aviso", texto: t("Aviso.Trancado", { objeto: nomeObjeto(doc) }) });
       Hooks.callAll("objetosVivos.trancado", doc, { token, userId });
       return;
     }
+    // Consertar: depois de consertado ele não volta a quebrar
+    if (consertado(c)) {
+      if (tt.depois === "nada") {
+        if (userId) efeito([userId], { tipo: "aviso", texto: t("Teste.JaConsertado", { objeto: nomeObjeto(doc) }) });
+        return;
+      }
+      if (!await podeAgir(doc, c, token, userId, "usar")) return;
+      await executarAcoes(doc, "usoConsertado", ctx);
+      Hooks.callAll("objetosVivos.usado", doc, { token, userId });
+      return;
+    }
+    if (precisaTeste(c)) {
+      const r = await avaliarTeste(doc, c, { token, userId, rolagem });
+      if (r !== "passou") return;
+    }
     if (!await podeAgir(doc, c, token, userId, "usar")) return;
   }
-  const ctx = { cena, token, userId, fonte: doc, profundidade: 0 };
-  await mudarEstado(doc, (c.estado + 1) % c.estados.length, ctx);
-  if (c.camaleao && c.revelarAoUsar && !c.revelado) await doc.setFlag(ID, "objeto.revelado", true);
-  Hooks.callAll("objetosVivos.usado", doc, { token, userId });
+  await dispararObjeto(doc, c, ctx);
 }
 
 // Algo aconteceu com uma porta/parede que é objeto
@@ -368,11 +806,48 @@ async function eventoParede(doc, momento, { tokenUuid = null, userId = null }) {
   } else await executarAcoes(doc, momento, ctx);
 }
 
+async function escolherArmadilha(doc, c) {
+  const D = foundry.applications.api.DialogV2;
+  const nome = esc(nomeObjeto(doc));
+  if (c.interacao !== "clicar" && c.interacao !== "mestre") {
+    const ok = await D.confirm({ window: { title: t("Teste.Modo.desarmar") }, content: `<p>${t("Teste.PerguntaDesarmar", { objeto: nome })}</p>`, rejectClose: false });
+    return ok ? "desarmar" : null;
+  }
+  return D.wait({
+    window: { title: nomeObjeto(doc) },
+    content: `<p>${t("Teste.PerguntaArmadilha", { objeto: nome })}</p>`,
+    buttons: [
+      { action: "usar", label: t("Teste.BotaoUsar"), icon: "fa-solid fa-hand-pointer" },
+      { action: "desarmar", label: t("Teste.BotaoDesarmar"), icon: "fa-solid fa-screwdriver-wrench", default: true }
+    ],
+    rejectClose: false
+  }).catch(() => null);
+}
+
 // Leva o pedido até o mestre ativo
-function pedirUso(doc, tokenUuid) {
-  if (souMestreAtivo()) return usarObjeto(doc, { tokenUuid, userId: game.user.id });
-  if (!game.users.activeGM) return ui.notifications.warn(t("Aviso.SemMestre"));
-  emitir({ acao: "usar", uuid: doc.uuid, tokenUuid, userId: game.user.id });
+async function pedirUso(doc, tokenUuid, { desarmar = false } = {}) {
+  if (!souMestreAtivo() && !game.users.activeGM) return ui.notifications.warn(t("Aviso.SemMestre"));
+  let rolagem = null;
+  const c = cfgDe(doc);
+  const tt = testeDe(c);
+  const precisa = tt.modo === "desarmar" ? (desarmar && !c?.desarmado && !c?.trancado) : (!c?.trancado && precisaTeste(c));
+  // O jogador rola o teste e joga o minijogo na própria tela (com a janela de vantagem do sistema); o mestre só confere
+  if (!game.user.isGM && c && precisa) {
+    if (usaRolagem(tt) && tt.quemRola !== "mestre") {
+      const ator = (tokenUuid ? (await fromUuid(tokenUuid))?.actor : null) ?? game.user.character;
+      if (!ator) return ui.notifications.warn(t("Teste.SemPersonagem"));
+      const total = await rolarTeste(ator, tt);
+      if (total === null) return;
+      rolagem = { total };
+    }
+    if (usaMinijogo(tt)) {
+      const r = await jogarMinijogo(doc, tt, { desarmar });
+      if (r === null) return;
+      rolagem = { ...(rolagem ?? {}), minijogo: r };
+    }
+  }
+  if (souMestreAtivo()) return usarObjeto(doc, { tokenUuid, userId: game.user.id, rolagem, desarmar });
+  emitir({ acao: "usar", uuid: doc.uuid, tokenUuid, userId: game.user.id, rolagem, desarmar });
 }
 
 // Animação do objeto ao mudar de estado (em todos os navegadores)
@@ -626,7 +1101,9 @@ const usaveis = () => (canvas.tiles?.placeables ?? []).filter(o => {
   const c = cfgDe(o.document);
   if (!c) return false;
   if (game.user.isGM) return true;
-  return !o.document.hidden && c.interacao === "clicar";
+  if (o.document.hidden) return false;
+  if (testeDe(c).modo === "desarmar" && !c.desarmado) return true;
+  return c.interacao === "clicar";
 });
 const tileNoPonto = p => (canvas.tiles?.placeables ?? []).filter(o => o.visible !== false && noTile(o.document, p))
   .sort((a, b) => (b.document.sort ?? 0) - (a.document.sort ?? 0))[0] ?? null;
@@ -651,7 +1128,7 @@ function ligarMapa() {
   view._ovLigado = true;
   let ini = null;
   view.addEventListener("pointerdown", ev => { ini = ev.button === 0 ? { x: ev.clientX, y: ev.clientY, t: Date.now() } : null; });
-  view.addEventListener("pointerup", ev => {
+  view.addEventListener("pointerup", async ev => {
     const i = ini;
     ini = null;
     if (!i || ev.button !== 0 || Math.hypot(ev.clientX - i.x, ev.clientY - i.y) > 6 || Date.now() - i.t > 500) return;
@@ -668,7 +1145,14 @@ function ligarMapa() {
     const doc = o.document, c = cfgDe(doc);
     const { perto, dist } = maisPerto(doc);
     if (!game.user.isGM && c.distancia > 0 && dist > c.distancia) return ui.notifications.info(t("Aviso.Longe"));
-    pedirUso(doc, perto?.document.uuid ?? null);
+    const tokenUuid = perto?.document.uuid ?? null;
+    // Armadilha: o clique oferece "Usar" ou "Tentar desarmar" (numa placa de pisar, o clique é só desarmar)
+    if (testeDe(c).modo === "desarmar" && !c.desarmado) {
+      const escolha = await escolherArmadilha(doc, c);
+      if (escolha) pedirUso(doc, tokenUuid, { desarmar: escolha === "desarmar" });
+      return;
+    }
+    pedirUso(doc, tokenUuid);
   });
   let quadro = 0;
   view.addEventListener("pointermove", ev => {
@@ -763,7 +1247,8 @@ const CSS = `
 .ov-raiz { display: flex; height: 100%; font-family: Signika, system-ui, sans-serif; }
 .ov-raiz button { font-family: inherit; }
 .ov-lado > * { flex: none; }
-.ov-lado > input[type=text] { flex: none; height: 36px; }
+.ov-raiz .ov-lado > input[type=text], .ov-raiz .ov-lado > * { flex: none; }
+.ov-raiz .ov-lado > input[type=text] { height: 36px; }
 .ov-mini { width: 40px; height: 40px; flex: none; border-radius: 6px; border: none; background: #2e2a37; object-fit: contain; display: flex; align-items: center; justify-content: center; color: #a8a1b4; }
 .ov-arquivo { flex: 1; min-width: 0; font-size: 12px; color: #cfc8da; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ov-aviso-img { margin: 0; padding: 8px 10px; border-radius: 8px; background: rgba(240,160,60,.10); border: 1px solid #f0a03c66; font-size: 12px; color: #ffd09a; }
@@ -788,6 +1273,7 @@ const CSS = `
 .ov-num { width: 26px; height: 26px; flex: none; border-radius: 7px; background: #2e2a37; color: #f0a03c; font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; }
 .ov-raiz input[type=text], .ov-raiz input[type=number], .ov-raiz select, .ov-raiz textarea {
   height: 36px; box-sizing: border-box; border-radius: 8px; border: 1px solid #343041; background: #1e1b24; color: #ece8f1; padding: 0 10px; font-family: inherit; font-size: 13px; flex: 1; min-width: 0; }
+.ov-corpo section > select { flex: none; width: 100%; height: 36px; }
 .ov-raiz textarea { height: auto; min-height: 64px; padding: 8px 10px; resize: vertical; }
 .ov-principal { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .ov-abas { display: flex; gap: 4px; padding: 10px 18px 0; border-bottom: 1px solid #343041; flex: none; }
@@ -842,6 +1328,15 @@ fieldset.ov-secao legend { padding: 0 6px; font-weight: bold; }
 fieldset.ov-secao p { font-size: 12px; margin: 0 0 8px; opacity: .85; }
 fieldset.ov-secao .ov-botoes { display: flex; gap: 6px; } fieldset.ov-secao .ov-botoes button { flex: 1; }
 .ov-narracao { font-style: italic; }
+.ov-minijogo .window-content { padding: 0; background: #17151c; color: #ece8f1; }
+.ov-mini-raiz { display: flex; flex-direction: column; gap: 10px; padding: 14px; font-family: Signika, system-ui, sans-serif; }
+.ov-mini-dica { margin: 0; font-size: 13px; color: #cfc8da; line-height: 1.4; }
+.ov-mini-tela { width: 100%; aspect-ratio: 1; border-radius: 12px; border: 1px solid #343041; background: #14121a; cursor: pointer; display: block; }
+.ov-mini-tempo { height: 8px; border-radius: 999px; background: #2a2632; overflow: hidden; }
+.ov-mini-barra { display: block; height: 100%; width: 100%; background: #f0a03c; transition: background .3s; }
+.ov-mini-barra.ov-pouco { background: #ff7a6a; }
+.ov-mini-rodape { display: flex; align-items: center; gap: 10px; }
+.ov-mini-status { flex: 1; font-size: 13px; font-weight: 600; color: #ffd09a; }
 .ov-faixa.ov-faixa-linha { display: grid; grid-template-columns: 110px minmax(0, 1fr) 52px; padding: 8px 14px; }
 .ov-faixa-linha b { font-size: 13px; } .ov-faixa-linha input[type=range] { width: 100%; accent-color: #f0a03c; }
 .ov-btn.ov-mais { align-self: flex-start; }
@@ -997,7 +1492,7 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
 
   _abas() {
     return this.tile
-      ? [["aparencia", t("Aba.Aparencia")], ["uso", t("Aba.Uso")], ["acoes", t("Aba.Acoes")]]
+      ? [["aparencia", t("Aba.Aparencia")], ["uso", t("Aba.Uso")], ["teste", t("Aba.Teste")], ["acoes", t("Aba.Acoes")]]
       : [["acoes", t("Aba.Acoes")]];
   }
 
@@ -1090,6 +1585,8 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
         <p class="ov-dica" style="margin-top:6px">${t("Aparencia.SomDica")}</p></section>`;
     }
 
+    if (this.aba === "teste") return this._htmlTeste(chave);
+
     if (this.aba === "uso") return `
       <section><h2>${t("Uso.Titulo")}</h2>
         <div class="ov-grade ov-2">${INTERACOES.map(i =>
@@ -1135,6 +1632,56 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
       </section>`;
     }
     return "";
+  }
+
+  _htmlTeste(chave) {
+    const tt = testeDe(this.dados);
+    const cartao = (m, nome, desc) => `<button type="button" class="ov-cartao ${tt.modo === m ? "ov-on" : ""}" data-teste-modo="${m}" aria-pressed="${tt.modo === m}"><b>${nome}</b><span>${desc}</span></button>`;
+    let h = `<section><h2>${t("Teste.Pergunta")}</h2>
+      <div class="ov-grade ov-2">${cartao("nenhum", t("Teste.Modo.nenhum"), t("Teste.Modo.nenhumDesc"))}${cartao("usar", t("Teste.Modo.usar"), t("Teste.Modo.usarDesc"))}${cartao("consertar", t("Teste.Modo.consertar"), t("Teste.Modo.consertarDesc"))}${cartao("desarmar", t("Teste.Modo.desarmar"), t("Teste.Modo.desarmarDesc"))}</div></section>`;
+    if (tt.modo === "nenhum") return h;
+    const grupos = opcoesDeTeste();
+    const op = (v, n) => `<option value="${esc(v)}" ${tt.qual === v ? "selected" : ""}>${esc(n)}</option>`;
+    const sel = grupos.length
+      ? `<select data-teste="qual" data-rerender aria-label="${esc(t("Teste.Qual"))}">${grupos.map(g => `<optgroup label="${esc(g.nome)}">${g.itens.map(i => op(i.valor, i.nome)).join("")}</optgroup>`).join("")}
+          <optgroup label="${esc(t("Teste.Grupo.outro"))}">${op("formula", t("Teste.Formula"))}</optgroup></select>`
+      : "";
+    const usaFormula = !grupos.length || tt.qual === "formula";
+    const passoT = (campo, texto, nome, desc) => `<div class="ov-faixa"><div class="ov-txt"><b>${esc(nome)}</b><span>${esc(desc)}</span></div>
+      <button type="button" class="ov-btn ov-icone" data-teste-menos="${campo}" aria-label="−">−</button><span class="ov-valor">${esc(texto)}</span>
+      <button type="button" class="ov-btn ov-icone" data-teste-mais="${campo}" aria-label="+">+</button></div>`;
+    const pilula = (attr, v, atual, nome) => `<button type="button" class="ov-pilula ${atual === v ? "ov-on" : ""}" ${attr}="${v}">${nome}</button>`;
+    const como = tt.como ?? "rolagem";
+    const cartaoJogo = (j, nome, desc) => `<button type="button" class="ov-cartao ${tt.minijogo === j ? "ov-on" : ""}" data-teste-jogo="${j}" aria-pressed="${tt.minijogo === j}"><b>${nome}</b><span>${desc}</span></button>`;
+    if (tt.modo === "desarmar") h += `<section style="display:flex;flex-direction:column;gap:8px">
+        <p class="ov-dica">${t("Teste.DesarmarDica")}</p>
+        ${this.dados.desarmado ? `<div class="ov-faixa"><div class="ov-txt"><b>${t("Teste.EstaDesarmada")}</b></div>
+          <button type="button" class="ov-btn" data-a="rearmar">${icone("fa-rotate-left")} ${t("Teste.Rearmar")}</button></div>` : ""}
+        ${chave(tt.falhaDispara !== false, "teste.falhaDispara", t("Teste.FalhaDispara"), t("Teste.FalhaDisparaDica"))}</section>`;
+    h += `<section style="display:flex;flex-direction:column;gap:8px"><h2>${t(tt.modo === "consertar" ? "Teste.ComoConsertar" : tt.modo === "desarmar" ? "Teste.ComoDesarmar" : "Teste.ComoPassar")}</h2>
+        <div class="ov-pilulas">${pilula("data-teste-como", "rolagem", como, t("Teste.Como.rolagem"))}${pilula("data-teste-como", "minijogo", como, t("Teste.Como.minijogo"))}${pilula("data-teste-como", "ambos", como, t("Teste.Como.ambos"))}</div>
+        ${como !== "rolagem" ? `
+          <div class="ov-grade ov-2">${cartaoJogo("aneis", t("Mini.Jogo.aneis"), t("Mini.Desc.aneis"))}${cartaoJogo("runa", t("Mini.Jogo.runa"), t("Mini.Desc.runa"))}</div>
+          ${passoT("tempo", Number(tt.tempo) > 0 ? t("Valor.Segundos", { n: tt.tempo }) : t("Valor.SemLimite"), t("Mini.Tempo"), t("Mini.TempoDica"))}
+          <button type="button" class="ov-btn ov-forte" data-a="testar-minijogo" style="align-self:flex-start">${icone("fa-gamepad")} ${t("Mini.Testar")}</button>` : ""}
+      </section>
+      <section style="display:flex;flex-direction:column;gap:8px"><h2>${t(como === "minijogo" ? "Mini.Dificuldade" : "Teste.Qual")}</h2>
+        ${como === "minijogo" ? "" : sel}
+        ${como !== "minijogo" && usaFormula ? `<div class="ov-campo"><label>${t("Teste.Formula")}</label><input type="text" data-teste="formula" value="${esc(tt.formula)}" placeholder="1d20 + @abilities.int.mod"></div>` : ""}
+        ${passoT("cd", `CD ${Number(tt.cd) || 10}`, t("Teste.CD"), t(como === "rolagem" ? "Teste.CDDica" : "Mini.CDDica", { aneis: dificuldade(tt.cd).aneis, pontos: dificuldade(tt.cd).pontos + 1 }))}
+        ${como !== "minijogo" ? chave(!!tt.mostrarCD, "teste.mostrarCD", t("Teste.MostrarCD"), t("Teste.MostrarCDDica")) : ""}</section>
+      ${como !== "minijogo" ? `<section><h2>${t("Teste.Quem")}</h2>
+        <div class="ov-pilulas">${pilula("data-teste-quem", "jogador", tt.quemRola, t("Teste.QuemJogador"))}${pilula("data-teste-quem", "mestre", tt.quemRola, t("Teste.QuemMestre"))}</div>
+        <p class="ov-dica" style="margin-top:6px">${t(tt.quemRola === "mestre" ? "Teste.QuemMestreDica" : "Teste.QuemJogadorDica")}</p></section>` : ""}
+      <section style="display:flex;flex-direction:column;gap:8px"><h2>${t("Teste.AoFalhar")}</h2>
+        ${passoT("tentativas", Number(tt.tentativas) > 0 ? t("Valor.Vezes", { n: tt.tentativas }) : t("Valor.SemLimite"), t("Teste.Tentativas"), t("Teste.TentativasDica", { n: Number(tt.feitas) || 0 }))}
+        ${Number(tt.feitas) > 0 ? `<button type="button" class="ov-btn" data-a="zerar-tentativas" style="align-self:flex-start">${icone("fa-rotate-left")} ${t("Teste.Zerar")}</button>` : ""}
+        <div class="ov-campo"><label>${t("Teste.Mensagem")}</label><input type="text" data-teste="msgFalha" value="${esc(tt.msgFalha)}" placeholder="${esc(t(tt.modo === "consertar" ? "Teste.FalhouConsertar" : "Teste.Falhou", { objeto: this.dados.nome || nomeObjeto(this.doc) }))}"></div>
+        <p class="ov-dica">${t("Teste.AoFalharDica")}</p></section>`;
+    if (tt.modo === "consertar") h += `<section><h2>${t("Teste.Depois")}</h2>
+        <div class="ov-pilulas">${pilula("data-teste-depois", "acoes", tt.depois, t("Teste.DepoisAcoes"))}${pilula("data-teste-depois", "nada", tt.depois, t("Teste.DepoisNada"))}</div>
+        <p class="ov-dica" style="margin-top:6px">${t("Teste.ConsertarDica")}</p></section>`;
+    return h;
   }
 
   _htmlQuem() {
@@ -1298,6 +1845,11 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
   _aoDigitar(ev, valor, mudou = false) {
     const alvo = ev.target, d = this.dados;
     if (alvo.dataset.geral) { d[alvo.dataset.geral] = valor(alvo); return; }
+    if (alvo.dataset.teste) {
+      d.teste = { ...testeDe(d), [alvo.dataset.teste]: alvo.value };
+      if (mudou && alvo.dataset.rerender !== undefined) this.render();
+      return;
+    }
     if (alvo.dataset.visao) {
       d.visao = { x: 0, y: 0, espelho: false, ...(d.visao ?? {}) };
       d.visao[alvo.dataset.visao] = Number(alvo.value) || 0;
@@ -1364,6 +1916,30 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
     if (ds.anim) { d.anim = ds.anim; this.render(); return this._animarPrevia(); }
     if (ds.interacao) { d.interacao = ds.interacao; return this.render(); }
     if (ds.quem) { d.quem = ds.quem; return this.render(); }
+    if (ds.testeModo) {
+      d.teste = { ...testeDe(d), modo: ds.testeModo };
+      // Consertar: a primeira aparência é a quebrada e a segunda a consertada
+      if (ds.testeModo === "consertar" && d.estados?.length >= 2) {
+        const padroes = Object.values(PRESETS).flatMap(p => p.estados.map(n => t(n)));
+        if (padroes.includes(d.estados[0].nome) || !d.estados[0].nome) d.estados[0].nome = t("Est.Quebrado");
+        if (padroes.includes(d.estados[1].nome) || !d.estados[1].nome) d.estados[1].nome = t("Est.Consertado");
+        d.estado = 0;
+      }
+      return this.render();
+    }
+    if (ds.testeComo) { d.teste = { ...testeDe(d), como: ds.testeComo }; return this.render(); }
+    if (ds.testeJogo) { d.teste = { ...testeDe(d), minijogo: ds.testeJogo }; return this.render(); }
+    if (ds.testeQuem) { d.teste = { ...testeDe(d), quemRola: ds.testeQuem }; return this.render(); }
+    if (ds.testeDepois) { d.teste = { ...testeDe(d), depois: ds.testeDepois }; return this.render(); }
+    if (ds.testeMenos || ds.testeMais) {
+      const campo = ds.testeMenos || ds.testeMais, delta = ds.testeMenos ? -1 : 1;
+      const tt = testeDe(d);
+      if (campo === "cd") tt.cd = Math.min(40, Math.max(1, (Number(tt.cd) || 10) + delta));
+      else if (campo === "tempo") tt.tempo = Math.min(300, Math.max(0, (Number(tt.tempo) || 0) + delta * 15));
+      else tt[campo] = Math.min(20, Math.max(0, (Number(tt[campo]) || 0) + delta));
+      d.teste = tt;
+      return this.render();
+    }
     if (ds.momento) { this.momento = ds.momento; return this.render(); }
     if (ds.visaoPreset) {
       d.visao = { ...VISOES[ds.visaoPreset], espelho: !!d.visao?.espelho };
@@ -1376,6 +1952,8 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
       return this._previaNoMapa();
     }
     if (ds.chave) {
+      if (ds.chave === "teste.falhaDispara") { d.teste = { ...testeDe(d), falhaDispara: testeDe(d).falhaDispara === false }; return this.render(); }
+      if (ds.chave === "teste.mostrarCD") { d.teste = { ...testeDe(d), mostrarCD: !testeDe(d).mostrarCD }; return this.render(); }
       if (ds.chave === "espelho") { d.visao = { x: 0, y: 0, ...(d.visao ?? {}), espelho: !d.visao?.espelho }; this.render(); return this._previaNoMapa(); }
       if (ds.chave === "parallax") { d.prof ??= profPadrao("plano"); d.prof.parallax = !d.prof.parallax; this.render(); return this._previaNoMapa(); }
       if (ds.chave === "camaleao" || ds.chave === "revelarAoUsar") {
@@ -1407,6 +1985,11 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
       case "salvar": return this._salvar();
       case "cancelar": return this.close();
       case "mais": this.mais = !this.mais; break;
+      case "testar-minijogo": return jogarMinijogo(this.doc, { ...testeDe(d), _img: d.estados?.[0]?.img }, { desarmar: testeDe(d).modo === "desarmar" }).then(r => {
+        if (r !== null) ui.notifications.info(t(r ? "Mini.Conseguiu" : "Mini.Falhou"));
+      });
+      case "rearmar": d.desarmado = false; d.teste = { ...testeDe(d), feitas: 0 }; d.trancado = false; break;
+      case "zerar-tentativas": d.teste = { ...testeDe(d), feitas: 0 }; if (d.trancado && Number(testeDe(d).tentativas) > 0) d.trancado = false; break;
       case "reesconder": d.revelado = false; this.render(); return this._previaCamo();
       case "ver-camo": this.verCamo = !this.verCamo; this.render(); return this._previaCamo();
       case "biblioteca": return salvarNaBiblioteca(this.doc, this.dados);
@@ -2323,6 +2906,12 @@ Hooks.once("ready", () => {
   if (game.user.isGM) for (const cena of game.scenes) { lembrarPosicoes(cena); lembrarPortas(cena); }
 
   game.socket.on(SOCKET, async data => {
+    if (data?.acao === "jogar") {
+      if (!data.userIds?.includes(game.user.id)) return;
+      const d = await fromUuid(data.uuid);
+      if (d) pedirUso(d, data.tokenUuid, { desarmar: !!data.desarmar });
+      return;
+    }
     if (data?.acao === "efeito") {
       if (data.userIds?.includes(game.user.id)) aplicarEfeito(data.efeito);
       return;
@@ -2330,7 +2919,7 @@ Hooks.once("ready", () => {
     if (!souMestreAtivo()) return;
     const doc = data?.uuid ? await fromUuid(data.uuid) : null;
     if (!doc) return;
-    if (data.acao === "usar") usarObjeto(doc, { tokenUuid: data.tokenUuid, userId: data.userId });
+    if (data.acao === "usar") usarObjeto(doc, { tokenUuid: data.tokenUuid, userId: data.userId, rolagem: data.rolagem ?? null, desarmar: !!data.desarmar });
     else if (data.acao === "parede" && doc.documentName === "Wall") eventoParede(doc, data.momento, { userId: data.userId });
   });
 
@@ -2339,6 +2928,12 @@ Hooks.once("ready", () => {
     biblioteca: () => abrirBiblioteca(),
     criar: (opcoes = {}) => criarObjeto(opcoes),
     encaixar: (opcoes = {}) => encaixar(opcoes),
+    // Abre um minijogo de conserto e devolve true (conseguiu), false (falhou) ou null (fechou)
+    minijogo: ({ jogo = "aneis", img = "", nome = "", cd = 15, tempo = 45 } = {}) => {
+      const app = new MinijogoConserto({ jogo, img, nome, cd, tempo });
+      app.render({ force: true });
+      return app.resultado;
+    },
     editar: async uuid => abrirEditor(await fromUuid(uuid)),
     usar: async (uuid, tokenUuid = null) => { const d = await fromUuid(uuid); if (d && ehObjeto(d)) pedirUso(d, tokenUuid); },
     mudarEstado: async (uuid, indice) => { if (!game.user.isGM) return; const d = await fromUuid(uuid); if (cfgDe(d)) mudarEstado(d, indice, { cena: d.parent, token: null, userId: game.user.id, fonte: d, profundidade: 0 }); },

@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.5.0
+
+### Novidades
+- **Passo novo no editor: Teste.** Qualquer objeto pode pedir um teste:
+  - **Teste para usar**: toda vez, precisa passar (ex.: alavanca emperrada, Atletismo CD 15).
+  - **Consertar**: o objeto começa *Quebrado* e, ao passar, vira *Consertado* (ex.: círculo mágico, Arcanismo). Depois de consertado, ele funciona normalmente ou fica parado, você escolhe.
+  - **Desarmar (armadilha)**: a armadilha dispara do jeito normal; quem clica nela escolhe "Usar" ou "Tentar desarmar" (numa placa de pressão, o clique já é a tentativa). Passou: desarmada, para de disparar e aparece se estava camuflada. Falhou: pode disparar a armadilha. Botão "Armar de novo" no editor.
+- **Como passar**: rolagem, minijogo, ou os dois.
+  - **Rolagem**: perícias, ferramentas, atributos e salvaguardas do D&D 5e (ou fórmula livre), CD, mostrar ou não a CD, e quem rola: o jogador na própria tela (com a janela de vantagem) ou o mestre, às cegas.
+  - **Minijogos**: **Girar os anéis** (a imagem do próprio objeto vem em anéis tortos; gire até encaixar) e **Redesenhar a runa** (a runa brilha e some; refaça o traço na ordem). A dificuldade acompanha a CD, com tempo limite. Quem clica joga na própria tela; se o objeto é acionado ao pisar ou chegar perto, o minijogo abre para o jogador dono do token. Botão "Testar o minijogo" no editor.
+  - **Tentativas**: limite de tentativas, mensagem de falha e os momentos novos "Ao falhar no teste" e "Ao ser desarmada" em O que acontece.
+- API para macros: `api.minijogo({ jogo, img, cd, tempo })`. Ganchos novos: `objetosVivos.teste`, `objetosVivos.falhou` e `objetosVivos.desarmado`.
+
+### Correções
+- O campo **Nome** do editor voltava a esticar e ocupar a coluna inteira quando sobrava espaço (a correção da v2.1.0 não pegava). Agora ficou de vez, com um teste para não voltar.
+
 ## v2.4.1
 - **Camaleão perfeito**: o objeto camuflado agora fica invisível de verdade para os jogadores. Antes, o módulo redesenhava o chão por cima do objeto, e essa cópia saía um pouco mais borrada e com outra luz, deixando um quadrado aparente. Agora nada é desenhado no lugar: o mapa fica exatamente igual, e o objeto continua funcionando (pisar, clicar, chegar perto). O mestre continua vendo o objeto meio transparente.
 

@@ -20,7 +20,9 @@
       "Acesa": "Acesa",
       "Estado1": "Normal",
       "Estado2": "Usado",
-      "Novo": "Aparência {n}"
+      "Novo": "Aparência {n}",
+      "Quebrado": "Quebrado",
+      "Consertado": "Consertado"
     },
     "Preset": {
       "alavanca": {
@@ -65,13 +67,16 @@
       "trancar": "Ao trancar",
       "destrancar": "Ao destrancar",
       "tentativa": "Ao tentar abrir trancada",
-      "atravessar": "Ao alguém atravessar"
+      "atravessar": "Ao alguém atravessar",
+      "falha": "Ao falhar no teste",
+      "desarmar": "Ao ser desarmada"
     },
     "Aba": {
       "Aparencia": "Aparência",
       "Uso": "Como usar",
       "Acoes": "O que acontece",
-      "Regras": "Regras"
+      "Regras": "Regras",
+      "Teste": "Teste"
     },
     "Editor": {
       "Titulo": "Objeto vivo: {nome}",
@@ -429,6 +434,121 @@
       "Y": "Virar (para os lados)",
       "Espelhar": "Espelhar",
       "EspelharDica": "Inverte a imagem da esquerda para a direita"
+    },
+    "Teste": {
+      "Titulo": "Teste do Objeto Vivo",
+      "Pergunta": "Precisa de um teste para usar?",
+      "Modo": {
+        "nenhum": "Sem teste",
+        "nenhumDesc": "Qualquer um usa direto",
+        "usar": "Teste para usar",
+        "usarDesc": "Toda vez, precisa passar no teste",
+        "consertar": "Consertar",
+        "consertarDesc": "Começa quebrado; passar no teste conserta",
+        "desarmar": "Desarmar (armadilha)",
+        "desarmarDesc": "Dispara normal; dá para tentar desarmar"
+      },
+      "Qual": "Qual teste",
+      "Grupo": {
+        "skill": "Perícias",
+        "tool": "Ferramentas",
+        "ability": "Atributos",
+        "save": "Salvaguardas",
+        "outro": "Outro"
+      },
+      "Formula": "Rolagem livre (fórmula)",
+      "CD": "Classe de dificuldade (CD)",
+      "CDDica": "Passa quem tirar igual ou maior",
+      "MostrarCD": "Mostrar a CD para o jogador",
+      "MostrarCDDica": "O aviso mostra o resultado e a CD, como \"14 × CD 15\"",
+      "Quem": "Quem rola",
+      "QuemJogador": "O jogador",
+      "QuemMestre": "O mestre, escondido",
+      "QuemJogadorDica": "Quem clica rola na própria tela (com a janela de vantagem do sistema). Se alguém pisar ou chegar perto, o mestre rola pelo personagem.",
+      "QuemMestreDica": "O mestre rola às cegas: o jogador só fica sabendo se deu certo ou não.",
+      "AoFalhar": "Ao falhar",
+      "Tentativas": "Tentativas",
+      "TentativasDica": "Depois disso, o objeto trava. Já foram {n}.",
+      "Zerar": "Zerar tentativas",
+      "Mensagem": "Mensagem",
+      "AoFalharDica": "Para mais efeitos na falha (som, alarme, narração), use \"Ao falhar no teste\" no passo O que acontece.",
+      "Depois": "Depois de consertado",
+      "DepoisAcoes": "Funciona normalmente",
+      "DepoisNada": "Fica consertado, sem fazer mais nada",
+      "ConsertarDica": "A primeira aparência é a quebrada e a segunda a consertada. As ações de \"Quando ficar: Consertado\" acontecem uma vez, ao consertar; com \"Funciona normalmente\", cada uso depois disso repete as de \"Sempre que for usado\".",
+      "Falhou": "Não deu certo com {objeto}.",
+      "FalhouConsertar": "Você não conseguiu consertar {objeto}.",
+      "Travou": "Não dá para tentar de novo.",
+      "Passou": "Deu certo!",
+      "Consertou": "Você consertou {objeto}!",
+      "JaConsertado": "{objeto} já está consertado.",
+      "SemPersonagem": "Selecione o seu token (ou tenha um personagem) para fazer o teste.",
+      "SemTokenMestre": "Sem token selecionado: o teste foi pulado porque quem usou foi o mestre.",
+      "Erro": "Não consegui rolar o teste. Veja o console (F12).",
+      "Ferr": {
+        "thief": "Ferramentas de Ladrão",
+        "tinker": "Ferramentas de Funileiro",
+        "herb": "Kit de Herbalismo",
+        "alchemist": "Suprimentos de Alquimista",
+        "smith": "Ferramentas de Ferreiro",
+        "mason": "Ferramentas de Pedreiro",
+        "carpenter": "Ferramentas de Carpinteiro",
+        "calligrapher": "Suprimentos de Calígrafo",
+        "cartographer": "Ferramentas de Cartógrafo",
+        "jeweler": "Ferramentas de Joalheiro",
+        "navg": "Ferramentas de Navegador",
+        "pois": "Kit de Envenenador",
+        "disg": "Kit de Disfarce",
+        "forg": "Kit de Falsificação"
+      },
+      "ComoConsertar": "Como consertar",
+      "ComoPassar": "Como passar",
+      "Como": {
+        "rolagem": "Rolagem",
+        "minijogo": "Minijogo",
+        "ambos": "Rolagem e minijogo"
+      },
+      "ComoDesarmar": "Como desarmar",
+      "DesarmarDica": "O objeto dispara do jeito normal (pisar, apertar, puxar). Quem clicar nele pode escolher Tentar desarmar; numa placa de pressão o clique já é a tentativa. Desarmada, ela para de disparar e, se estava camuflada, aparece.",
+      "EstaDesarmada": "Esta armadilha já foi desarmada.",
+      "Rearmar": "Armar de novo",
+      "FalhaDispara": "Falhar dispara a armadilha",
+      "FalhaDisparaDica": "Além das ações de \"Ao falhar no teste\", a armadilha dispara como se tivesse sido usada",
+      "Desarmou": "Você desarmou {objeto}!",
+      "FalhouDesarmar": "Você não conseguiu desarmar {objeto}.",
+      "JaDesarmada": "{objeto} já está desarmada.",
+      "SemTentativas": "Não dá mais para tentar desarmar {objeto}.",
+      "PerguntaArmadilha": "O que você quer fazer com <strong>{objeto}</strong>?",
+      "PerguntaDesarmar": "Tentar desarmar <strong>{objeto}</strong>?",
+      "BotaoUsar": "Usar",
+      "BotaoDesarmar": "Tentar desarmar"
+    },
+    "Mini": {
+      "Titulo": "Consertar: {nome}",
+      "Jogo": {
+        "aneis": "Girar os anéis",
+        "runa": "Redesenhar a runa"
+      },
+      "Desc": {
+        "aneis": "A imagem do objeto vem em anéis tortos; gire até encaixar",
+        "runa": "A runa brilha e some; refaça o traço na ordem"
+      },
+      "DicaAneis": "Clique num anel para girá-lo (botão direito gira ao contrário). Encaixe todos até o desenho ficar inteiro.",
+      "DicaRuna": "Observe a runa sendo traçada. Depois, clique nos pontos na mesma ordem. Errar recomeça o traço; 3 erros é falha.",
+      "Desistir": "Desistir",
+      "Conseguiu": "Conseguiu!",
+      "Falhou": "Não deu certo…",
+      "Memorize": "Memorize a runa…",
+      "Sua": "Sua vez: refaça o traço.",
+      "Erros": "Errou ({n} de {max}). Recomece o traço.",
+      "SemJogador": "“{objeto}” precisa de um minijogo, mas nenhum jogador dono desse token está conectado.",
+      "Tempo": "Tempo limite",
+      "TempoDica": "Acabou o tempo, conta como falha",
+      "Testar": "Testar o minijogo",
+      "Dificuldade": "Dificuldade",
+      "CDDica": "Com essa CD: {aneis} anéis para girar ou {pontos} pontos na runa",
+      "TituloDesarmar": "Desarmar: {nome}",
+      "TituloTeste": "Teste: {nome}"
     }
   }
 }

@@ -20,7 +20,9 @@
       "Acesa": "Lit",
       "Estado1": "Normal",
       "Estado2": "Used",
-      "Novo": "Look {n}"
+      "Novo": "Look {n}",
+      "Quebrado": "Broken",
+      "Consertado": "Repaired"
     },
     "Preset": {
       "alavanca": {
@@ -65,13 +67,16 @@
       "trancar": "When locked",
       "destrancar": "When unlocked",
       "tentativa": "When tried while locked",
-      "atravessar": "When someone walks through"
+      "atravessar": "When someone walks through",
+      "falha": "When the check fails",
+      "desarmar": "When disarmed"
     },
     "Aba": {
       "Aparencia": "Look",
       "Uso": "How to use",
       "Acoes": "What happens",
-      "Regras": "Rules"
+      "Regras": "Rules",
+      "Teste": "Check"
     },
     "Editor": {
       "Titulo": "Living object: {nome}",
@@ -429,6 +434,121 @@
       "Y": "Turn (sideways)",
       "Espelhar": "Mirror",
       "EspelharDica": "Flips the image left to right"
+    },
+    "Teste": {
+      "Titulo": "Living Object check",
+      "Pergunta": "Does using it need a check?",
+      "Modo": {
+        "nenhum": "No check",
+        "nenhumDesc": "Anyone uses it right away",
+        "usar": "Check to use",
+        "usarDesc": "Every time, a check must be passed",
+        "consertar": "Repair",
+        "consertarDesc": "Starts broken; passing the check repairs it",
+        "desarmar": "Disarm (trap)",
+        "desarmarDesc": "Triggers as usual; can be disarmed"
+      },
+      "Qual": "Which check",
+      "Grupo": {
+        "skill": "Skills",
+        "tool": "Tools",
+        "ability": "Abilities",
+        "save": "Saving throws",
+        "outro": "Other"
+      },
+      "Formula": "Free roll (formula)",
+      "CD": "Difficulty class (DC)",
+      "CDDica": "Equal or higher passes",
+      "MostrarCD": "Show the DC to the player",
+      "MostrarCDDica": "The message shows the result and the DC, like \"14 × DC 15\"",
+      "Quem": "Who rolls",
+      "QuemJogador": "The player",
+      "QuemMestre": "The GM, hidden",
+      "QuemJogadorDica": "Whoever clicks rolls on their own screen (with the system's advantage dialog). If someone steps on it or comes close, the GM rolls for the character.",
+      "QuemMestreDica": "The GM rolls blind: the player only learns whether it worked.",
+      "AoFalhar": "On failure",
+      "Tentativas": "Attempts",
+      "TentativasDica": "After that, the object locks. {n} so far.",
+      "Zerar": "Reset attempts",
+      "Mensagem": "Message",
+      "AoFalharDica": "For more effects on failure (sound, alarm, narration), use \"When the check fails\" in the What happens step.",
+      "Depois": "After repaired",
+      "DepoisAcoes": "Works normally",
+      "DepoisNada": "Stays repaired, does nothing else",
+      "ConsertarDica": "The first look is the broken one and the second the repaired one. \"When it becomes: Repaired\" actions happen once, on repair; with \"Works normally\", each later use repeats \"Every time it is used\".",
+      "Falhou": "It didn't work with {objeto}.",
+      "FalhouConsertar": "You couldn't repair {objeto}.",
+      "Travou": "No more attempts.",
+      "Passou": "It worked!",
+      "Consertou": "You repaired {objeto}!",
+      "JaConsertado": "{objeto} is already repaired.",
+      "SemPersonagem": "Select your token (or have a character) to make the check.",
+      "SemTokenMestre": "No token selected: the check was skipped because the GM used it.",
+      "Erro": "Couldn't roll the check. See the console (F12).",
+      "Ferr": {
+        "thief": "Thieves' Tools",
+        "tinker": "Tinker's Tools",
+        "herb": "Herbalism Kit",
+        "alchemist": "Alchemist's Supplies",
+        "smith": "Smith's Tools",
+        "mason": "Mason's Tools",
+        "carpenter": "Carpenter's Tools",
+        "calligrapher": "Calligrapher's Supplies",
+        "cartographer": "Cartographer's Tools",
+        "jeweler": "Jeweler's Tools",
+        "navg": "Navigator's Tools",
+        "pois": "Poisoner's Kit",
+        "disg": "Disguise Kit",
+        "forg": "Forgery Kit"
+      },
+      "ComoConsertar": "How to repair",
+      "ComoPassar": "How to pass",
+      "Como": {
+        "rolagem": "Roll",
+        "minijogo": "Minigame",
+        "ambos": "Roll and minigame"
+      },
+      "ComoDesarmar": "How to disarm",
+      "DesarmarDica": "The object triggers as usual (stepping, pressing, pulling). Whoever clicks it can choose Try to disarm; on a pressure plate the click is already the attempt. Once disarmed it stops triggering and, if camouflaged, shows up.",
+      "EstaDesarmada": "This trap has already been disarmed.",
+      "Rearmar": "Arm it again",
+      "FalhaDispara": "Failing triggers the trap",
+      "FalhaDisparaDica": "Besides the \"When the check fails\" actions, the trap triggers as if it had been used",
+      "Desarmou": "You disarmed {objeto}!",
+      "FalhouDesarmar": "You couldn't disarm {objeto}.",
+      "JaDesarmada": "{objeto} is already disarmed.",
+      "SemTentativas": "You can't try to disarm {objeto} anymore.",
+      "PerguntaArmadilha": "What do you want to do with <strong>{objeto}</strong>?",
+      "PerguntaDesarmar": "Try to disarm <strong>{objeto}</strong>?",
+      "BotaoUsar": "Use",
+      "BotaoDesarmar": "Try to disarm"
+    },
+    "Mini": {
+      "Titulo": "Repair: {nome}",
+      "Jogo": {
+        "aneis": "Turn the rings",
+        "runa": "Redraw the rune"
+      },
+      "Desc": {
+        "aneis": "The object's image comes in twisted rings; turn them until it fits",
+        "runa": "The rune glows and fades; redraw it in order"
+      },
+      "DicaAneis": "Click a ring to turn it (right click turns it back). Line them all up until the picture is whole.",
+      "DicaRuna": "Watch the rune being drawn. Then click the points in the same order. A mistake restarts the stroke; 3 mistakes is a failure.",
+      "Desistir": "Give up",
+      "Conseguiu": "Done!",
+      "Falhou": "It didn't work…",
+      "Memorize": "Memorize the rune…",
+      "Sua": "Your turn: redraw it.",
+      "Erros": "Wrong ({n} of {max}). Start the stroke again.",
+      "SemJogador": "“{objeto}” needs a minigame, but no player who owns that token is online.",
+      "Tempo": "Time limit",
+      "TempoDica": "When time runs out, it counts as a failure",
+      "Testar": "Try the minigame",
+      "Dificuldade": "Difficulty",
+      "CDDica": "With this DC: {aneis} rings to turn or {pontos} points in the rune",
+      "TituloDesarmar": "Disarm: {nome}",
+      "TituloTeste": "Check: {nome}"
     }
   }
 }
