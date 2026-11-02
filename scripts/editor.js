@@ -69,6 +69,7 @@ const pilulas = (lista, atual) => lista.map(([id, chaveTexto]) => ({ id, on: atu
 
 // Junta a edição com o objeto como ele está agora: um campo só é trocado se foi mudado na janela
 // (comparando com como estava ao abrir). Em "teste", "prof" e "visao", campo a campo.
+// "comandos": campos que um botão mandou mudar ("usados", "teste.feitas"...); esses entram sempre.
 const igual = (a, b) => JSON.stringify(ordenar(a)) === JSON.stringify(ordenar(b));
 function ordenar(x) {
   if (Array.isArray(x)) return x.map(ordenar);
@@ -76,16 +77,21 @@ function ordenar(x) {
   return x;
 }
 const POR_CAMPO = ["teste", "prof", "visao"];
-export function mesclarEdicao(atual, base, editado) {
+export function mesclarEdicao(atual, base, editado, comandos = new Set()) {
   if (!atual) return clone(editado);
   const final = clone(atual);
+  const obj = v => v && typeof v === "object" && !Array.isArray(v);
   for (const k of Object.keys(editado)) {
     if (!(k in final)) { final[k] = clone(editado[k]); continue; }
-    if (igual(editado[k], base[k])) continue;
-    const obj = v => v && typeof v === "object" && !Array.isArray(v);
+    if (comandos.has(k)) { final[k] = clone(editado[k]); continue; }
     if (POR_CAMPO.includes(k) && obj(editado[k]) && obj(final[k])) {
-      for (const s of Object.keys(editado[k])) if (!igual(editado[k][s], base[k]?.[s])) final[k][s] = clone(editado[k][s]);
-    } else final[k] = clone(editado[k]);
+      for (const s of Object.keys(editado[k])) {
+        if (comandos.has(`${k}.${s}`) || !igual(editado[k][s], base[k]?.[s])) final[k][s] = clone(editado[k][s]);
+      }
+      continue;
+    }
+    if (igual(editado[k], base[k])) continue;
+    final[k] = clone(editado[k]);
   }
   return final;
 }
@@ -112,12 +118,16 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
     this.dados = { ...padrao(doc), ...clone(cfgDe(doc) ?? {}) };
     // como estava ao abrir: ao salvar, só o que mudou aqui na janela é gravado
     this.base = clone(this.dados);
+    // campos que um botão de comando mandou mudar ("Zerar usos", "Armar de novo"...)
+    this.comandos = new Set();
     this.tile = ehTile(doc);
     this.aba = this.tile ? "aparencia" : "acoes";
     this.momento = momentosDe(doc, this.dados)[0].id;
     this.abertas = new Set();
     this.previa = this.dados.estado ?? 0;
   }
+
+  _comando(...campos) { for (const c of campos) this.comandos.add(c); }
 
   get title() { return t("Editor.Titulo", { nome: this.dados.nome || nomeObjeto(this.doc) }); }
   get cena() { return this.doc.parent; }
@@ -560,9 +570,13 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
       case "testar-minijogo": return jogarMinijogo(this.doc, { ...testeDe(d), _img: d.estados?.[0]?.img }, { desarmar: testeDe(d).modo === "desarmar" }).then(r => {
         if (r !== null) ui.notifications.info(t(r ? "Mini.Conseguiu" : "Mini.Falhou"));
       });
-      case "rearmar": d.desarmado = false; d.teste = { ...testeDe(d), feitas: 0 }; d.trancado = false; break;
-      case "zerar-tentativas": d.teste = { ...testeDe(d), feitas: 0 }; if (d.trancado && Number(testeDe(d).tentativas) > 0) d.trancado = false; break;
-      case "reesconder": d.revelado = false; this.render(); return this._previaCamo();
+      // Botões de comando: valem ao salvar mesmo que o valor seja igual ao de quando a janela abriu
+      case "rearmar": d.desarmado = false; d.teste = { ...testeDe(d), feitas: 0 }; d.trancado = false; this._comando("desarmado", "teste.feitas", "trancado"); break;
+      case "zerar-tentativas":
+        d.teste = { ...testeDe(d), feitas: 0 }; this._comando("teste.feitas");
+        if (d.trancado && Number(testeDe(d).tentativas) > 0) { d.trancado = false; this._comando("trancado"); }
+        break;
+      case "reesconder": d.revelado = false; this._comando("revelado"); this.render(); return this._previaCamo();
       case "ver-camo": this.verCamo = !this.verCamo; this.render(); return this._previaCamo();
       case "biblioteca": return salvarNaBiblioteca(this.doc, this.dados);
       case "gazua": {
@@ -591,7 +605,7 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
       }
       case "som-escolher": return this._escolherArquivo("audio", d.som, c => { d.som = c; });
       case "som-ouvir": if (d.som) foundry.audio.AudioHelper.play({ src: d.som, volume: 0.8, loop: false, channel: "environment" }, false); return;
-      case "zerar": d.usados = 0; break;
+      case "zerar": d.usados = 0; this._comando("usados"); break;
       case "subir": if (i > 0) [lista[i - 1], lista[i]] = [lista[i], lista[i - 1]]; break;
       case "descer": if (i >= 0 && i < lista.length - 1) [lista[i + 1], lista[i]] = [lista[i], lista[i + 1]]; break;
       case "editar": this.abertas.has(a.id) ? this.abertas.delete(a.id) : this.abertas.add(a.id); break;
@@ -635,7 +649,7 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
     editado.usos = Math.max(0, Math.floor(Number(editado.usos) || 0));
     // O jogo pode ter mudado o objeto com a janela aberta (estado, usos gastos, tentativas, desarmado...).
     // Por cima do que está no objeto AGORA, entra só o que foi mudado na janela.
-    const d = mesclarEdicao(cfgDe(this.doc), this.base, editado);
+    const d = mesclarEdicao(cfgDe(this.doc), this.base, editado, this.comandos);
     const upd = { [`flags.${ID}.objeto`]: d };
     if (this.tile) {
       d.estado = Math.min(d.estado ?? 0, d.estados.length - 1);

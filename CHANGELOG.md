@@ -1,5 +1,12 @@
 # Changelog
 
+## v3.0.2
+
+### Correções
+- **Botões do editor valem sempre.** "Zerar usos", "Armar de novo", "Zerar tentativas" e "Esconder de novo" não tinham efeito se, desde que a janela abriu, o objeto tivesse mudado no jogo e voltado ao valor da abertura (exemplo: abrir com 0 usos, alguém usar, clicar em "Zerar usos" e salvar — o contador ficava em 1). Agora o editor guarda que o botão foi clicado e aplica o comando ao salvar.
+- 4 testes novos para esses botões (29 no total).
+
+
 ## v3.0.1
 
 Correções de uma revisão da 3.0.0.

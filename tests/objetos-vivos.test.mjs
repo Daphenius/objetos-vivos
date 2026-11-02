@@ -368,3 +368,49 @@ test("visão 3D: nunca passa de 2048 px no maior lado", () => {
   for (const lado of [10, 500, 1024, 2048, 5000, 12000, 40000]) assert.ok(lado * resolucaoVisao(lado, 100) <= 2048 + 1e-6, `lado ${lado}`);
   assert.equal(resolucaoVisao(100, 100), 2, "objeto pequeno continua nítido");
 });
+
+// ---------- Botões de comando do editor valem mesmo quando o valor bate com o da abertura
+const botao = a => ({ dataset: { a }, closest: () => null });
+test("editor: 'Zerar usos' depois de um uso com a janela aberta zera de verdade", async () => {
+  comoMestre();
+  const d = F.tile("zerar", objeto({ usos: 3 }));
+  const ed = new EditorObjeto(d);                       // abriu com 0 usos gastos
+  await usarObjeto(d, { userId: "gm" });               // gastou 1 com a janela aberta
+  assert.equal(cfg(d).usados, 1);
+  await ed._aoClicar(botao("zerar"));
+  await ed._salvar();
+  assert.equal(cfg(d).usados, 0);
+  assert.equal(cfg(d).estado, 1, "o resto do jogo continua");
+});
+test("editor: 'Armar de novo' e 'Zerar tentativas' valem mesmo batendo com a abertura", async () => {
+  comoMestre();
+  const d = F.tile("rearmar", objeto({ teste: { modo: "desarmar", como: "rolagem", qual: "formula", cd: 10, quemRola: "mestre", tentativas: 1, feitas: 0 } }));
+  const ed = new EditorObjeto(d);                       // abriu armada, sem tentativas
+  await d.update({ "flags.objetos-vivos.objeto.desarmado": true, "flags.objetos-vivos.objeto.teste.feitas": 1, "flags.objetos-vivos.objeto.trancado": true });
+  await ed._aoClicar(botao("rearmar"));
+  await ed._salvar();
+  assert.deepEqual([cfg(d).desarmado, cfg(d).teste.feitas, cfg(d).trancado], [false, 0, false]);
+  const e = F.tile("tentativas", objeto({ teste: { modo: "usar", como: "rolagem", qual: "formula", cd: 10, tentativas: 2, feitas: 0 } }));
+  const ed2 = new EditorObjeto(e);
+  await e.update({ "flags.objetos-vivos.objeto.teste.feitas": 2 });
+  await ed2._aoClicar(botao("zerar-tentativas"));
+  await ed2._salvar();
+  assert.equal(cfg(e).teste.feitas, 0);
+});
+test("editor: 'Esconder de novo' vale mesmo se abriu escondido", async () => {
+  comoMestre();
+  const d = F.tile("reesconder", objeto({ camaleao: true, revelado: false }));
+  const ed = new EditorObjeto(d);
+  await d.update({ "flags.objetos-vivos.objeto.revelado": true });  // revelado no jogo
+  await ed._aoClicar(botao("reesconder"));
+  await ed._salvar();
+  assert.equal(cfg(d).revelado, false);
+});
+test("editor: sem clicar em comando, o jogo continua valendo", async () => {
+  comoMestre();
+  const d = F.tile("semcomando", objeto({ usos: 3 }));
+  const ed = new EditorObjeto(d);
+  await usarObjeto(d, { userId: "gm" });
+  await ed._salvar();
+  assert.equal(cfg(d).usados, 1);
+});
