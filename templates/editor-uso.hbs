@@ -1,0 +1,8 @@
+<section><h2>{{L.Uso.Titulo}}</h2>
+  <div class="ov-grade ov-2">{{#each uso.interacoes}}<button type="button" class="ov-cartao {{#if on}}ov-on{{/if}}" data-interacao="{{id}}" aria-pressed="{{on}}"><b>{{nome}}</b><span>{{desc}}</span></button>{{/each}}</div></section>
+{{#if uso.distancia}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" uso.distancia}}{{/if}}{{> "modules/objetos-vivos/templates/editor-quem.hbs"}}
+<section class="ov-coluna">{{> "modules/objetos-vivos/templates/editor-faixa.hbs" uso.voltar}}
+  {{#if uso.tempo}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" uso.tempo}}{{/if}}
+</section>
+<section class="ov-coluna"><h2>{{L.Uso.Ajudas}}</h2>{{> "modules/objetos-vivos/templates/editor-faixa.hbs" uso.mao}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" uso.brilho}}
+  <p class="ov-dica">{{L.Uso.MestreDica}}</p></section>

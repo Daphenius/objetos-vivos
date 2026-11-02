@@ -1,0 +1,78 @@
+{{!-- Janela da biblioteca (BibliotecaObjetos, scripts/biblioteca.js). Todos os dados vêm prontos do _prepareContext.
+     Os data-*, ids e classes são usados pelos ouvintes do biblioteca.js, pelo arrastar para o mapa e pelo CSS: não renomear. --}}
+<div class="ov-bib">
+{{#if erro}}
+  <div class="ov-bib-vazio ov-folgado"><p>{{textos.erro}}</p>
+    <button type="button" class="ov-btn ov-forte" data-a="recomecar"><i class="fa-solid fa-rotate" aria-hidden="true"></i> {{textos.recomecar}}</button></div>
+{{else}}
+  <div class="ov-bib-barra">
+    <button type="button" class="ov-btn ov-forte" data-a="imagem"><i class="fa-solid fa-image" aria-hidden="true"></i> {{barra.minha}}</button>
+    <input type="search" class="ov-busca{{#if barra.buscaPacote}} ov-busca-pacote{{/if}}" value="{{barra.busca}}" placeholder="{{barra.placeholder}}" aria-label="{{barra.rotuloBusca}}">
+    <div class="ov-tamanhos" role="group" aria-label="{{barra.rotuloTamanho}}">{{#each barra.tamanhos}}<button type="button" class="ov-tam{{#if on}} ov-on{{/if}}" data-tam="{{k}}" aria-label="{{rotulo}}" data-tooltip="{{rotulo}}"><i class="fa-solid {{icone}}" aria-hidden="true"></i></button>{{/each}}</div>
+  </div>
+  <div class="ov-bib-meio"><nav class="ov-bib-lado" aria-label="{{lado.rotulo}}"><div class="ov-lado-grupo">
+      {{#each lado.secoes}}{{> "modules/objetos-vivos/templates/biblioteca-item.hbs"}}{{/each}}
+      </div><div class="ov-lado-titulo"><i class="fa-solid fa-box-open" aria-hidden="true"></i> Dungeondraft</div><div class="ov-lado-grupo">
+      {{#each lado.pacotes}}{{> "modules/objetos-vivos/templates/biblioteca-item.hbs"}}{{/each}}
+      <button type="button" class="ov-lado-item ov-lado-abrir" data-a="abrir-pacote"><i class="fa-solid fa-plus" aria-hidden="true"></i><span class="ov-lado-nome">{{lado.abrir}}</span></button>
+      <input type="file" class="ov-dd-arquivo" accept=".dungeondraft_pack" hidden></div></nav>
+    <div class="ov-bib-conteudo">
+{{#if prontos}}
+      <h2 class="ov-sec-titulo">{{prontos.titulo}}</h2><div class="ov-grade-assets">{{#each prontos.cartoes}}{{> "modules/objetos-vivos/templates/biblioteca-cartao.hbs"}}{{/each}}</div>
+{{/if}}
+{{#if meus}}
+      <h2 class="ov-sec-titulo">{{meus.titulo}}</h2>
+  {{#if meus.cartoes.length}}
+      <div class="ov-grade-assets">{{#each meus.cartoes}}<div class="ov-com-apagar">
+        {{> "modules/objetos-vivos/templates/biblioteca-cartao.hbs"}}
+        <button type="button" class="ov-apagar" data-apagar="{{salvo}}" aria-label="{{rotuloApagar}}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>{{/each}}</div>
+  {{else}}
+      <p class="ov-vazio">{{meus.vazio}}</p>
+  {{/if}}
+{{/if}}
+{{#if semPasta}}
+      <div class="ov-bib-vazio"><h2 class="ov-sec-titulo">{{semPasta.titulo}}</h2><p>{{semPasta.explica}}</p>
+        <button type="button" class="ov-btn ov-forte" data-a="pasta"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> {{semPasta.escolher}}</button></div>
+{{/if}}
+{{#if pasta}}
+      <div class="ov-sec-cab">
+        {{#if pasta.podeSubir}}<button type="button" class="ov-btn ov-icone" data-a="subir-pasta" aria-label="{{pasta.rotuloVoltar}}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>{{/if}}
+        <h2 class="ov-sec-titulo" data-tooltip="{{pasta.caminho}}"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> {{pasta.nome}}</h2>
+        <button type="button" class="ov-btn" data-a="pasta">{{pasta.trocar}}</button></div>
+      {{#if pasta.erro}}<p class="ov-vazio">{{pasta.erro}}</p>{{/if}}
+      {{#if pasta.temChips}}<div class="ov-pastas">
+        {{#each pasta.pacotes}}<button type="button" class="ov-pasta-chip ov-dd-chip" data-pacote-arquivo="{{arquivo}}" data-nome="{{nomeBusca}}"><i class="fa-solid fa-box-open" aria-hidden="true"></i> {{nome}}</button>{{/each}}
+        {{#each pasta.dirs}}<button type="button" class="ov-pasta-chip" data-dir="{{dir}}" data-nome="{{nomeBusca}}"><i class="fa-solid fa-folder" aria-hidden="true"></i> {{nome}}</button>{{/each}}</div>{{/if}}
+      <div class="ov-grade-assets">{{#each pasta.cartoes}}{{> "modules/objetos-vivos/templates/biblioteca-cartao.hbs"}}{{/each}}</div>
+      {{#if pasta.mais}}<button type="button" class="ov-btn ov-mais-largo" data-a="mais">{{pasta.mais}}</button>{{/if}}
+      {{#if pasta.vazia}}<p class="ov-vazio">{{pasta.vazia}}</p>{{/if}}
+{{/if}}
+{{#if pacote}}
+      <div class="ov-sec-cab ov-dd-cab">
+        <div class="ov-txt"><h2 class="ov-sec-titulo"><i class="fa-solid fa-box-open" aria-hidden="true"></i> {{pacote.nome}}</h2>
+          <span>{{pacote.autor}} {{pacote.total}}</span></div>
+        {{#if pacote.guardar}}<button type="button" class="ov-btn" data-a="guardar-pacote" data-tooltip="{{pacote.guardar.dica}}"><i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i> {{pacote.guardar.texto}}</button>{{/if}}
+        <button type="button" class="ov-btn" data-a="fechar-pacote"><i class="fa-solid fa-xmark" aria-hidden="true"></i> {{pacote.fechar}}</button></div>
+  {{#if pacote.busca}}
+      <p class="ov-sec-info">{{pacote.busca.resultados}}</p>
+      <div class="ov-grade-assets">{{#each pacote.busca.cartoes}}{{> "modules/objetos-vivos/templates/biblioteca-cartao.hbs"}}{{/each}}</div>
+      {{#if pacote.busca.mais}}<button type="button" class="ov-btn ov-mais-largo" data-a="mais">{{pacote.busca.mais}}</button>{{/if}}
+  {{else}}
+      {{#if pacote.trilha}}<nav class="ov-trilha">
+        <button type="button" class="ov-link" data-dd-pasta="">{{pacote.nome}}</button>
+        {{#each pacote.trilha}} › <button type="button" class="ov-link" data-dd-pasta="{{caminho}}">{{nome}}</button>{{/each}}</nav>{{/if}}
+    {{#each pacote.grupos}}
+      <section class="ov-grupo"><div class="ov-grupo-cab">
+          {{#if temPasta}}<button type="button" class="ov-link ov-grupo-nome" data-dd-pasta="{{caminho}}"><i class="fa-solid fa-folder" aria-hidden="true"></i> {{nome}}</button>{{else}}<span class="ov-grupo-nome">{{nome}}</span>{{/if}}
+          <span class="ov-conta">{{conta}}</span>{{#if verTodos}}<button type="button" class="ov-link" data-dd-pasta="{{caminho}}">{{verTodos}} ›</button>{{/if}}</div>
+        <div class="ov-grade-assets">{{#each cartoes}}{{> "modules/objetos-vivos/templates/biblioteca-cartao.hbs"}}{{/each}}</div>
+        {{#if mais}}<button type="button" class="ov-btn ov-mais-largo" data-a="mais">{{mais}}</button>{{/if}}</section>
+    {{else}}
+      <p class="ov-vazio">{{pacote.vazia}}</p>
+    {{/each}}
+  {{/if}}
+{{/if}}
+    </div></div>
+  <p class="ov-bib-dica">{{dica}}</p>
+{{/if}}
+</div>

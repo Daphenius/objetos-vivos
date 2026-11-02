@@ -1,0 +1,10 @@
+<div class="ov-raiz">{{> "modules/objetos-vivos/templates/editor-lado.hbs"}}
+  <section class="ov-principal">
+    <nav class="ov-abas" aria-label="{{L.Editor.Etapas}}">{{#each abas}}<button type="button" class="ov-aba {{#if on}}ov-on{{/if}}" data-aba="{{id}}"><span class="ov-n">{{n}}</span>{{nome}}</button>{{/each}}</nav>
+    <div class="ov-corpo">{{#if aba.aparencia}}{{> "modules/objetos-vivos/templates/editor-aparencia.hbs"}}{{/if}}{{#if aba.uso}}{{> "modules/objetos-vivos/templates/editor-uso.hbs"}}{{/if}}{{#if aba.teste}}{{> "modules/objetos-vivos/templates/editor-teste.hbs"}}{{/if}}{{#if aba.acoes}}{{> "modules/objetos-vivos/templates/editor-acoes.hbs"}}{{/if}}</div>
+    <footer class="ov-rodape"><span class="ov-resumo">{{resumo}}</span>
+      {{#if tile}}<button type="button" class="ov-btn" data-a="biblioteca" data-tooltip="{{L.Bib.SalvarDica}}"><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{L.Bib.Salvar}}</button>{{/if}}
+      <button type="button" class="ov-btn" data-a="cancelar">{{L.Editor.Cancelar}}</button>
+      <button type="button" class="ov-btn ov-primario" data-a="salvar"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> {{L.Editor.Salvar}}</button></footer>
+  </section>
+</div>

@@ -81,11 +81,17 @@ O passo **Teste** do editor faz o objeto pedir um teste:
 - **Girar os anéis**: a imagem do próprio objeto vem cortada em anéis tortos; clique para girar até o desenho ficar inteiro.
 - **Redesenhar a runa**: a runa é traçada entre pontos e some; refaça o traço na mesma ordem (3 erros é falha).
 
-Quem clica joga na própria tela. Se o objeto é acionado ao pisar ou chegar perto, o minijogo abre para o jogador dono do token. Use **Testar o minijogo** no editor para experimentar. Na falha, além da mensagem, rodam as ações de **Ao falhar no teste**; ao desarmar, as de **Ao ser desarmada**.
+Quem clica joga na própria tela. Se o objeto é acionado ao pisar ou chegar perto, a rolagem e o minijogo abrem na tela do jogador dono do token (se ele não estiver online, o mestre rola às cegas). Use **Testar o minijogo** no editor para experimentar. Na falha, além da mensagem, rodam as ações de **Ao falhar no teste**; ao desarmar, as de **Ao ser desarmada**.
+
+**Quem confere o resultado é o mestre.** O jogador não manda "passei":
+- **Rolagem**: o Foundry do mestre lê o resultado direto na mensagem da rolagem no chat (e confere que foi aquele jogador que rolou, uma vez só).
+- **Minijogo**: quem monta o desafio (o giro dos anéis, os pontos e a ordem da runa) é o mestre, que guarda isso só com ele. O jogador joga e manda as jogadas; o mestre refaz tudo, confere o tempo e decide.
+- O mestre também confere que o token é mesmo do jogador e que ele pode usar o objeto. As regras (quem pode usar, usos, confirmação) são conferidas **antes** do teste, e um uso só é gasto se o teste passar.
+- Por isso o mestre precisa estar conectado para os jogadores usarem objetos com teste.
 
 ## Visão (3D)
 
-No passo **Aparência**, a seção **Visão (3D)** gira o objeto como uma carta no espaço, com perspectiva, para encaixar na vista do mapa: **Vista de cima**, **De frente**, **Pelo lado esquerdo**, **Pelo lado direito**, barras para inclinar e virar, e **Espelhar**. O mapa mostra a mudança na hora. A imagem continua plana: dá para inclinar e virar, mas não aparece o outro lado do desenho.
+No passo **Aparência**, a seção **Visão (3D)** gira o objeto como uma carta no espaço, com perspectiva, para encaixar na vista do mapa: **Vista de cima**, **De frente**, **Pelo lado esquerdo**, **Pelo lado direito**, barras para inclinar e virar, e **Espelhar**. O mapa mostra a mudança na hora. A imagem continua plana: dá para inclinar e virar, mas não aparece o outro lado do desenho. Funciona também com tiles de vídeo (o vídeo continua rodando).
 
 ## Camaleão
 
@@ -132,7 +138,7 @@ Com o módulo [Gazua da Mesa](https://github.com/Daphenius/gazua-mesa) ativo, qu
 | Mover a câmera | Leva a câmera até o objeto ou até uma região |
 | Escuridão | Muda a escuridão do mapa, com animação |
 | Música | Toca ou para uma playlist nativa |
-| Levar a outro mapa | Leva o token (e o jogador dono dele) para outro mapa. Precisa do módulo [Navegador de Mundos](https://github.com/Daphenius/navegador-mapas) ativo |
+| Levar a outro mapa | Leva o token (e o jogador dono dele) para outro mapa. Precisa do módulo [Navegador de Mundos (navegador-mapas)](https://github.com/Daphenius/navegador-mapas) ativo |
 | Escada / nível | Sobe ou desce o token no mesmo mapa: para outro nível do mapa (Níveis do Foundry v14) e/ou para uma região de chegada, com tela escura "Subindo..." / "Descendo..." |
 | Esperar | Pausa entre uma ação e outra |
 
@@ -141,7 +147,11 @@ As ações são executadas pelo mestre conectado. Sem mestre online, os objetos 
 ## Dicas
 
 - O botão de setas no HUD do tile troca a aparência na hora, sem conferir distância nem regras (bom para testar).
+- Uma **armadilha camuflada** (Camaleão, ainda não revelada) não responde ao clique dos jogadores, para não entregar onde está; ela continua disparando ao pisar ou chegar perto. Um botão secreto camuflado de clicar continua clicável (sem mãozinha nem brilho).
+- **Guardar no Foundry** (pacotes do Dungeondraft): o Foundry só aceita enviar alguns tipos de arquivo. Se ele não aceitar o `.dungeondraft_pack`, o módulo avisa; nesse caso, copie o pacote para a sua pasta de assets e ele aparece na barra lateral.
 - Um tile **escondido** não pode ser usado pelos jogadores. Esconda e mostre objetos com a ação "Mostrar / esconder" para revelar alavancas secretas.
+- **Caminho com vários pontos**: arrastando o token com a régua, tudo o que fica no meio do caminho conta (placas de pressão, "chegar perto" e fios de parede).
+- **Tema claro**: as janelas do módulo seguem o tema claro ou escuro do Foundry.
 - Para um objeto "invisível" que reage quando alguém pisa, use um tile com imagem transparente e "Pisar em cima".
 
 ## API para macros

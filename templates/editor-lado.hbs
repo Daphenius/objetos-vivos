@@ -1,0 +1,25 @@
+{{#if tile}}<aside class="ov-lado">
+  <div class="ov-palco">{{#if lado.img}}<img class="ov-previa" src="{{lado.img}}" alt="" style="{{lado.estilo}}">{{else}}<span class="ov-porta"><i class="fa-solid fa-image" aria-hidden="true"></i></span>{{/if}}
+    <span class="ov-chip">{{lado.chip}}</span></div>
+  <button type="button" class="ov-btn ov-forte" data-a="testar"><i class="fa-solid fa-play" aria-hidden="true"></i> {{L.Editor.Testar}}</button>
+  <div class="ov-campo"><label for="ov-nome">{{L.Editor.Nome}}</label></div>
+  <input id="ov-nome" type="text" data-geral="nome" value="{{nome}}" placeholder="{{nomePadrao}}">
+  <span class="ov-rotulo">{{L.Editor.Estados}}</span>
+  {{#each lado.estados}}<div class="ov-estado {{#if atual}}ov-atual{{/if}}" data-e="{{i}}">
+    <div class="ov-linha"><span class="ov-num">{{n}}</span>
+      <input type="text" data-estado="nome" value="{{nome}}" aria-label="{{@root.L.Editor.NomeEstado}}">
+      {{#if @root.lado.podeRemover}}<button type="button" class="ov-btn ov-icone ov-perigo" data-a="estado-remover" aria-label="{{@root.L.Editor.RemoverEstado}}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>{{/if}}</div>
+    <div class="ov-linha">{{#if img}}<img class="ov-mini" src="{{img}}" alt="">{{else}}<span class="ov-mini"><i class="fa-solid fa-image" aria-hidden="true"></i></span>{{/if}}
+      <span class="ov-arquivo" data-tooltip="{{img}}">{{arquivo}}</span>
+      <button type="button" class="ov-btn" data-a="estado-img">{{@root.L.Editor.TrocarImagem}}</button></div>
+    {{#if inicial}}<span class="ov-sub ov-menor">{{@root.L.Editor.Inicial}}</span>{{/if}}
+  </div>{{/each}}
+  <button type="button" class="ov-btn ov-tracejado" data-a="estado-add">+ {{L.Editor.AdicionarEstado}}</button>
+  {{#if lado.mesmaImagem}}<p class="ov-aviso-img"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> {{L.Editor.MesmaImagem}}</p>{{/if}}
+</aside>{{else}}<aside class="ov-lado">
+  <div class="ov-palco"><span class="ov-porta"><i class="fa-solid {{lado.icone}}" aria-hidden="true"></i></span>
+    <span class="ov-chip">{{lado.tipo}}</span></div>
+  <div class="ov-campo"><label for="ov-nome">{{L.Editor.Nome}}</label></div>
+  <input id="ov-nome" type="text" data-geral="nome" value="{{nome}}" placeholder="{{nomePadrao}}">
+  <p class="ov-dica ov-sub ov-colada">{{lado.dica}}</p>
+</aside>{{/if}}

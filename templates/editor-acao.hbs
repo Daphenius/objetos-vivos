@@ -1,0 +1,27 @@
+<div class="ov-acao" data-i="{{i}}">
+  <div class="ov-acao-cab"><span class="ov-num">{{n}}</span>
+    <div class="ov-txt"><b><i class="fa-solid {{icone}}" aria-hidden="true"></i> {{nome}}</b><span>{{resumo}}</span></div>
+    <button type="button" class="ov-btn ov-icone" data-a="subir" {{#if primeira}}disabled{{/if}} aria-label="{{@root.L.Editor.Subir}}"><i class="fa-solid fa-arrow-up" aria-hidden="true"></i></button>
+    <button type="button" class="ov-btn ov-icone" data-a="descer" aria-label="{{@root.L.Editor.Descer}}"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i></button>
+    <button type="button" class="ov-btn" data-a="editar">{{rotuloEditar}}</button>
+    <button type="button" class="ov-btn ov-icone ov-perigo" data-a="remover" aria-label="{{@root.L.Editor.Remover}}"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>
+  {{#if aberta}}<div class="ov-acao-corpo">{{#if tempo}}<div class="ov-campo"><label>{{@root.L.Campo.atraso}}</label>
+    <input type="number" min="0" step="0.5" data-campo="atraso" data-rerender value="{{tempo.valor}}" class="ov-curto">
+    <span class="ov-dica">{{@root.L.Campo.AtrasoDica}}</span></div>{{/if}}{{#each campos}}<div class="ov-campo"><label>{{rotulo}}</label>
+    {{#if select}}<select data-campo="{{campo}}" {{#if rerender}}data-rerender{{/if}}>{{#each opcoes}}<option value="{{v}}" {{#if sel}}selected{{/if}}>{{r}}</option>{{/each}}</select>{{/if}}
+    {{#if semNiveis}}<span class="ov-dica ov-colada">{{@root.L.Campo.SemNiveis}}</span>{{/if}}
+    {{#if arquivo}}<input type="text" data-campo="{{campo}}" value="{{valor}}" placeholder="{{@root.L.Editor.Arquivo}}">
+      <button type="button" class="ov-btn ov-icone" data-a="arquivo" data-tipo="{{arquivo}}" data-campo-alvo="{{campo}}" aria-label="{{@root.L.Editor.Escolher}}"><i class="fa-solid fa-file-import" aria-hidden="true"></i></button>
+      {{#if audio}}<button type="button" class="ov-btn ov-icone" data-a="ouvir" aria-label="{{@root.L.Editor.Ouvir}}"><i class="fa-solid fa-play" aria-hidden="true"></i></button>{{/if}}{{/if}}
+    {{#if faixa}}<input type="range" min="0" max="1" step="0.05" data-campo="{{campo}}" value="{{valor}}" class="ov-cresce"><span class="ov-valor">{{pct}}%</span>{{/if}}
+    {{#if numero}}<input type="number" min="0" step="0.5" data-campo="{{campo}}" value="{{valor}}" class="ov-curto">{{/if}}
+    {{#if texto}}<input type="text" data-campo="{{campo}}" value="{{valor}}">{{/if}}
+    {{#if textoLongo}}<textarea data-campo="{{campo}}" placeholder="{{@root.L.Campo.TextoExemplo}}">{{valor}}</textarea>{{/if}}
+    {{#if portas}}<span>{{contagem}}</span>
+      <button type="button" class="ov-btn" data-a="portas-add"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{@root.L.Campo.UsarPortas}}</button>
+      {{#if limpar}}<button type="button" class="ov-btn" data-a="portas-limpar">{{@root.L.Campo.Limpar}}</button>{{/if}}{{/if}}
+    {{#if selecao}}<span data-tooltip="{{tooltip}}">{{contagem}}</span>
+      <button type="button" class="ov-btn" data-a="sel-add"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{@root.L.Campo.UsarSelecionados}}</button>
+      {{#if limpar}}<button type="button" class="ov-btn" data-a="sel-limpar">{{@root.L.Campo.Limpar}}</button>{{/if}}{{/if}}
+    {{#if ehObjetos}}{{#if objetos.length}}<div class="ov-lista-alvos">{{#each objetos}}<label><input type="checkbox" data-alvo="{{uuid}}" {{#if marcado}}checked{{/if}}> {{nome}}</label>{{/each}}</div>{{else}}<span class="ov-dica">{{@root.L.Campo.SemObjetos}}</span>{{/if}}{{/if}}</div>{{/each}}<p class="ov-dica">{{dica}}</p></div>{{/if}}
+</div>

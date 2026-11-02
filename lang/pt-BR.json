@@ -70,7 +70,8 @@
       "atravessar": "Ao alguém atravessar",
       "falha": "Ao falhar no teste",
       "desarmar": "Ao ser desarmada",
-      "destrancado": "Ao ser destrancado"
+      "destrancado": "Ao ser destrancado",
+      "usoConsertado": "Ao usar depois de consertado"
     },
     "Aba": {
       "Aparencia": "Aparência",
@@ -328,7 +329,8 @@
       "SemNavegador": "\"Levar a outro mapa\" precisa do módulo Navegador de Mundos ativo.",
       "TrancadoGazua": "\"{objeto}\" está trancado. Clique nele com o seu token por perto para usar a chave ou a gazua.",
       "SemToken": "Coloque o seu token perto do objeto primeiro.",
-      "SemNivel": "O nível escolhido na escada não existe mais neste mapa."
+      "SemNivel": "O nível escolhido na escada não existe mais neste mapa.",
+      "NaoPode": "Você não pode usar “{objeto}” agora."
     },
     "Bib": {
       "Titulo": "Objetos Vivos",
@@ -426,7 +428,8 @@
       "GuardarDica": "Copia o arquivo do pacote para o Foundry. Nas próximas sessões ele aparece na lista e abre com um clique, sem escolher o arquivo de novo.",
       "Guardando": "Guardando “{nome}” no Foundry…",
       "Guardado": "“{nome}” guardado. Ele vai aparecer na lista nas próximas sessões.",
-      "VerTodos": "Ver todos ({n})"
+      "VerTodos": "Ver todos ({n})",
+      "NaoAceito": "O Foundry não aceita enviar arquivos .dungeondraft_pack. Copie o pacote para a sua pasta de assets (no computador onde o Foundry roda) e ele aparece na barra lateral da biblioteca."
     },
     "Camaleao": {
       "Titulo": "Camaleão",
@@ -538,7 +541,8 @@
       "PerguntaArmadilha": "O que você quer fazer com <strong>{objeto}</strong>?",
       "PerguntaDesarmar": "Tentar desarmar <strong>{objeto}</strong>?",
       "BotaoUsar": "Usar",
-      "BotaoDesarmar": "Tentar desarmar"
+      "BotaoDesarmar": "Tentar desarmar",
+      "SemMensagem": "Não achei a mensagem da sua rolagem no chat. Tente de novo."
     },
     "Mini": {
       "Titulo": "Consertar: {nome}",

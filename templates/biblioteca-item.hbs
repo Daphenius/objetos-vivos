@@ -1,0 +1,3 @@
+{{!-- Item da barra lateral da biblioteca; data-nivel dá o recuo (CSS .ov-lado-item[data-nivel]) --}}
+<button type="button" class="ov-lado-item{{#if ativo}} ov-on{{/if}}" data-nivel="{{nivel}}"{{#if secao}} data-secao="{{secao}}"{{/if}}{{#if pacoteId}} data-pacote-id="{{pacoteId}}"{{/if}}{{#if temDdPasta}} data-dd-pasta="{{ddPasta}}"{{/if}}{{#if guardado}} data-guardado="{{guardado}}"{{/if}}>
+  <i class="fa-solid {{icone}}" aria-hidden="true"></i><span class="ov-lado-nome">{{nome}}</span>{{#if temConta}}<span class="ov-conta">{{conta}}</span>{{/if}}</button>

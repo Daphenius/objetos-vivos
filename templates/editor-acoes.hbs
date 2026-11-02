@@ -1,0 +1,14 @@
+<section class="ov-coluna ov-folga"><h2>{{L.Acoes.Titulo}}</h2>
+  <div class="ov-momentos">{{#each ac.momentos}}<button type="button" class="ov-momento {{#if on}}ov-on{{/if}}" data-momento="{{id}}">{{nome}}{{#if n}}<span class="ov-cont">{{n}}</span>{{/if}}</button>{{/each}}</div>
+  {{#each ac.lista}}{{> "modules/objetos-vivos/templates/editor-acao.hbs"}}{{else}}<p class="ov-vazio">{{L.Acoes.Vazio}}</p>{{/each}}
+</section>
+<section><h2 class="ov-rotulo">{{L.Acoes.Adicionar}}</h2>
+  <div class="ov-grade ov-4 ov-acima-8">{{#each ac.novas}}<button type="button" class="ov-cartao" data-nova="{{id}}" {{#if bloqueada}}disabled{{/if}}><b><i class="fa-solid {{icone}}" aria-hidden="true"></i> {{nome}}</b><span>{{desc}}</span></button>{{/each}}</div></section>
+<section class="ov-coluna">
+  <button type="button" class="ov-btn ov-mais" data-a="mais" aria-expanded="{{ac.mais}}"><i class="fa-solid {{ac.maisIcone}}" aria-hidden="true"></i> {{L.Mais.Titulo}}</button>
+  {{#if ac.mais}}{{#if ac.quem}}{{> "modules/objetos-vivos/templates/editor-quem.hbs"}}{{/if}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" ac.usos}}
+    {{#if ac.usados}}<button type="button" class="ov-btn ov-esquerda" data-a="zerar"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> {{L.Regras.Zerar}}</button>{{/if}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" ac.confirmar}}
+    {{#if tile}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" ac.trancado}}{{#if ac.gazua.instalada}}<div class="ov-faixa"><div class="ov-txt"><b><i class="fa-solid fa-key" aria-hidden="true"></i> {{L.Gazua.Titulo}}</b><span>{{ac.gazua.estado}}</span></div>
+        <button type="button" class="ov-btn" data-a="gazua"><i class="fa-solid {{ac.gazua.icone}}" aria-hidden="true"></i> {{ac.gazua.botao}}</button></div>
+      {{#if ac.gazua.tem}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" ac.gazua.usar}}{{/if}}{{else}}<p class="ov-dica"><i class="fa-solid fa-key" aria-hidden="true"></i> {{L.Gazua.Instale}}</p>{{/if}}{{/if}}{{/if}}
+</section>

@@ -1,0 +1,4 @@
+<section><h2>{{L.Regras.Quem}}</h2>
+  <div class="ov-pilulas">{{#each quem.opcoes}}<button type="button" class="ov-pilula {{#if on}}ov-on{{/if}}" data-quem="{{id}}">{{nome}}</button>{{/each}}</div>
+  {{#if quem.ator}}<div class="ov-campo ov-acima-8"><input type="text" data-geral="ator" data-drop="Actor" value="{{quem.valor}}" placeholder="{{L.Regras.ArrasteAtor}}" aria-label="{{L.Quem.ator}}">
+    {{#if quem.temAtor}}<span class="ov-sub">{{quem.nomeAtor}}</span>{{/if}}</div>{{/if}}</section>

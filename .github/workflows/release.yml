@@ -17,5 +17,7 @@ jobs:
           VER=$(jq -r .version module.json)
           TAG="${GITHUB_REF_NAME#v}"
           if [ "$TAG" != "$VER" ]; then echo "Tag $GITHUB_REF_NAME diferente da versão $VER do module.json"; exit 1; fi
-          zip -r "$ID.zip" . -x ".git/*" ".github/*" "*.zip" "CHANGELOG.md"
+          grep -q "releases/download/v${VER}/${ID}.zip" module.json || { echo "O link de download do module.json não aponta para v${VER}."; exit 1; }
+          # só o que o Foundry precisa, com module.json na raiz
+          zip -r "$ID.zip" module.json scripts styles templates assets lang README.md LICENSE
           gh release upload "$GITHUB_REF_NAME" "$ID.zip" module.json --clobber

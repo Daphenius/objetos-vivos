@@ -1,0 +1,24 @@
+<section class="ov-coluna"><h2><i class="fa-solid fa-cube" aria-hidden="true"></i> {{L.Visao.Titulo}}</h2><p class="ov-dica">{{L.Visao.Dica}}</p>
+  <div class="ov-pilulas">{{#each ap.visoes}}<button type="button" class="ov-pilula {{#if on}}ov-on{{/if}}" data-visao-preset="{{id}}">{{nome}}</button>{{/each}}</div>
+  {{#each ap.eixos}}<div class="ov-faixa ov-faixa-linha"><b>{{nome}}</b>
+    <input type="range" min="{{min}}" max="{{max}}" step="1" data-visao="{{eixo}}" value="{{valor}}" aria-label="{{nome}}">
+    <span class="ov-valor">{{valor}}°</span></div>{{/each}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" ap.espelho}}</section>
+<section class="ov-coluna"><h2>{{L.Prof.Titulo}}</h2><p class="ov-dica">{{L.Prof.Dica}}</p>
+  <div class="ov-pilulas">{{#each ap.profs}}<button type="button" class="ov-pilula {{#if on}}ov-on{{/if}}" data-prof-preset="{{id}}">{{nome}}</button>{{/each}}</div>
+  {{#each ap.faixas}}<div class="ov-faixa ov-faixa-linha"><b>{{nome}}</b>
+    <input type="range" min="0" max="{{max}}" step="1" data-prof="{{campo}}" value="{{valor}}" aria-label="{{nome}}">
+    <span class="ov-valor">{{valor}}{{sufixo}}</span></div>{{/each}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" ap.parallax}}</section>
+<section class="ov-coluna"><h2><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> {{L.Camaleao.Titulo}}</h2>{{> "modules/objetos-vivos/templates/editor-faixa.hbs" ap.camaleao}}
+  {{#if ap.ligado}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" ap.revelar}}
+    {{#if ap.revelado}}<div class="ov-faixa"><div class="ov-txt"><b>{{L.Camaleao.Revelado}}</b></div>
+      <button type="button" class="ov-btn" data-a="reesconder"><i class="fa-solid fa-eye-slash" aria-hidden="true"></i> {{L.Camaleao.Reesconder}}</button></div>{{/if}}
+    <button type="button" class="ov-btn ov-esquerda {{#if ap.verCamo}}ov-forte{{/if}}" data-a="ver-camo"><i class="fa-solid {{ap.verIcone}}" aria-hidden="true"></i> {{ap.verTexto}}</button>
+    <p class="ov-dica">{{L.Camaleao.SemProf}}</p>{{/if}}</section>
+<section><h2>{{L.Aparencia.Anim}}</h2>
+  <div class="ov-pilulas">{{#each ap.anims}}<button type="button" class="ov-pilula {{#if on}}ov-on{{/if}}" data-anim="{{id}}">{{nome}}</button>{{/each}}</div>
+  <p class="ov-dica ov-acima">{{L.Aparencia.AnimDica}}</p></section>
+<section><h2>{{L.Aparencia.Som}}</h2>
+  <div class="ov-campo"><input type="text" data-geral="som" value="{{ap.som}}" placeholder="{{L.Editor.Arquivo}}" aria-label="{{L.Aparencia.Som}}">
+    <button type="button" class="ov-btn" data-a="som-escolher">{{L.Editor.Escolher}}</button>
+    <button type="button" class="ov-btn ov-icone" data-a="som-ouvir" aria-label="{{L.Editor.Ouvir}}"><i class="fa-solid fa-play" aria-hidden="true"></i></button></div>
+  <p class="ov-dica ov-acima">{{L.Aparencia.SomDica}}</p></section>

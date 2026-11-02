@@ -1,0 +1,9 @@
+{
+  "name": "objetos-vivos",
+  "private": true,
+  "type": "module",
+  "description": "Testes do módulo Objetos Vivos (Foundry VTT). Não é preciso instalar nada: npm test",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\""
+  }
+}

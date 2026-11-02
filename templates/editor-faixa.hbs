@@ -1,0 +1,4 @@
+{{#if passo}}<div class="ov-faixa"><div class="ov-txt"><b>{{nome}}</b><span>{{desc}}</span></div>
+  <button type="button" class="ov-btn ov-icone" {{attrMenos}}="{{campo}}" aria-label="−">−</button><span class="ov-valor">{{texto}}</span>
+  <button type="button" class="ov-btn ov-icone" {{attrMais}}="{{campo}}" aria-label="+">+</button></div>{{else}}<div class="ov-faixa"><div class="ov-txt"><b>{{nome}}</b><span>{{desc}}</span></div>
+  <button type="button" role="switch" aria-checked="{{on}}" aria-label="{{nome}}" class="ov-chave {{#if on}}ov-on{{/if}}" data-chave="{{campo}}"><span></span></button></div>{{/if}}

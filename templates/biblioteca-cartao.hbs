@@ -1,0 +1,4 @@
+{{!-- Cartão de um asset da biblioteca (clicar encaixa; arrastar leva para o mapa). Os data-* são lidos pelos ouvintes do biblioteca.js --}}
+<button type="button" class="ov-cartao-asset" draggable="true"{{#if preset}} data-preset="{{preset}}"{{/if}}{{#if salvo}} data-salvo="{{salvo}}"{{/if}}{{#if img}} data-img="{{img}}"{{/if}}{{#if dd}} data-dd="{{dd}}" data-pac="{{pac}}"{{/if}} data-nome="{{nomeBusca}}" data-tooltip="{{nome}}">
+  <span class="ov-cartao-img">{{#if video}}<video src="{{src}}" muted loop preload="metadata"></video>{{else}}<img src="{{src}}" alt="" loading="lazy">{{/if}}</span>
+  <span class="ov-cartao-nome">{{nome}}</span></button>

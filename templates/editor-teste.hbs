@@ -1,0 +1,28 @@
+<section><h2>{{L.Teste.Pergunta}}</h2>
+  <div class="ov-grade ov-2">{{#each te.modos}}<button type="button" class="ov-cartao {{#if on}}ov-on{{/if}}" data-teste-modo="{{id}}" aria-pressed="{{on}}"><b>{{nome}}</b><span>{{desc}}</span></button>{{/each}}</div></section>
+{{#unless te.nenhum}}
+{{#if te.desarmar}}<section class="ov-coluna">
+  <p class="ov-dica">{{L.Teste.DesarmarDica}}</p>
+  {{#if te.desarmado}}<div class="ov-faixa"><div class="ov-txt"><b>{{L.Teste.EstaDesarmada}}</b></div>
+    <button type="button" class="ov-btn" data-a="rearmar"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> {{L.Teste.Rearmar}}</button></div>{{/if}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" te.falhaDispara}}</section>{{/if}}
+<section class="ov-coluna"><h2>{{te.tituloComo}}</h2>
+  <div class="ov-pilulas">{{#each te.comos}}<button type="button" class="ov-pilula {{#if on}}ov-on{{/if}}" data-teste-como="{{id}}">{{nome}}</button>{{/each}}</div>
+  {{#if te.comJogo}}<div class="ov-grade ov-2">{{#each te.jogos}}<button type="button" class="ov-cartao {{#if on}}ov-on{{/if}}" data-teste-jogo="{{id}}" aria-pressed="{{on}}"><b>{{nome}}</b><span>{{desc}}</span></button>{{/each}}</div>{{> "modules/objetos-vivos/templates/editor-faixa.hbs" te.tempo}}
+    <button type="button" class="ov-btn ov-forte ov-esquerda" data-a="testar-minijogo"><i class="fa-solid fa-gamepad" aria-hidden="true"></i> {{L.Mini.Testar}}</button>{{/if}}
+</section>
+<section class="ov-coluna"><h2>{{te.tituloQual}}</h2>
+  {{#if te.select}}<select data-teste="qual" data-rerender aria-label="{{L.Teste.Qual}}">{{#each te.grupos}}<optgroup label="{{nome}}">{{#each itens}}<option value="{{valor}}" {{#if sel}}selected{{/if}}>{{nome}}</option>{{/each}}</optgroup>{{/each}}
+    <optgroup label="{{L.Teste.Grupo.outro}}"><option value="formula" {{#if te.formulaSel}}selected{{/if}}>{{L.Teste.Formula}}</option></optgroup></select>{{/if}}
+  {{#if te.campoFormula}}<div class="ov-campo"><label>{{L.Teste.Formula}}</label><input type="text" data-teste="formula" value="{{te.formula}}" placeholder="1d20 + @abilities.int.mod"></div>{{/if}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" te.cd}}
+  {{#if te.mostrarCD}}{{> "modules/objetos-vivos/templates/editor-faixa.hbs" te.mostrarCD}}{{/if}}</section>
+{{#if te.comRolagem}}<section><h2>{{L.Teste.Quem}}</h2>
+  <div class="ov-pilulas">{{#each te.quem}}<button type="button" class="ov-pilula {{#if on}}ov-on{{/if}}" data-teste-quem="{{id}}">{{nome}}</button>{{/each}}</div>
+  <p class="ov-dica ov-acima">{{te.dicaQuem}}</p></section>{{/if}}
+<section class="ov-coluna"><h2>{{L.Teste.AoFalhar}}</h2>{{> "modules/objetos-vivos/templates/editor-faixa.hbs" te.tentativas}}
+  {{#if te.feitas}}<button type="button" class="ov-btn ov-esquerda" data-a="zerar-tentativas"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> {{L.Teste.Zerar}}</button>{{/if}}
+  <div class="ov-campo"><label>{{L.Teste.Mensagem}}</label><input type="text" data-teste="msgFalha" value="{{te.msgFalha}}" placeholder="{{te.msgPadrao}}"></div>
+  <p class="ov-dica">{{L.Teste.AoFalharDica}}</p></section>
+{{#if te.consertar}}<section><h2>{{L.Teste.Depois}}</h2>
+  <div class="ov-pilulas">{{#each te.depois}}<button type="button" class="ov-pilula {{#if on}}ov-on{{/if}}" data-teste-depois="{{id}}">{{nome}}</button>{{/each}}</div>
+  <p class="ov-dica ov-acima">{{L.Teste.ConsertarDica}}</p></section>{{/if}}
+{{/unless}}

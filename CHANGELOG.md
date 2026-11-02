@@ -1,5 +1,44 @@
 # Changelog
 
+## v3.0.0
+
+Versão grande: as correções de segurança que tinham ficado de fora da 2.6.0 e da 2.7.0, o minijogo conferido pelo mestre, placas no meio do caminho, vídeo na visão 3D, tema claro e o módulo reorganizado por dentro.
+
+### Segurança: o mestre confere tudo
+- **Quem pediu é quem pediu.** O módulo usa o remetente real de cada pedido (informado pelo Foundry), não um nome escrito dentro do pedido. Ninguém consegue usar um objeto "no nome" de outro jogador.
+- **A rolagem é lida no chat.** O jogador continua rolando na própria tela, mas não manda mais o número: o mestre lê o resultado na mensagem da rolagem e confere que foi aquele jogador que rolou (e que a mesma rolagem não é usada duas vezes).
+- **O minijogo é conferido pelo mestre.** Quem monta o desafio (o giro de cada anel, os pontos e a ordem da runa) é o mestre, e ele guarda isso só com ele. O jogador joga na própria tela e manda o que fez; o mestre refaz as jogadas, confere o tempo e decide. O desafio vale uma vez, só para aquele jogador.
+- **O token tem que ser do jogador.** Se o pedido vier com um token que não é dele (ou de outro mapa), o token é ignorado.
+- **Efeitos na tela** (imagem, diário, câmera, aviso, som, escada) e pedidos de minijogo só são aceitos quando vêm do mestre.
+- Das portas, os jogadores só conseguem avisar "tentei abrir trancada".
+
+### Novidades
+- **Movimento com vários pontos**: ao arrastar o token com a régua passando por vários pontos, a placa de pressão (ou o "chegar perto", ou o fio de parede) que fica **no meio do caminho** agora dispara. Antes só contavam o começo e o fim.
+- **Visão 3D com vídeo**: tiles de vídeo (.webm/.mp4) com visão 3D continuam se mexendo (antes congelavam). Em tiles muito grandes, a imagem da visão 3D fica limitada a 2048 px, para não pesar na placa de vídeo.
+- **Tema claro**: o editor, a biblioteca e o minijogo acompanham o tema claro do Foundry.
+
+### Correções
+- **Armadilha camuflada** não responde mais ao clique dos jogadores (antes, clicar no lugar abria a pergunta "Usar ou desarmar?" com o nome dela). Ela continua disparando ao pisar ou chegar perto. Um botão secreto camuflado continua clicável, e clicar longe dele não avisa mais "longe demais".
+- **Regras antes do teste**: "quem pode usar", usos e confirmação são conferidos antes de pedir a rolagem ou o minijogo, e o jogador não rola à toa. Um uso só é gasto se o teste passar.
+- **Ao usar depois de consertado**: momento novo em O que acontece (aparece no modo Consertar, quando o objeto continua funcionando depois de consertado). Antes, essas ações não tinham onde ser configuradas.
+- **Volta automática** (voltar sozinho depois de X segundos) não roda mais as ações de "Sempre que for usado", e não dá erro se o objeto foi apagado nesse meio-tempo.
+- **Jogador rola, mas pisou/chegou perto**: a rolagem abre na tela do jogador dono do token; se ele não estiver online, o mestre rola às cegas.
+- **Meus objetos**: salvar (ou colocar) um objeto da biblioteca não leva mais junto o estado do jogo (trancado, revelado, desarmado, tentativas feitas).
+- **Guardar no Foundry** (pacotes do Dungeondraft): se o Foundry não aceitar enviar o arquivo, aparece um aviso explicando o que fazer, em vez de um erro genérico.
+- Nomes de token, jogador, objeto e mapa nas mensagens do chat agora são escritos como texto (um nome com `<` ou `>` não vira HTML).
+- O brilho dos objetos não acumula mais um "pulso" a cada troca de mapa.
+- Erros nas ações de "Ao falhar no teste", "Ao ser desarmada", "Ao ser destrancado" e "Ao alguém atravessar" agora avisam o mestre na tela, não só no console.
+- Fechar o minijogo enquanto a imagem carrega não dá mais erro.
+- Regras de estilo repetidas foram unificadas. A entrada da 2.5.0 dizia que havia "um teste para não voltar"; o correto é que a regra de estilo foi reforçada.
+
+
+### Por dentro (não muda o uso)
+- O código, que era um arquivo só de mais de 3.000 linhas, foi dividido em partes menores (núcleo, estados, gatilhos, testes, minijogos, socket, visual, editor, biblioteca, encaixe, pacotes do Dungeondraft, interface).
+- Os estilos saíram do código para `styles/objetos-vivos.css`, com as cores em variáveis.
+- O editor e a biblioteca passaram a usar modelos (templates Handlebars) em `templates/`, como os módulos do próprio Foundry.
+- Removidos restos de compatibilidade com o Foundry 12 e com o D&D 5e antigo (o mínimo continua sendo o Foundry 14).
+- Testes automáticos em `tests/` (rodam com `npm test`, sem Foundry): volta automática, regras de uso, biblioteca, pacotes do Dungeondraft com `%` no nome, socket, rolagem, minijogo e movimento com vários pontos.
+
 ## v2.7.0
 
 ### Novidades
@@ -41,7 +80,7 @@
 - API para macros: `api.minijogo({ jogo, img, cd, tempo })`. Ganchos novos: `objetosVivos.teste`, `objetosVivos.falhou` e `objetosVivos.desarmado`.
 
 ### Correções
-- O campo **Nome** do editor voltava a esticar e ocupar a coluna inteira quando sobrava espaço (a correção da v2.1.0 não pegava). Agora ficou de vez, com um teste para não voltar.
+- O campo **Nome** do editor voltava a esticar e ocupar a coluna inteira quando sobrava espaço (a correção da v2.1.0 não pegava). Agora a regra de estilo foi reforçada para não voltar.
 
 ## v2.4.1
 - **Camaleão perfeito**: o objeto camuflado agora fica invisível de verdade para os jogadores. Antes, o módulo redesenhava o chão por cima do objeto, e essa cópia saía um pouco mais borrada e com outra luz, deixando um quadrado aparente. Agora nada é desenhado no lugar: o mapa fica exatamente igual, e o objeto continua funcionando (pisar, clicar, chegar perto). O mestre continua vendo o objeto meio transparente.

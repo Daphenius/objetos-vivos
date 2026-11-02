@@ -70,7 +70,8 @@
       "atravessar": "When someone walks through",
       "falha": "When the check fails",
       "desarmar": "When disarmed",
-      "destrancado": "When unlocked"
+      "destrancado": "When unlocked",
+      "usoConsertado": "When used after repaired"
     },
     "Aba": {
       "Aparencia": "Look",
@@ -328,7 +329,8 @@
       "SemNavegador": "\"Move to another map\" needs the World Navigator module active.",
       "TrancadoGazua": "\"{objeto}\" is locked. Click it with your token nearby to use a key or lockpick.",
       "SemToken": "Move your token near the object first.",
-      "SemNivel": "The level chosen on the stairs no longer exists on this map."
+      "SemNivel": "The level chosen on the stairs no longer exists on this map.",
+      "NaoPode": "You can’t use “{objeto}” right now."
     },
     "Bib": {
       "Titulo": "Living Objects",
@@ -426,7 +428,8 @@
       "GuardarDica": "Copies the pack file into Foundry. In future sessions it shows up in the list and opens with one click, without picking the file again.",
       "Guardando": "Keeping “{nome}” in Foundry…",
       "Guardado": "“{nome}” kept. It will show up in the list in future sessions.",
-      "VerTodos": "See all ({n})"
+      "VerTodos": "See all ({n})",
+      "NaoAceito": "Foundry doesn’t accept uploading .dungeondraft_pack files. Copy the pack into your assets folder (on the computer running Foundry) and it will show up in the library sidebar."
     },
     "Camaleao": {
       "Titulo": "Chameleon",
@@ -538,7 +541,8 @@
       "PerguntaArmadilha": "What do you want to do with <strong>{objeto}</strong>?",
       "PerguntaDesarmar": "Try to disarm <strong>{objeto}</strong>?",
       "BotaoUsar": "Use",
-      "BotaoDesarmar": "Try to disarm"
+      "BotaoDesarmar": "Try to disarm",
+      "SemMensagem": "Couldn’t find your roll message in the chat. Try again."
     },
     "Mini": {
       "Titulo": "Repair: {nome}",
