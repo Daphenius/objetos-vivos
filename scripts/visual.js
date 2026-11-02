@@ -126,7 +126,7 @@ export function projetarCarta(W, H, v, seg = VISAO_SEG) {
 
 // Resolução da imagem da carta: nítida em objetos pequenos, mas nunca mais de 2048 px no maior lado
 // (tile grande com resolução 2 pesava na placa de vídeo)
-export const resolucaoVisao = (W, H) => Math.max(0.25, Math.min(2, 2048 / Math.max(1, W, H)));
+export const resolucaoVisao = (W, H) => Math.min(2, 2048 / Math.max(1, W, H));
 // Tile de vídeo: a imagem muda a cada quadro, então a carta precisa ser redesenhada junto
 export const ehTexturaVideo = tex => {
   const fonte = tex?.baseTexture?.resource?.source;

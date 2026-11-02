@@ -14,6 +14,11 @@ export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;"
 export const emitir = data => game.socket.emit(SOCKET, data);
 export const souMestreAtivo = () => game.user === game.users.activeGM;
 export const comparar = (a, b) => String(a).localeCompare(String(b), game.i18n.lang);
+// Volume de 0 a 1. Zero é zero (mudo); só vazio ou inválido vira o padrão de 80%.
+export const volumeDe = v => {
+  const n = v === "" || v === null || v === undefined ? NaN : Number(v);
+  return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0.8;
+};
 export const novoId = () => foundry.utils.randomID(8);
 // Nomes de arquivo podem ter "%" e outros caracteres que quebram decodeURIComponent: nunca deixa estourar
 export const decodificar = texto => { try { return decodeURIComponent(String(texto ?? "")); } catch { return String(texto ?? ""); } };

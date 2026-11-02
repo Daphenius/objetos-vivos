@@ -1,7 +1,7 @@
 import { salvarNaBiblioteca } from "./biblioteca.js";
 import { atualizarSecoes } from "./interface.js";
 import { dificuldade } from "./minijogos.js";
-import { ACOES, ANIMS, ID, INTERACOES, PARA, PRESETS, PROFS, QUEM, cfgDe, clone, comparar, decodificar, ehObjeto, ehTile, fechaduraTrancada, gazua, momentosDe, navegador, niveisDe, nomeObjeto, novaAcao, novoId, padrao, profPadrao, t, temFechadura, testeDe } from "./nucleo.js";
+import { ACOES, ANIMS, ID, INTERACOES, PARA, PRESETS, PROFS, QUEM, cfgDe, clone, comparar, decodificar, ehObjeto, ehTile, fechaduraTrancada, gazua, momentosDe, navegador, niveisDe, nomeObjeto, novaAcao, novoId, padrao, profPadrao, t, temFechadura, testeDe, volumeDe } from "./nucleo.js";
 import { jogarMinijogo, opcoesDeTeste } from "./testes.js";
 import { VISAO_MAX, VISOES, aplicarCamaleao, aplicarProfundidade, aplicarVisao } from "./visual.js";
 
@@ -67,6 +67,29 @@ const chave = (on, campo, nome, desc) => ({ on: !!on, campo, nome, desc });
 const passo = (campo, texto, nome, desc, prefixo = "data") => ({ passo: true, campo, texto, nome, desc, attrMenos: `${prefixo}-menos`, attrMais: `${prefixo}-mais` });
 const pilulas = (lista, atual) => lista.map(([id, chaveTexto]) => ({ id, on: atual === id, nome: t(chaveTexto) }));
 
+// Junta a edição com o objeto como ele está agora: um campo só é trocado se foi mudado na janela
+// (comparando com como estava ao abrir). Em "teste", "prof" e "visao", campo a campo.
+const igual = (a, b) => JSON.stringify(ordenar(a)) === JSON.stringify(ordenar(b));
+function ordenar(x) {
+  if (Array.isArray(x)) return x.map(ordenar);
+  if (x && typeof x === "object") return Object.fromEntries(Object.keys(x).sort().map(k => [k, ordenar(x[k])]));
+  return x;
+}
+const POR_CAMPO = ["teste", "prof", "visao"];
+export function mesclarEdicao(atual, base, editado) {
+  if (!atual) return clone(editado);
+  const final = clone(atual);
+  for (const k of Object.keys(editado)) {
+    if (!(k in final)) { final[k] = clone(editado[k]); continue; }
+    if (igual(editado[k], base[k])) continue;
+    const obj = v => v && typeof v === "object" && !Array.isArray(v);
+    if (POR_CAMPO.includes(k) && obj(editado[k]) && obj(final[k])) {
+      for (const s of Object.keys(editado[k])) if (!igual(editado[k][s], base[k]?.[s])) final[k][s] = clone(editado[k][s]);
+    } else final[k] = clone(editado[k]);
+  }
+  return final;
+}
+
 export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
     classes: ["ov-editor"],
@@ -87,6 +110,8 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
     super({ ...opcoes, id: `${ID}-editor-${doc.documentName}-${doc.id}` });
     this.doc = doc;
     this.dados = { ...padrao(doc), ...clone(cfgDe(doc) ?? {}) };
+    // como estava ao abrir: ao salvar, só o que mudou aqui na janela é gravado
+    this.base = clone(this.dados);
     this.tile = ehTile(doc);
     this.aba = this.tile ? "aparencia" : "acoes";
     this.momento = momentosDe(doc, this.dados)[0].id;
@@ -572,7 +597,7 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
       case "editar": this.abertas.has(a.id) ? this.abertas.delete(a.id) : this.abertas.add(a.id); break;
       case "remover": lista.splice(i, 1); break;
       case "arquivo": return this._escolherArquivo(ds.tipo, a[ds.campoAlvo], c => { a[ds.campoAlvo] = c; });
-      case "ouvir": if (a?.arquivo) foundry.audio.AudioHelper.play({ src: a.arquivo, volume: Number(a.volume) || 0.8, loop: false, channel: "environment" }, false); return;
+      case "ouvir": if (a?.arquivo) foundry.audio.AudioHelper.play({ src: a.arquivo, volume: volumeDe(a.volume), loop: false, channel: "environment" }, false); return;
       case "portas-add": {
         if (!this._noMapa()) return;
         const ids = (canvas.walls?.controlled ?? []).filter(w => w.document.door > 0).map(w => w.document.id);
@@ -604,10 +629,13 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _salvar() {
-    const d = clone(this.dados);
-    d.nome = (d.nome ?? "").trim();
-    d.distancia = Math.max(0, Number(d.distancia) || 0);
-    d.usos = Math.max(0, Math.floor(Number(d.usos) || 0));
+    const editado = clone(this.dados);
+    editado.nome = (editado.nome ?? "").trim();
+    editado.distancia = Math.max(0, Number(editado.distancia) || 0);
+    editado.usos = Math.max(0, Math.floor(Number(editado.usos) || 0));
+    // O jogo pode ter mudado o objeto com a janela aberta (estado, usos gastos, tentativas, desarmado...).
+    // Por cima do que está no objeto AGORA, entra só o que foi mudado na janela.
+    const d = mesclarEdicao(cfgDe(this.doc), this.base, editado);
     const upd = { [`flags.${ID}.objeto`]: d };
     if (this.tile) {
       d.estado = Math.min(d.estado ?? 0, d.estados.length - 1);

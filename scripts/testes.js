@@ -205,9 +205,11 @@ export async function usarObjeto(doc, { tokenUuid = null, userId = null, forcar 
       }
       if (desarmar) {
         if (c.trancado) { if (userId) efeito([userId], { tipo: "aviso", texto: t("Teste.SemTentativas", { objeto: nomeObjeto(doc) }) }); return; }
-        if (!await podeAgir(doc, c, token, userId, "desarmar", { confirmar: !semConfirmar })) return;
+        // confere as regras sem gastar o uso; o uso só é gasto se desarmar
+        if (!await podeAgir(doc, c, token, userId, "desarmar", { gastar: false, confirmar: !semConfirmar })) return;
         const r = await avaliarTeste(doc, c, { token, userId, rolagem, desarmar: true });
         if (r === "passou") {
+          await gastarUso(doc);
           const upd = { [`flags.${ID}.objeto.desarmado`]: true };
           if (c.camaleao && !c.revelado) upd[`flags.${ID}.objeto.revelado`] = true;
           await doc.update(upd);

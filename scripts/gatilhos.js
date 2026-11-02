@@ -153,8 +153,9 @@ export const estadosPorta = new Map();
 export function lembrarPortas(cena) { for (const w of cena?.walls ?? []) if (w.door > 0) estadosPorta.set(w.uuid, w.ds); }
 
 // "Ao tentar abrir trancada": cada controle de porta ganha um ouvinte próprio.
-// O módulo NÃO substitui nenhuma função do Foundry (nada de prototype nem libWrapper),
-// então não entra em conflito com Gazua da Mesa, Arm's Reach ou qualquer outro módulo.
+// O módulo não substitui funções do Foundry (nada de prototype nem libWrapper). Isso evita o aviso
+// de conflito do libWrapper que aparecia com a Gazua da Mesa e o Arm's Reach; não garante, sozinho,
+// que nenhum outro módulo vá se estranhar com ele.
 export function aoClicarPorta(ev) {
   try {
     if ((ev?.button ?? 0) !== 0 || game.user.isGM) return;

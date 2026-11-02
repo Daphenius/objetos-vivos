@@ -269,3 +269,102 @@ test("chat: nomes entram escapados", () => {
   const d = F.tile("chat", objeto());
   assert.equal(preencher("{token} / {jogador}", { token: { name: "<b>x</b>" }, userId: "ana", fonte: d, cena: F.cena }), "&lt;b&gt;x&lt;/b&gt; / ana");
 });
+
+// ---------- Regressões da revisão da 3.0.0
+const { mesclarEdicao, EditorObjeto } = await import("../scripts/editor.js");
+const { EXECUTAR } = await import("../scripts/estados.js");
+const { volumeDe } = await import("../scripts/nucleo.js");
+const { resolucaoVisao } = await import("../scripts/visual.js");
+const resolverAneis = estado => estado.giros.flatMap((g, i) => Array.from({ length: (360 - g) / 45 }, () => [i, 1]));
+
+async function desarmarComMinijogo(id, usos) {
+  comoMestre();
+  const d = F.tile(id, objeto({ usos, interacao: "pisar", teste: { modo: "desarmar", como: "minijogo", minijogo: "aneis", cd: 15, tempo: 45 } }));
+  F.emitidos.length = 0;
+  await F.socket({ acao: "usar", uuid: d.uuid, tokenUuid: tkAna.uuid, desarmar: true }, "ana");
+  await F.espera(30);
+  assert.equal(cfg(d).usados, 0, "abrir o desafio não gasta o uso");
+  const { id: desafio, estado } = F.emitidos.find(e => e.desafio).desafio;
+  await F.socket({ acao: "minijogo", desafio, jogadas: resolverAneis(estado) }, "ana");
+  await F.espera(30);
+  return d;
+}
+test("desarmar com 1 uso: abrir o desafio não gasta; acertar desarma e gasta uma vez", async () => {
+  const d = await desarmarComMinijogo("arm1", 1);
+  assert.equal(cfg(d).desarmado, true);
+  assert.equal(cfg(d).usados, 1);
+});
+test("desarmar com 3 usos: a tentativa gasta um uso só", async () => {
+  const d = await desarmarComMinijogo("arm3", 3);
+  assert.equal(cfg(d).desarmado, true);
+  assert.equal(cfg(d).usados, 1);
+});
+test("desarmar e falhar não gasta uso", async () => {
+  comoMestre();
+  const d = F.tile("armf", objeto({ usos: 2, teste: { modo: "desarmar", como: "rolagem", qual: "formula", formula: "1d20", cd: 15, quemRola: "mestre", falhaDispara: false } }));
+  F.rolagens.total = 5;
+  await usarObjeto(d, { userId: "gm", tokenUuid: tkAna.uuid, desarmar: true });
+  F.rolagens.total = 12;
+  assert.equal(cfg(d).usados, 0);
+  assert.equal(cfg(d).desarmado, undefined);
+});
+
+test("editor: salvar só o nome não desfaz o que aconteceu no jogo com a janela aberta", async () => {
+  const atual = { nome: "", estado: 1, usados: 1, desarmado: true, teste: { modo: "desarmar", feitas: 2, cd: 15 }, prof: { sombra: 40 } };
+  const base = { nome: "", estado: 0, usados: 0, desarmado: false, teste: { modo: "desarmar", feitas: 0, cd: 15 }, prof: { sombra: 40 } };
+  const editado = { ...structuredClone(base), nome: "Alavanca", teste: { modo: "desarmar", feitas: 0, cd: 18 } };
+  const final = mesclarEdicao(atual, base, editado);
+  assert.equal(final.nome, "Alavanca");
+  assert.deepEqual([final.estado, final.usados, final.desarmado, final.teste.feitas], [1, 1, true, 2], "estado de jogo preservado");
+  assert.equal(final.teste.cd, 18, "a CD mudada na janela entra");
+  const zerado = mesclarEdicao(atual, { ...base, usados: 1 }, { ...structuredClone(base), usados: 0 });
+  assert.equal(zerado.usados, 0, "'Zerar usos' na janela continua valendo");
+});
+test("editor: integração — abrir, o jogo muda o objeto, salvar o nome", async () => {
+  comoMestre();
+  const d = F.tile("ed", objeto({ usos: 3 }));
+  const ed = new EditorObjeto(d);
+  await usarObjeto(d, { userId: "gm" });               // estado 1, 1 uso gasto
+  ed.dados.nome = "Portão";
+  await ed._salvar();
+  assert.equal(cfg(d).nome, "Portão");
+  assert.equal(cfg(d).estado, 1);
+  assert.equal(cfg(d).usados, 1);
+});
+
+test("volta automática antiga não roda depois de outra mudança", async () => {
+  comoMestre();
+  const d = F.tile("velha", objeto({ voltar: 0.05, acoes: {
+    "estado:e1": [{ id: "w", tipo: "esperar", segundos: 0.1, atraso: 0 }],
+    "estado:e0": [{ id: "c", tipo: "chat", texto: "inicial", atraso: 0 }] } }));
+  F.chat.length = 0;
+  const uso = usarObjeto(d, { userId: "gm" });         // vai para o estado 1 e espera 0,1 s
+  await F.espera(20);
+  await mudarEstado(d, 0, { cena: F.cena, token: null, userId: "gm", fonte: d, profundidade: 0 }); // volta manual
+  await uso;
+  await F.espera(200);
+  assert.equal(F.chat.filter(m => /inicial/.test(m.content)).length, 1, "as ações do estado inicial rodam uma vez só");
+  assert.equal(cfg(d).estado, 0);
+});
+
+test("volume zero continua zero", async () => {
+  assert.equal(volumeDe(0), 0);
+  assert.equal(volumeDe("0"), 0);
+  assert.equal(volumeDe(""), 0.8);
+  assert.equal(volumeDe(undefined), 0.8);
+  assert.equal(volumeDe("abc"), 0.8);
+  assert.equal(volumeDe(1.7), 1);
+  const tocados = [];
+  const antigo = foundry.audio.AudioHelper.play;
+  foundry.audio.AudioHelper.play = async o => { tocados.push(o.volume); };
+  F.mestre.viewedScene = "c1";
+  await EXECUTAR.som({ arquivo: "x.ogg", volume: 0, para: "mapa" }, { cena: F.cena, token: null, userId: "gm" });
+  await F.espera(10);
+  foundry.audio.AudioHelper.play = antigo;
+  assert.deepEqual(tocados, [0]);
+});
+
+test("visão 3D: nunca passa de 2048 px no maior lado", () => {
+  for (const lado of [10, 500, 1024, 2048, 5000, 12000, 40000]) assert.ok(lado * resolucaoVisao(lado, 100) <= 2048 + 1e-6, `lado ${lado}`);
+  assert.equal(resolucaoVisao(100, 100), 2, "objeto pequeno continua nítido");
+});

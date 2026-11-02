@@ -152,6 +152,7 @@ As ações são executadas pelo mestre conectado. Sem mestre online, os objetos 
 - Um tile **escondido** não pode ser usado pelos jogadores. Esconda e mostre objetos com a ação "Mostrar / esconder" para revelar alavancas secretas.
 - **Caminho com vários pontos**: arrastando o token com a régua, tudo o que fica no meio do caminho conta (placas de pressão, "chegar perto" e fios de parede).
 - **Tema claro**: as janelas do módulo seguem o tema claro ou escuro do Foundry.
+- **Editor aberto durante o jogo**: ao salvar, só o que você mudou na janela é gravado. O que aconteceu no jogo enquanto ela estava aberta (estado, usos gastos, tentativas, desarmada) é mantido.
 - Para um objeto "invisível" que reage quando alguém pisa, use um tile com imagem transparente e "Pisar em cima".
 
 ## API para macros

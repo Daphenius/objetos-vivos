@@ -1,5 +1,19 @@
 # Changelog
 
+## v3.0.1
+
+Correções de uma revisão da 3.0.0.
+
+### Correções
+- **Desarmar não gasta mais o uso antes da hora.** Abrir o minijogo (ou a rolagem) de desarmar gastava o uso na hora; numa armadilha com 1 uso, acertar o minijogo não desarmava nada, e com mais usos a mesma tentativa podia cobrar duas vezes. Agora o uso é conferido antes e gasto uma vez só, quando desarma.
+- **Salvar o editor não desfaz mais o que aconteceu no jogo.** Se o objeto mudasse com o editor aberto (alguém usou, gastou um uso, desarmou), salvar voltava tudo para como estava quando a janela abriu. Agora só o que você mudou na janela é gravado; o resto fica como o objeto está no momento. Botões como "Zerar usos" e "Armar de novo" continuam valendo.
+- **Volta automática fora de hora.** Com "Esperar" nas ações, se o objeto mudasse de novo durante a espera, a execução antiga ainda agendava uma volta, e as ações do estado inicial podiam rodar duas vezes. Agora uma execução antiga não agenda nem faz volta.
+- **Volume zero é zero.** Um som com volume 0 tocava a 80%. Só volume vazio ou inválido usa o padrão de 80% (também na prévia do editor).
+- **Visão 3D**: o limite de 2048 px no maior lado agora vale para qualquer tamanho de tile (antes, tiles enormes passavam disso).
+- Comentários no código com garantias absolutas foram reescritos (não substituir funções do Foundry evita o aviso do libWrapper, mas não garante sozinho que nenhum módulo vá conflitar).
+- 8 testes novos, um para cada caso acima (25 no total).
+
+
 ## v3.0.0
 
 Versão grande: as correções de segurança que tinham ficado de fora da 2.6.0 e da 2.7.0, o minijogo conferido pelo mestre, placas no meio do caminho, vídeo na visão 3D, tema claro e o módulo reorganizado por dentro.

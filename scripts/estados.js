@@ -1,4 +1,4 @@
-import { ID, alvos, centroDaRegiao, centroDe, centroToken, cfgDe, ehTile, emitir, esc, estaTrancado, gazua, navegador, niveisDe, nomeObjeto, pausa, preencher, t, testeDe } from "./nucleo.js";
+import { ID, alvos, centroDaRegiao, centroDe, centroToken, cfgDe, ehTile, emitir, esc, estaTrancado, gazua, navegador, niveisDe, nomeObjeto, pausa, preencher, t, testeDe, volumeDe } from "./nucleo.js";
 import { usarObjeto } from "./testes.js";
 
 // Efeitos na tela de quem precisa ver/ouvir
@@ -29,7 +29,7 @@ export async function efeitoEscada(e) {
     tela.innerHTML = `<span>${esc(e.texto ?? "")}</span>`;
     requestAnimationFrame(() => tela.classList.add("ov-on"));
     clearTimeout(tela._ovFim);
-    tela._ovFim = setTimeout(() => tela?.classList.remove("ov-on"), 8000); // nunca fica preso no escuro
+    tela._ovFim = setTimeout(() => tela?.classList.remove("ov-on"), 8000); // se a "fase fim" não chegar, a tela clareia sozinha em 8 s
     return;
   }
   try {
@@ -47,7 +47,7 @@ export async function efeitoEscada(e) {
 
 // O que cada ação faz (no mestre ativo)
 export const EXECUTAR = {
-  async som(a, ctx) { if (a.arquivo) efeito(alvos(a.para, ctx), { tipo: "som", src: a.arquivo, volume: Number(a.volume) || 0.8 }); },
+  async som(a, ctx) { if (a.arquivo) efeito(alvos(a.para, ctx), { tipo: "som", src: a.arquivo, volume: volumeDe(a.volume) }); },
   async portas(a, ctx) {
     const S = CONST.WALL_DOOR_STATES;
     const mud = (a.portas ?? []).map(id => ctx.cena.walls.get(id)).filter(Boolean).map(w => ({
@@ -244,18 +244,26 @@ export async function gastarUso(doc) {
 
 // Muda o estado de um objeto (tile): imagem, animação, som, ações e volta automática
 export const voltas = new Map();
+// Cada mudança de estado de um objeto ganha um número. Se, enquanto as ações rodam (com "esperar"),
+// o objeto mudar de novo, a execução antiga não agenda nem faz a volta automática.
+const transicoes = new Map();
 export async function mudarEstado(doc, idx, ctx) {
   const c = cfgDe(doc);
   const e = c?.estados?.[idx];
   if (!e) return;
+  const vez = (transicoes.get(doc.uuid) ?? 0) + 1;
+  transicoes.set(doc.uuid, vez);
+  clearTimeout(voltas.get(doc.uuid));
+  voltas.delete(doc.uuid);
   const upd = { [`flags.${ID}.objeto.estado`]: idx };
   if (e.img && e.img !== doc.texture?.src) upd["texture.src"] = e.img;
   await doc.update(upd);
   if (c.som) efeito(alvos("mapa", ctx), { tipo: "som", src: c.som, volume: 0.8 });
-  clearTimeout(voltas.get(doc.uuid));
   await executarAcoes(doc, `estado:${e.id}`, ctx);
+  if (transicoes.get(doc.uuid) !== vez) return; // o objeto já mudou de novo: esta volta não vale mais
   if (c.voltar > 0 && idx !== 0 && testeDe(c).modo !== "consertar") voltas.set(doc.uuid, setTimeout(() => {
     voltas.delete(doc.uuid);
+    if (transicoes.get(doc.uuid) !== vez) return;
     if (!doc.parent?.tiles?.has(doc.id)) return; // o objeto foi apagado nesse meio-tempo
     mudarEstado(doc, 0, { ...ctx, token: null, automatico: true }).catch(err => console.warn(`${ID} | volta automática falhou`, err));
   }, c.voltar * 1000));

@@ -109,6 +109,8 @@ export function instalar() {
     async evaluate() { rolagens.n++; this.total = rolagens.total; return this; }
     async toMessage() { mensagem(`r${rolagens.n}`, game.user, this.total); }
   };
+  // página sem nada aberto (o módulo só procura janelas/elementos para atualizar)
+  globalThis.document = { querySelectorAll: () => [], querySelector: () => null, getElementById: () => null, body: { classList: { toggle() {}, add() {}, remove() {} } } };
   globalThis.canvas = { ready: false, scene: cena, dimensions: { size: 100 }, tiles: { placeables: [] }, tokens: { placeables: [] } };
   globalThis.game = {
     user: mestre, users: usuarios, messages: mensagens, scenes: [cena], system: { id: "teste", version: "1" },
