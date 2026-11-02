@@ -133,6 +133,7 @@ Com o módulo [Gazua da Mesa](https://github.com/Daphenius/gazua-mesa) ativo, qu
 | Escuridão | Muda a escuridão do mapa, com animação |
 | Música | Toca ou para uma playlist nativa |
 | Levar a outro mapa | Leva o token (e o jogador dono dele) para outro mapa. Precisa do módulo [Navegador de Mundos](https://github.com/Daphenius/navegador-mapas) ativo |
+| Escada / nível | Sobe ou desce o token no mesmo mapa: para outro nível do mapa (Níveis do Foundry v14) e/ou para uma região de chegada, com tela escura "Subindo..." / "Descendo..." |
 | Esperar | Pausa entre uma ação e outra |
 
 As ações são executadas pelo mestre conectado. Sem mestre online, os objetos não respondem.

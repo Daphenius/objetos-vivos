@@ -19,6 +19,21 @@ const decodificar = texto => { try { return decodeURIComponent(String(texto ?? "
 const clone = x => foundry.utils.deepClone(x);
 const navegador = () => { const m = game.modules.get("navegador-mapas"); return m?.active ? m.api : null; };
 
+// Níveis do mapa (Foundry v14): andares empilhados na mesma cena
+function niveisDe(cena) {
+  try {
+    const col = cena?.levels ?? cena?.getEmbeddedCollection?.("Level");
+    return (col?.contents ?? []).slice().sort((a, b) => (Number(a.elevation?.bottom) || 0) - (Number(b.elevation?.bottom) || 0) || (a.sort ?? 0) - (b.sort ?? 0));
+  } catch { return []; }
+}
+// O objeto e o token estão no mesmo nível? (sem níveis no mapa, sempre sim)
+function mesmoNivel(doc, tk) {
+  const lv = tk?.level, lista = doc?.levels;
+  const n = lista?.size ?? lista?.length ?? 0;
+  if (!lv || !n) return true;
+  return typeof lista.has === "function" ? lista.has(lv) : lista.includes(lv);
+}
+
 // Gazua da Mesa: um objeto (tile) pode ter fechadura. Trancado = "Trancado" do objeto OU fechadura trancada.
 const gazua = () => { const m = game.modules.get("gazua-mesa"); return m?.active && m.api?.lerFechadura ? m.api : null; };
 const temFechadura = doc => !!gazua()?.lerFechadura(doc);
@@ -60,6 +75,7 @@ const ACOES = {
   escuridao:    { campos: { valor: ["faixa", 1], duracao: ["numero", 2] } },
   musica:       { campos: { playlist: ["playlist", ""], modo: ["opcao", "tocar", ["tocar", "parar", "pararTodas"]] } },
   mover:        { campos: { destino: ["cena", ""], regiao: ["regiaoDestino", ""], quem: ["opcao", "token", ["token", "jogadores"]] } },
+  escada:       { campos: { nivel: ["nivel", ""], chegada: ["regiaoChegada", ""], quem: ["opcao", "token", ["token", "jogadores"]], tela: ["opcao", "subindo", ["subindo", "descendo", "semTela"]] } },
   esperar:      { campos: { segundos: ["numero", 1] } }
 };
 const novaAcao = tipo => ({ id: novoId(), tipo, atraso: 0, ...Object.fromEntries(Object.entries(ACOES[tipo].campos).map(([k, [, v]]) => [k, clone(v)])) });
@@ -196,7 +212,32 @@ async function aplicarEfeito(e) {
     } else if (e.tipo === "diario") (await fromUuid(e.uuid))?.sheet?.render(true);
     else if (e.tipo === "camera" && canvas.scene?.id === e.cena) canvas.animatePan({ x: e.x, y: e.y, scale: e.zoom || undefined, duration: 900 });
     else if (e.tipo === "aviso") ui.notifications.info(e.texto);
+    else if (e.tipo === "escada") await efeitoEscada(e);
   } catch (err) { console.warn(`${ID} | efeito falhou`, err); }
+}
+
+// Escada: escurece a tela, troca o nível que a pessoa vê e leva a câmera até o token
+async function efeitoEscada(e) {
+  let tela = document.getElementById("ov-escada");
+  if (e.fase === "inicio") {
+    if (!tela) { tela = document.createElement("div"); tela.id = "ov-escada"; document.body.append(tela); }
+    tela.innerHTML = `<span>${esc(e.texto ?? "")}</span>`;
+    requestAnimationFrame(() => tela.classList.add("ov-on"));
+    clearTimeout(tela._ovFim);
+    tela._ovFim = setTimeout(() => tela?.classList.remove("ov-on"), 8000); // nunca fica preso no escuro
+    return;
+  }
+  try {
+    if (canvas.scene?.id === e.cena) {
+      const visto = canvas.level?.id ?? canvas.scene?._view?.level;
+      if (e.nivel && visto !== e.nivel && typeof canvas.scene.view === "function") await canvas.scene.view({ level: e.nivel });
+      const tk = canvas.tokens?.get(e.token);
+      if (tk?.isOwner && !game.user.isGM) tk.control({ releaseOthers: true });
+      canvas.animatePan({ x: e.x, y: e.y, duration: e.tela ? 0 : 700 });
+    }
+  } finally {
+    if (tela) setTimeout(() => tela.classList.remove("ov-on"), 250);
+  }
 }
 
 const preencher = (texto, ctx) => String(texto ?? "")
@@ -273,6 +314,47 @@ const EXECUTAR = {
     if (!game.scenes.has(a.destino)) return;
     const tokens = a.quem === "jogadores" ? ctx.cena.tokens.filter(tk => tk.actor?.hasPlayerOwner) : [ctx.token].filter(Boolean);
     for (const tk of tokens) await nav.portal(tk, a.destino, a.regiao || null);
+  },
+  async escada(a, ctx) {
+    const cena = ctx.cena;
+    const nivel = a.nivel ? niveisDe(cena).find(l => l.id === a.nivel) : null;
+    if (a.nivel && !nivel) return ui.notifications.warn(t("Aviso.SemNivel"));
+    const tokens = a.quem === "jogadores" ? cena.tokens.filter(tk => tk.actor?.hasPlayerOwner) : [ctx.token].filter(tk => tk?.parent?.id === cena.id);
+    if (!tokens.length) return;
+    const chegada = a.chegada ? await centroDaRegiao(a.chegada) : null;
+    if (!chegada && !nivel) return;
+    // quem vê a tela escura: os donos dos tokens (e quem usou)
+    const ativos = game.users.filter(u => u.active && !u.isGM);
+    const donos = tk => ativos.filter(u => tk.actor?.testUserPermission(u, "OWNER")).map(u => u.id);
+    const ids = [...new Set([...tokens.flatMap(donos), ...(ctx.userId && !game.users.get(ctx.userId)?.isGM ? [ctx.userId] : [])])];
+    if (a.tela !== "semTela") {
+      efeito(ids, { tipo: "escada", fase: "inicio", texto: t(`Escada.${a.tela}`) });
+      await pausa(0.6);
+    }
+    // chegada: todos juntos em volta do ponto, um por casa
+    const gs = cena.grid?.size ?? cena.dimensions?.size ?? 100;
+    const volta = [[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1], [2, 0], [0, 2], [-2, 0], [0, -2]];
+    const upd = tokens.map((tk, i) => {
+      const d = { _id: tk.id };
+      if (chegada) {
+        const [dx, dy] = volta[i % volta.length];
+        d.x = Math.round(chegada.x - (tk.width * gs) / 2 + dx * gs);
+        d.y = Math.round(chegada.y - (tk.height * gs) / 2 + dy * gs);
+      }
+      if (nivel) {
+        d.elevation = Number(nivel.elevation?.bottom) || 0;
+        if ("level" in (tk._source ?? {})) d.level = nivel.id;
+      }
+      return d;
+    });
+    // teleporte não dispara placas, "chegar perto" nem fios de parede no caminho
+    for (const tk of tokens) teleportados.add(tk.uuid);
+    try { await cena.updateEmbeddedDocuments("Token", upd, { animate: false, ovInterno: true }); }
+    finally { for (const tk of tokens) { teleportados.delete(tk.uuid); posicoes.set(tk.uuid, centroToken(tk)); } }
+    for (const tk of tokens) {
+      const c = centroToken(tk);
+      efeito([...new Set([...donos(tk), ...ids])], { tipo: "escada", fase: "fim", cena: cena.id, nivel: nivel?.id ?? null, x: c.x, y: c.y, token: tk.id, tela: a.tela !== "semTela" });
+    }
   },
   async esperar(a) { await new Promise(r => setTimeout(r, Math.max(0, Number(a.segundos) || 0) * 1000)); }
 };
@@ -1143,7 +1225,7 @@ const usaveis = () => (canvas.tiles?.placeables ?? []).filter(o => {
 const tileNoPonto = p => (canvas.tiles?.placeables ?? []).filter(o => o.visible !== false && noTile(o.document, p))
   .sort((a, b) => (b.document.sort ?? 0) - (a.document.sort ?? 0))[0] ?? null;
 const objetoNoPonto = p => {
-  const lista = usaveis().filter(o => noTile(o.document, p));
+  const lista = usaveis().filter(o => o.visible !== false && noTile(o.document, p));
   return lista.sort((a, b) => (b.document.sort ?? 0) - (a.document.sort ?? 0))[0] ?? null;
 };
 const pontoDoMouse = (x, y) => canvas.canvasCoordinatesFromClient?.({ x, y }) ?? canvas.stage.worldTransform.applyInverse({ x, y });
@@ -1232,8 +1314,10 @@ function atualizarBrilho() {
 const posicoes = new Map();
 function lembrarPosicoes(cena) { for (const tk of cena?.tokens ?? []) posicoes.set(tk.uuid, centroToken(tk)); }
 
+const teleportados = new Set();
 function aoMoverToken(tk, mud) {
-  if (!("x" in mud || "y" in mud)) return;
+  if (!("x" in mud || "y" in mud || "level" in mud)) return;
+  if (teleportados.has(tk.uuid)) { posicoes.set(tk.uuid, centroToken(tk)); if (tk.parent?.id === canvas.scene?.id) atualizarBrilho(); return; }
   const antes = posicoes.get(tk.uuid);
   const agora = centroToken(tk);
   posicoes.set(tk.uuid, agora);
@@ -1246,7 +1330,7 @@ function aoMoverToken(tk, mud) {
       if (c.acoes?.atravessar?.length && cruza(antes, agora, doc.c)) eventoParede(doc, "atravessar", { tokenUuid: tk.uuid });
       continue;
     }
-    if (doc.hidden) continue;
+    if (doc.hidden || !mesmoNivel(doc, tk)) continue;
     if (c.interacao === "pisar" && !noTile(doc, antes) && noTile(doc, agora)) usarObjeto(doc, { tokenUuid: tk.uuid });
     if (c.interacao === "perto") {
       const alcance = c.distancia > 0 ? c.distancia : 1;
@@ -1283,6 +1367,9 @@ function ouvirTentativas() {
 
 // Editor do objeto
 const CSS = `
+#ov-escada { position: fixed; inset: 0; z-index: 9999; background: #000; opacity: 0; pointer-events: none; transition: opacity .55s ease; display: flex; align-items: center; justify-content: center; }
+#ov-escada.ov-on { opacity: 1; pointer-events: all; }
+#ov-escada span { color: #e9dcc3; font: 600 22px Signika, system-ui, sans-serif; letter-spacing: 2px; text-shadow: 0 0 12px #000; }
 .ov-editor .window-content { padding: 0; background: #17151c; color: #ece8f1; }
 .ov-raiz { display: flex; height: 100%; font-family: Signika, system-ui, sans-serif; }
 .ov-raiz button { font-family: inherit; }
@@ -1456,7 +1543,7 @@ function injetarEstilo() {
 
 const icone = nome => `<i class="fa-solid ${nome}" aria-hidden="true"></i>`;
 const ICONES = { som: "fa-volume-high", portas: "fa-door-open", visibilidade: "fa-eye-low-vision", objeto: "fa-arrows-rotate", chat: "fa-comment",
-  imagem: "fa-image", diario: "fa-book-open", camera: "fa-video", escuridao: "fa-moon", musica: "fa-music", mover: "fa-map-location-dot", esperar: "fa-hourglass-half" };
+  imagem: "fa-image", diario: "fa-book-open", camera: "fa-video", escuridao: "fa-moon", musica: "fa-music", mover: "fa-map-location-dot", escada: "fa-stairs", esperar: "fa-hourglass-half" };
 
 function nomeDoc(uuid) {
   try { const d = fromUuidSync(uuid); return d?.name || (d?.documentName === "Tile" ? nomeObjeto(d) : d?.documentName) || uuid; } catch { return uuid; }
@@ -1482,6 +1569,12 @@ function resumoBase(a) {
     case "musica": return a.modo === "pararTodas" ? t("Opc.pararTodas") : a.playlist ? `${t(`Opc.${a.modo}`)} · ${game.playlists.get(a.playlist)?.name ?? "?"}` : t("Resumo.Configurar");
     case "mover": return a.destino ? `${game.scenes.get(a.destino)?.name ?? "?"} · ${t(`Opc.${a.quem}`)}` : t("Resumo.Configurar");
     case "esperar": return t("Resumo.Segundos", { n: a.segundos });
+    case "escada": {
+      const partes = [];
+      if (a.nivel) partes.push(niveisDe(canvas.scene).find(l => l.id === a.nivel)?.name ?? t("Resumo.Nivel"));
+      if (a.chegada) partes.push(nomeDoc(a.chegada));
+      return partes.length ? `${partes.join(" · ")} · ${t(`Opc.${a.quem}`)}` : t("Resumo.Configurar");
+    }
     default: return "";
   }
 }
@@ -1822,6 +1915,16 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
         h = `<select ${attr}>${op("", vazio, v)}${(cena?.regions?.contents ?? []).map(r => op(r.uuid, r.name, v)).join("")}</select>`;
         break;
       }
+      case "nivel": {
+        const niveis = niveisDe(this.cena);
+        h = niveis.length
+          ? `<select ${attr} data-rerender>${op("", t("Campo.MesmoNivel"), v)}${niveis.map(l => op(l.id, l.name || t("Resumo.Nivel"), v)).join("")}</select>`
+          : `<span class="ov-dica" style="margin:0">${t("Campo.SemNiveis")}</span>`;
+        break;
+      }
+      case "regiaoChegada":
+        h = `<select ${attr} data-rerender>${op("", t("Campo.MesmoLugar"), v)}${(this.cena?.regions?.contents ?? []).map(r => op(r.uuid, r.name, v)).join("")}</select>`;
+        break;
       case "opcao": h = `<select ${attr} data-rerender>${escolhas.map(x => op(x, t(`Opc.${x}`), v)).join("")}</select>`; break;
       case "para": h = `<select ${attr} data-rerender>${PARA.map(x => op(x, t(`Para.${x}`), v)).join("")}</select>`; break;
       case "audio":
@@ -2336,6 +2439,7 @@ async function salvarNaBiblioteca(doc, dados) {
     if (Array.isArray(a.portas)) a.portas = [];
     if (Array.isArray(a.alvos)) a.alvos = [];
     if (a.tipo === "camera") a.regiao = "";
+    if (a.tipo === "escada") { a.nivel = ""; a.chegada = ""; }
   }
   const nome = (cfg.nome || nomeObjeto(doc)).trim();
   const lista = meusObjetos().filter(o => o.nome !== nome);

@@ -206,7 +206,10 @@
       "parar": "Stop",
       "pararTodas": "Stop all playlists",
       "token": "The token of whoever used it",
-      "jogadores": "All player tokens on the map"
+      "jogadores": "All player tokens on the map",
+      "subindo": "Fade: \"Going up...\"",
+      "descendo": "Fade: \"Going down...\"",
+      "semTela": "No fade, just move"
     },
     "Acao": {
       "som": "Sound effect",
@@ -220,7 +223,8 @@
       "escuridao": "Darkness",
       "musica": "Music",
       "mover": "Move to another map",
-      "esperar": "Wait"
+      "esperar": "Wait",
+      "escada": "Stairs / level"
     },
     "AcaoDesc": {
       "som": "Door, button, scream",
@@ -234,7 +238,8 @@
       "escuridao": "Day, night, blackout",
       "musica": "Play or stop",
       "mover": "With World Navigator",
-      "esperar": "Pause between actions"
+      "esperar": "Pause between actions",
+      "escada": "Go up or down on the same map"
     },
     "AcaoDica": {
       "som": "Plays once. For long or ambient sounds, use Music.",
@@ -248,7 +253,8 @@
       "escuridao": "0% = bright day, 100% = total darkness. Duration in seconds.",
       "musica": "Uses Foundry's native playlists and plays for the whole table.",
       "mover": "Moves the token (with HP and effects) and the player who owns it, with World Navigator's transition screen.",
-      "esperar": "Pauses before the next action."
+      "esperar": "Pauses before the next action.",
+      "escada": "Map with Levels (Levels tab in the scene configuration): pick the level and, optionally, the arrival region. Map with floors drawn side by side: pick only the arrival region. Tokens moved this way do not trigger plates or tripwires on the way."
     },
     "Campo": {
       "som": "Sound",
@@ -281,7 +287,13 @@
       "SelecionePortas": "Select one or more doors on the Walls layer.",
       "SelecioneObjetos": "Select tiles, tokens, lights, sounds, notes or drawings on the map.",
       "atraso": "Wait before (s)",
-      "AtrasoDica": "0 = happens right away"
+      "AtrasoDica": "0 = happens right away",
+      "nivel": "Destination level",
+      "chegada": "Arrives at",
+      "tela": "Screen",
+      "MesmoNivel": "— Stay on the same level —",
+      "MesmoLugar": "Same spot where it is",
+      "SemNiveis": "This map has no levels. Use the arrival region."
     },
     "Resumo": {
       "Configurar": "Click Edit to set it up",
@@ -289,7 +301,8 @@
       "ObjetosN": "{n} object(s)",
       "EsteObjeto": "This object",
       "Segundos": "{n} second(s)",
-      "Depois": "after {n} s"
+      "Depois": "after {n} s",
+      "Nivel": "Level"
     },
     "Secao": {
       "NaoETile": "This tile is not a living object yet.",
@@ -314,7 +327,8 @@
       "ErroAcao": "\"{objeto}\": the \"{acao}\" action failed. Check the console (F12).",
       "SemNavegador": "\"Move to another map\" needs the World Navigator module active.",
       "TrancadoGazua": "\"{objeto}\" is locked. Click it with your token nearby to use a key or lockpick.",
-      "SemToken": "Move your token near the object first."
+      "SemToken": "Move your token near the object first.",
+      "SemNivel": "The level chosen on the stairs no longer exists on this map."
     },
     "Bib": {
       "Titulo": "Living Objects",
@@ -564,6 +578,10 @@
       "UsarAoDestrancar": "Use the object when unlocked",
       "UsarAoDestrancarDica": "When the lock opens, the object changes appearance and runs its actions (e.g. the chest opens by itself)",
       "TrancadoDica": "Linked to the Gazua da Mesa lock: locking or unlocking here does the same to the lock"
+    },
+    "Escada": {
+      "subindo": "Going up...",
+      "descendo": "Going down..."
     }
   }
 }

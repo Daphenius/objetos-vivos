@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.7.0
+
+### Novidades
+- **Ação nova: Escada / nível.** Leva o token (ou todos os tokens de jogadores) para cima ou para baixo **no mesmo mapa**:
+  - **Mapa com Níveis** (do Foundry v14): escolha o nível de destino; o token muda de nível e de elevação, e a tela do jogador passa a mostrar aquele andar.
+  - **Andares desenhados lado a lado** no mesmo mapa: escolha só a **região de chegada**.
+  - Tela escura com "Subindo..." ou "Descendo..." (ou sem tela), câmera centralizada no token na chegada.
+  - Vários tokens chegam juntos, um por casa, em volta do ponto de chegada.
+  - Quem sobe ou desce não dispara placas de pressão, "chegar perto" nem fios de parede pelo caminho (assim a escada de cima não manda o token de volta para baixo).
+
+### Correções
+- Em mapas com níveis, objetos de outro andar não são mais disparados por quem pisa ou chega perto deles, e o clique só pega objetos visíveis.
+
 ## v2.6.0
 
 ### Novidades

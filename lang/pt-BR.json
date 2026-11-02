@@ -206,7 +206,10 @@
       "parar": "Parar",
       "pararTodas": "Parar todas as playlists",
       "token": "O token de quem usou",
-      "jogadores": "Todos os tokens de jogadores do mapa"
+      "jogadores": "Todos os tokens de jogadores do mapa",
+      "subindo": "Escurece: \"Subindo...\"",
+      "descendo": "Escurece: \"Descendo...\"",
+      "semTela": "Sem tela, só leva"
     },
     "Acao": {
       "som": "Efeito sonoro",
@@ -220,7 +223,8 @@
       "escuridao": "Escuridão",
       "musica": "Música",
       "mover": "Levar a outro mapa",
-      "esperar": "Esperar"
+      "esperar": "Esperar",
+      "escada": "Escada / nível"
     },
     "AcaoDesc": {
       "som": "Porta, botão, grito",
@@ -234,7 +238,8 @@
       "escuridao": "Dia, noite, apagão",
       "musica": "Tocar ou parar",
       "mover": "Com o Navegador de Mundos",
-      "esperar": "Pausa entre ações"
+      "esperar": "Pausa entre ações",
+      "escada": "Subir ou descer no mesmo mapa"
     },
     "AcaoDica": {
       "som": "Toca uma vez. Para sons longos ou ambiente, use Música.",
@@ -248,7 +253,8 @@
       "escuridao": "0% = dia claro, 100% = escuro total. Duração em segundos.",
       "musica": "Usa as playlists nativas do Foundry e toca para a mesa toda.",
       "mover": "Leva o token (com vida e efeitos) e o jogador dono dele, com a tela de transição do Navegador de Mundos.",
-      "esperar": "Pausa antes da próxima ação."
+      "esperar": "Pausa antes da próxima ação.",
+      "escada": "Mapa com Níveis (aba Níveis da configuração da cena): escolha o nível e, se quiser, a região onde chega. Mapa com os andares desenhados lado a lado: escolha só a região de chegada. Quem sobe ou desce não dispara placas nem fios no caminho."
     },
     "Campo": {
       "som": "Som",
@@ -281,7 +287,13 @@
       "SelecionePortas": "Selecione uma ou mais portas na camada Paredes.",
       "SelecioneObjetos": "Selecione tiles, tokens, luzes, sons, notas ou desenhos no mapa.",
       "atraso": "Esperar antes (s)",
-      "AtrasoDica": "0 = acontece na hora"
+      "AtrasoDica": "0 = acontece na hora",
+      "nivel": "Nível de destino",
+      "chegada": "Onde chega",
+      "tela": "Tela",
+      "MesmoNivel": "— Continua no mesmo nível —",
+      "MesmoLugar": "No mesmo lugar onde está",
+      "SemNiveis": "Este mapa não tem níveis. Use a região de chegada."
     },
     "Resumo": {
       "Configurar": "Clique em Editar para configurar",
@@ -289,7 +301,8 @@
       "ObjetosN": "{n} objeto(s)",
       "EsteObjeto": "Este objeto",
       "Segundos": "{n} segundo(s)",
-      "Depois": "depois de {n} s"
+      "Depois": "depois de {n} s",
+      "Nivel": "Nível"
     },
     "Secao": {
       "NaoETile": "Este tile ainda não é um objeto vivo.",
@@ -314,7 +327,8 @@
       "ErroAcao": "\"{objeto}\": a ação \"{acao}\" falhou. Veja o console (F12).",
       "SemNavegador": "\"Levar a outro mapa\" precisa do módulo Navegador de Mundos ativo.",
       "TrancadoGazua": "\"{objeto}\" está trancado. Clique nele com o seu token por perto para usar a chave ou a gazua.",
-      "SemToken": "Coloque o seu token perto do objeto primeiro."
+      "SemToken": "Coloque o seu token perto do objeto primeiro.",
+      "SemNivel": "O nível escolhido na escada não existe mais neste mapa."
     },
     "Bib": {
       "Titulo": "Objetos Vivos",
@@ -564,6 +578,10 @@
       "UsarAoDestrancar": "Usar o objeto ao destrancar",
       "UsarAoDestrancarDica": "Quando a fechadura abrir, o objeto já troca de aparência e roda as ações (ex.: o baú abre sozinho)",
       "TrancadoDica": "Ligado à fechadura da Gazua da Mesa: trancar ou destrancar aqui faz o mesmo na fechadura"
+    },
+    "Escada": {
+      "subindo": "Subindo...",
+      "descendo": "Descendo..."
     }
   }
 }
