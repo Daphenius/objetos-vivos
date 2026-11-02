@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.6.0
+
+### Novidades
+- **Ligação com a Gazua da Mesa.** Um objeto pode ter fechadura com chave, gazua, teste e minijogos:
+  - Botão **Colocar / Configurar fechadura** no editor (O que acontece → Mais opções), com o estado da fechadura.
+  - O jogador clica no objeto trancado e abre a janela da fechadura, mesmo que o objeto seja de pisar ou chegar perto.
+  - **Trancado** e a fechadura ficam sempre iguais, venha a mudança do editor, de outro objeto, da API ou da própria Gazua.
+  - Momento novo **Ao ser destrancado** e opção **Usar o objeto ao destrancar** (o baú abre sozinho quando a fechadura abre).
+- API: `api.trancar` também tranca/destranca a fechadura; novo `api.estaTrancado(uuid)`.
+
+### Observação
+- Continua sem libWrapper e sem substituir funções do Foundry, então o aviso de conflito com a Gazua da Mesa e o Arm's Reach não volta.
+- O erro "tagDocument is undefined" do Arm's Reach ao abrir a configuração de um tile é do próprio Arm's Reach (não deste módulo).
+
 ## v2.5.0
 
 ### Novidades

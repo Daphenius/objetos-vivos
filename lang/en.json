@@ -69,7 +69,8 @@
       "tentativa": "When tried while locked",
       "atravessar": "When someone walks through",
       "falha": "When the check fails",
-      "desarmar": "When disarmed"
+      "desarmar": "When disarmed",
+      "destrancado": "When unlocked"
     },
     "Aba": {
       "Aparencia": "Look",
@@ -311,7 +312,9 @@
       "Trancado": "\"{objeto}\" is locked.",
       "Confirmar": "<strong>{quem}</strong> wants to use <strong>{objeto}</strong>. Allow?",
       "ErroAcao": "\"{objeto}\": the \"{acao}\" action failed. Check the console (F12).",
-      "SemNavegador": "\"Move to another map\" needs the World Navigator module active."
+      "SemNavegador": "\"Move to another map\" needs the World Navigator module active.",
+      "TrancadoGazua": "\"{objeto}\" is locked. Click it with your token nearby to use a key or lockpick.",
+      "SemToken": "Move your token near the object first."
     },
     "Bib": {
       "Titulo": "Living Objects",
@@ -549,6 +552,18 @@
       "CDDica": "With this DC: {aneis} rings to turn or {pontos} points in the rune",
       "TituloDesarmar": "Disarm: {nome}",
       "TituloTeste": "Check: {nome}"
+    },
+    "Gazua": {
+      "Titulo": "Lock (Gazua da Mesa)",
+      "SemFechadura": "No lock. With one, players open it with a key, lockpick, check or minigame.",
+      "EstaTrancada": "Lock is locked",
+      "EstaAberta": "Lock is open",
+      "Colocar": "Add lock",
+      "Configurar": "Configure lock",
+      "Instale": "Enable the Gazua da Mesa module to add a lock with keys and lockpicks to this object.",
+      "UsarAoDestrancar": "Use the object when unlocked",
+      "UsarAoDestrancarDica": "When the lock opens, the object changes appearance and runs its actions (e.g. the chest opens by itself)",
+      "TrancadoDica": "Linked to the Gazua da Mesa lock: locking or unlocking here does the same to the lock"
     }
   }
 }

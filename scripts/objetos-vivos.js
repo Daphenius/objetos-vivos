@@ -19,6 +19,12 @@ const decodificar = texto => { try { return decodeURIComponent(String(texto ?? "
 const clone = x => foundry.utils.deepClone(x);
 const navegador = () => { const m = game.modules.get("navegador-mapas"); return m?.active ? m.api : null; };
 
+// Gazua da Mesa: um objeto (tile) pode ter fechadura. Trancado = "Trancado" do objeto OU fechadura trancada.
+const gazua = () => { const m = game.modules.get("gazua-mesa"); return m?.active && m.api?.lerFechadura ? m.api : null; };
+const temFechadura = doc => !!gazua()?.lerFechadura(doc);
+const fechaduraTrancada = doc => { const g = gazua(); return !!(g && g.lerFechadura(doc) && g.estaTrancada(doc)); };
+const estaTrancado = (doc, c = cfgDe(doc)) => !!c?.trancado || fechaduraTrancada(doc);
+
 // Modelos prontos (a biblioteca usa estes, com as imagens da pasta assets/)
 const ASSETS = `modules/${ID}/assets`;
 const PRESETS = {
@@ -101,6 +107,7 @@ function momentosDe(doc, c = cfgDe(doc)) {
     ? (c?.estados ?? []).map(e => ({ id: `estado:${e.id}`, nome: t("Mom.AoFicar", { estado: e.nome || "?" }) }))
     : MOMENTOS_PAREDE.filter(m => doc.door > 0 || m === "atravessar").map(m => ({ id: m, nome: t(`Mom.${m}`) }));
   if (ehTile(doc) || doc.door > 0) lista.push({ id: "sempre", nome: t(ehTile(doc) ? "Mom.sempreTile" : "Mom.sempreParede") });
+  if (ehTile(doc) && (c?.trancado || temFechadura(doc) || c?.acoes?.destrancado?.length)) lista.push({ id: "destrancado", nome: t("Mom.destrancado") });
   if (ehTile(doc) && (c?.teste?.modo ?? "nenhum") === "desarmar") lista.push({ id: "desarmar", nome: t("Mom.desarmar") });
   if (ehTile(doc) && (c?.teste?.modo ?? "nenhum") !== "nenhum") lista.push({ id: "falha", nome: t("Mom.falha") });
   return lista;
@@ -224,7 +231,7 @@ const EXECUTAR = {
       if (!c || !ehTile(doc) || doc.uuid === ctx.fonte.uuid && a.estado === "proximo") continue;
       const sub = { ...ctx, fonte: doc, profundidade: ctx.profundidade + 1 };
       if (sub.profundidade > 5) continue;
-      if (a.estado === "trancar" || a.estado === "destrancar") await doc.setFlag(ID, "objeto.trancado", a.estado === "trancar");
+      if (a.estado === "trancar" || a.estado === "destrancar") await definirTrancado(doc, a.estado === "trancar", sub);
       else await mudarEstado(doc, a.estado === "inicial" ? 0 : (c.estado + 1) % c.estados.length, sub);
     }
   },
@@ -269,6 +276,33 @@ const EXECUTAR = {
   },
   async esperar(a) { await new Promise(r => setTimeout(r, Math.max(0, Number(a.segundos) || 0) * 1000)); }
 };
+
+// Tranca ou destranca um objeto (tile). Com fechadura da Gazua da Mesa, as duas andam juntas.
+async function definirTrancado(doc, trancar, ctx = null) {
+  const g = gazua();
+  const comFechadura = !!g?.lerFechadura(doc);
+  const antes = estaTrancado(doc);
+  if (comFechadura && g.estaTrancada(doc) !== trancar) {
+    // a Gazua avisa no chat, roda o que foi configurado nela e chama o gancho (que roda "Ao ser destrancado")
+    await (trancar ? g.trancar(doc) : g.destrancar(doc));
+  }
+  if (!!cfgDe(doc)?.trancado !== trancar) await doc.setFlag(ID, "objeto.trancado", trancar);
+  if (antes && !trancar && !comFechadura) await aoDestrancar(doc, ctx ?? { cena: doc.parent, token: null, userId: game.user.id, fonte: doc, profundidade: 0 });
+}
+
+// O objeto acabou de ser destrancado: ações "Ao ser destrancado" e, se marcado, usa o objeto na hora
+const destrancando = new Set();
+async function aoDestrancar(doc, ctx) {
+  const c = cfgDe(doc);
+  if (!c || !ehTile(doc) || destrancando.has(doc.uuid) || (ctx.profundidade ?? 0) > 5) return;
+  destrancando.add(doc.uuid);
+  try {
+    for (const a of c.acoes?.destrancado ?? []) {
+      try { await rodarAcao(a, { ...ctx, fonte: doc }); } catch (err) { console.error(`${ID} |`, err); }
+    }
+    if (c.usarAoDestrancar) await usarObjeto(doc, { tokenUuid: ctx.token?.uuid ?? null, userId: ctx.userId, forcar: true });
+  } finally { destrancando.delete(doc.uuid); }
+}
 
 // Uma ação, com o tempo de espera antes dela (as ações acontecem uma depois da outra)
 const pausa = segundos => new Promise(r => setTimeout(r, Math.max(0, Number(segundos) || 0) * 1000));
@@ -763,8 +797,8 @@ async function usarObjeto(doc, { tokenUuid = null, userId = null, forcar = false
       if (!await podeAgir(doc, c, token, userId, "usar")) return;
       return dispararObjeto(doc, c, ctx);
     }
-    if (c.trancado) {
-      if (userId) efeito([userId], { tipo: "aviso", texto: t("Aviso.Trancado", { objeto: nomeObjeto(doc) }) });
+    if (estaTrancado(doc, c)) {
+      if (userId) efeito([userId], { tipo: "aviso", texto: t(fechaduraTrancada(doc) ? "Aviso.TrancadoGazua" : "Aviso.Trancado", { objeto: nomeObjeto(doc) }) });
       Hooks.callAll("objetosVivos.trancado", doc, { token, userId });
       return;
     }
@@ -830,7 +864,7 @@ async function pedirUso(doc, tokenUuid, { desarmar = false } = {}) {
   let rolagem = null;
   const c = cfgDe(doc);
   const tt = testeDe(c);
-  const precisa = tt.modo === "desarmar" ? (desarmar && !c?.desarmado && !c?.trancado) : (!c?.trancado && precisaTeste(c));
+  const precisa = tt.modo === "desarmar" ? (desarmar && !c?.desarmado && !c?.trancado) : (!estaTrancado(doc, c) && precisaTeste(c));
   // O jogador rola o teste e joga o minijogo na própria tela (com a janela de vantagem do sistema); o mestre só confere
   if (!game.user.isGM && c && precisa) {
     if (usaRolagem(tt) && tt.quemRola !== "mestre") {
@@ -1103,6 +1137,7 @@ const usaveis = () => (canvas.tiles?.placeables ?? []).filter(o => {
   if (game.user.isGM) return true;
   if (o.document.hidden) return false;
   if (testeDe(c).modo === "desarmar" && !c.desarmado) return true;
+  if (fechaduraTrancada(o.document)) return true;
   return c.interacao === "clicar";
 });
 const tileNoPonto = p => (canvas.tiles?.placeables ?? []).filter(o => o.visible !== false && noTile(o.document, p))
@@ -1146,6 +1181,11 @@ function ligarMapa() {
     const { perto, dist } = maisPerto(doc);
     if (!game.user.isGM && c.distancia > 0 && dist > c.distancia) return ui.notifications.info(t("Aviso.Longe"));
     const tokenUuid = perto?.document.uuid ?? null;
+    // Fechadura da Gazua da Mesa: o jogador abre a janela da fechadura (chave, gazua, teste ou minijogo)
+    if (!game.user.isGM && fechaduraTrancada(doc) && !(testeDe(c).modo === "desarmar" && !c.desarmado)) {
+      if (!perto) return ui.notifications.warn(t("Aviso.SemToken"));
+      return gazua().abrir(doc, perto);
+    }
     // Armadilha: o clique oferece "Usar" ou "Tentar desarmar" (numa placa de pisar, o clique é só desarmar)
     if (testeDe(c).modo === "desarmar" && !c.desarmado) {
       const escolha = await escolherArmadilha(doc, c);
@@ -1181,7 +1221,7 @@ function atualizarBrilho() {
   if (game.user.isGM) return;
   for (const o of usaveis()) {
     const doc = o.document, c = cfgDe(doc);
-    if (c.brilho === false || c.trancado || camuflado(o)) continue;
+    if (c.brilho === false || (c.trancado && !fechaduraTrancada(doc)) || camuflado(o)) continue;
     const alcance = c.distancia > 0 ? c.distancia : 1;
     if (maisPerto(doc).dist > alcance) continue;
     brilhos.lineStyle(4, 0xffc27a, 1).drawRoundedRect(doc.x - 4, doc.y - 4, doc.width + 8, doc.height + 8, 10);
@@ -1628,10 +1668,24 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
           ${passo("usos", d.usos > 0 ? t("Valor.Vezes", { n: d.usos }) : t("Valor.SemLimite"), t("Regras.Usos"), t("Regras.UsosDica", { n: d.usados ?? 0 }))}
           ${d.usados ? `<button type="button" class="ov-btn" data-a="zerar" style="align-self:flex-start">${icone("fa-rotate-left")} ${t("Regras.Zerar")}</button>` : ""}
           ${chave(!!d.confirmar, "confirmar", t("Regras.Confirmar"), t("Regras.ConfirmarDica"))}
-          ${this.tile ? chave(!!d.trancado, "trancado", t("Regras.Trancado"), t("Regras.TrancadoDica")) : ""}` : ""}
+          ${this.tile ? chave(!!d.trancado, "trancado", t("Regras.Trancado"), t(temFechadura(this.doc) ? "Gazua.TrancadoDica" : "Regras.TrancadoDica")) : ""}
+          ${this.tile ? this._htmlGazua() : ""}` : ""}
       </section>`;
     }
     return "";
+  }
+
+  // Fechadura da Gazua da Mesa
+  _htmlGazua() {
+    const g = gazua();
+    if (!g) return `<p class="ov-dica">${icone("fa-key")} ${t("Gazua.Instale")}</p>`;
+    const tem = temFechadura(this.doc);
+    const estado = tem ? t(fechaduraTrancada(this.doc) ? "Gazua.EstaTrancada" : "Gazua.EstaAberta") : t("Gazua.SemFechadura");
+    const marcado = !!this.dados.usarAoDestrancar;
+    return `<div class="ov-faixa"><div class="ov-txt"><b>${icone("fa-key")} ${t("Gazua.Titulo")}</b><span>${esc(estado)}</span></div>
+        <button type="button" class="ov-btn" data-a="gazua">${icone(tem ? "fa-lock" : "fa-plus")} ${t(tem ? "Gazua.Configurar" : "Gazua.Colocar")}</button></div>
+      ${tem ? `<div class="ov-faixa"><div class="ov-txt"><b>${t("Gazua.UsarAoDestrancar")}</b><span>${t("Gazua.UsarAoDestrancarDica")}</span></div>
+        <button type="button" role="switch" aria-checked="${marcado}" aria-label="${esc(t("Gazua.UsarAoDestrancar"))}" class="ov-chave ${marcado ? "ov-on" : ""}" data-chave="usarAoDestrancar"><span></span></button></div>` : ""}`;
   }
 
   _htmlTeste(chave) {
@@ -1993,6 +2047,13 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
       case "reesconder": d.revelado = false; this.render(); return this._previaCamo();
       case "ver-camo": this.verCamo = !this.verCamo; this.render(); return this._previaCamo();
       case "biblioteca": return salvarNaBiblioteca(this.doc, this.dados);
+      case "gazua": {
+        const g = gazua();
+        if (!g) return;
+        // a janela da Gazua guarda sozinha; o editor se atualiza quando ela fecha (updateTile)
+        await g.configurar(this.doc);
+        return this.render();
+      }
       case "testar":
         this.previa = (this.previa + 1) % d.estados.length;
         this.render();
@@ -2060,7 +2121,12 @@ class EditorObjeto extends foundry.applications.api.ApplicationV2 {
       const img = d.estados[d.estado]?.img;
       if (img && img !== this.doc.texture?.src) upd["texture.src"] = img;
     }
+    const mudouTranca = this.tile && !!cfgDe(this.doc)?.trancado !== !!d.trancado;
     await this.doc.update(upd);
+    if (mudouTranca && temFechadura(this.doc)) {
+      const g = gazua();
+      if (g.estaTrancada(this.doc) !== !!d.trancado) await (d.trancado ? g.trancar(this.doc) : g.destrancar(this.doc));
+    }
     atualizarSecoes(this.doc);
     ui.notifications.info(t("Aviso.Salvo", { objeto: d.nome || nomeObjeto(this.doc) }));
     this.close();
@@ -2887,6 +2953,7 @@ Hooks.on("updateTile", (doc, mud) => {
   if (doc.parent?.id !== canvas.scene?.id) return;
   if (foundry.utils.hasProperty(mud, `flags.${ID}`)) { aplicarCamaleao(doc.object); aplicarVisao(doc.object); aplicarProfundidade(doc.object); }
   if (foundry.utils.hasProperty(mud, `flags.${ID}.objeto.estado`)) animar(doc.object, cfgDe(doc)?.anim);
+  if (foundry.utils.hasProperty(mud, "flags.gazua-mesa")) foundry.applications.instances?.get?.(`${ID}-editor-Tile-${doc.id}`)?.render();
   atualizarBrilho();
 });
 
@@ -2901,6 +2968,18 @@ Hooks.on("updateWall", (parede, mud, op, userId) => {
   if (momento) eventoParede(parede, momento, { userId });
 });
 Hooks.on("createWall", w => { if (w.door > 0) estadosPorta.set(w.uuid, w.ds); });
+
+// Gazua da Mesa: a fechadura do objeto foi aberta (chave, gazua, teste, minijogo ou pelo mestre) ou trancada de novo
+Hooks.on("gazua-mesa.destrancou", async (doc, { actor = null, userId = null } = {}) => {
+  if (!souMestreAtivo() || !ehTile(doc) || !ehObjeto(doc)) return;
+  if (cfgDe(doc)?.trancado) await doc.setFlag(ID, "objeto.trancado", false);
+  const token = actor?.getActiveTokens?.(false, true)?.find(tk => tk.parent?.id === doc.parent?.id) ?? null;
+  await aoDestrancar(doc, { cena: doc.parent, token, userId: userId ?? game.user.id, fonte: doc, profundidade: 0 });
+});
+Hooks.on("gazua-mesa.trancou", async doc => {
+  if (!souMestreAtivo() || !ehTile(doc) || !ehObjeto(doc)) return;
+  if (!cfgDe(doc)?.trancado) await doc.setFlag(ID, "objeto.trancado", true);
+});
 
 Hooks.once("ready", () => {
   if (game.user.isGM) for (const cena of game.scenes) { lembrarPosicoes(cena); lembrarPortas(cena); }
@@ -2937,6 +3016,7 @@ Hooks.once("ready", () => {
     editar: async uuid => abrirEditor(await fromUuid(uuid)),
     usar: async (uuid, tokenUuid = null) => { const d = await fromUuid(uuid); if (d && ehObjeto(d)) pedirUso(d, tokenUuid); },
     mudarEstado: async (uuid, indice) => { if (!game.user.isGM) return; const d = await fromUuid(uuid); if (cfgDe(d)) mudarEstado(d, indice, { cena: d.parent, token: null, userId: game.user.id, fonte: d, profundidade: 0 }); },
-    trancar: async (uuid, trancado = true) => { if (!game.user.isGM) return; const d = await fromUuid(uuid); if (cfgDe(d)) await d.setFlag(ID, "objeto.trancado", !!trancado); }
+    trancar: async (uuid, trancado = true) => { if (!game.user.isGM) return; const d = await fromUuid(uuid); if (cfgDe(d)) await definirTrancado(d, !!trancado); },
+    estaTrancado: async uuid => { const d = await fromUuid(uuid); return d ? estaTrancado(d) : false; }
   };
 });

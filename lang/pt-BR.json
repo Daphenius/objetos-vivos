@@ -69,7 +69,8 @@
       "tentativa": "Ao tentar abrir trancada",
       "atravessar": "Ao alguém atravessar",
       "falha": "Ao falhar no teste",
-      "desarmar": "Ao ser desarmada"
+      "desarmar": "Ao ser desarmada",
+      "destrancado": "Ao ser destrancado"
     },
     "Aba": {
       "Aparencia": "Aparência",
@@ -311,7 +312,9 @@
       "Trancado": "\"{objeto}\" está trancado.",
       "Confirmar": "<strong>{quem}</strong> quer usar <strong>{objeto}</strong>. Deixar?",
       "ErroAcao": "\"{objeto}\": a ação \"{acao}\" falhou. Veja o console (F12).",
-      "SemNavegador": "\"Levar a outro mapa\" precisa do módulo Navegador de Mundos ativo."
+      "SemNavegador": "\"Levar a outro mapa\" precisa do módulo Navegador de Mundos ativo.",
+      "TrancadoGazua": "\"{objeto}\" está trancado. Clique nele com o seu token por perto para usar a chave ou a gazua.",
+      "SemToken": "Coloque o seu token perto do objeto primeiro."
     },
     "Bib": {
       "Titulo": "Objetos Vivos",
@@ -549,6 +552,18 @@
       "CDDica": "Com essa CD: {aneis} anéis para girar ou {pontos} pontos na runa",
       "TituloDesarmar": "Desarmar: {nome}",
       "TituloTeste": "Teste: {nome}"
+    },
+    "Gazua": {
+      "Titulo": "Fechadura (Gazua da Mesa)",
+      "SemFechadura": "Sem fechadura. Com uma, o jogador abre com chave, gazua, teste ou minijogo.",
+      "EstaTrancada": "Fechadura trancada",
+      "EstaAberta": "Fechadura aberta",
+      "Colocar": "Colocar fechadura",
+      "Configurar": "Configurar fechadura",
+      "Instale": "Ative o módulo Gazua da Mesa para colocar uma fechadura com chave e gazua neste objeto.",
+      "UsarAoDestrancar": "Usar o objeto ao destrancar",
+      "UsarAoDestrancarDica": "Quando a fechadura abrir, o objeto já troca de aparência e roda as ações (ex.: o baú abre sozinho)",
+      "TrancadoDica": "Ligado à fechadura da Gazua da Mesa: trancar ou destrancar aqui faz o mesmo na fechadura"
     }
   }
 }

@@ -108,6 +108,16 @@ Na configuração de uma parede aparece a mesma seção. A porta continua abrind
 - ao tentar abrir trancada (quando um jogador clica numa porta trancada);
 - ao alguém atravessar (vale para qualquer parede: uma parede que não bloqueia movimento vira um fio de armadilha invisível).
 
+## Fechadura (Gazua da Mesa)
+
+Com o módulo [Gazua da Mesa](https://github.com/Daphenius/gazua-mesa) ativo, qualquer objeto pode ter uma fechadura de verdade, com chave, gazua, teste de Ferramentas de Ladrão e minijogos.
+
+- No editor, em **O que acontece → Mais opções**, clique em **Colocar fechadura** (ou **Configurar fechadura**). A janela é a da própria Gazua.
+- **Jogadores**: clicam no objeto trancado com o token por perto e abre a janela da fechadura (usar a chave, a gazua, o teste ou o minijogo).
+- O interruptor **Trancado** do objeto e a fechadura andam juntos: trancar ou destrancar por um, pelo outro, por outro objeto ("Outro objeto → trancar/destrancar") ou pela API faz o mesmo nos dois.
+- Momento novo **Ao ser destrancado**: as ações dele rodam quando a fechadura abre (ex.: tocar um som de baú rangendo, mandar uma narração).
+- **Usar o objeto ao destrancar**: ligado, o objeto já troca de aparência e roda as ações assim que a fechadura abre (o baú abre sozinho).
+
 ## Ações
 
 | Ação | O que faz |
@@ -142,7 +152,8 @@ api.criar({ preset: "bau", x, y }); // coloca um objeto pronto (ou { img: "camin
 api.editar(uuid);                 // abre o editor do objeto (tile ou parede)
 api.usar(uuid, tokenUuid);        // usa o objeto, como se o jogador tivesse clicado
 api.mudarEstado(uuid, indice);    // vai direto para uma aparência (0 = a primeira)
-api.trancar(uuid, true | false);  // tranca ou destranca
+api.trancar(uuid, true | false);  // tranca ou destranca (a fechadura da Gazua junto)
+await api.estaTrancado(uuid);     // true se o objeto ou a fechadura dele está trancado
 api.minijogo({ jogo: "aneis" | "runa", img, cd, tempo }); // abre um minijogo; devolve true, false ou null
 ```
 
