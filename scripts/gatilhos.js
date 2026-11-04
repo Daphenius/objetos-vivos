@@ -1,6 +1,5 @@
-import { abrirEditor } from "./editor.js";
-import { posicoes, teleportados } from "./estados.js";
-import { ID, centroToken, cfgDe, cruza, distanciaAoTile, ehObjeto, emitir, fechaduraTrancada, gazua, mesmoNivel, noTile, objetosDe, souMestreAtivo, t, testeDe } from "./nucleo.js";
+import { teleportados } from "./estados.js";
+import { ID, abrirEditor, cfgDe, cruza, distanciaAoTile, ehObjeto, emitir, fechaduraTrancada, gazua, mesmoNivel, noTile, objetosDe, souMestreAtivo, t, testeDe } from "./nucleo.js";
 import { escolherArmadilha, eventoParede, pedirUso, usarObjeto } from "./testes.js";
 import { atualizarBrilho, camuflado } from "./visual.js";
 
@@ -10,7 +9,7 @@ export const CONTROLE = "objetos-vivos";
 export const naFerramenta = () => (ui.controls?.control?.name ?? ui.controls?.activeControl) === CONTROLE;
 // O mestre usa os objetos com um clique simples quando está na camada de tokens (como os jogadores)
 export const mestrePodeUsar = () => !!canvas.tokens?.active;
-export const usaveis = () => (canvas.tiles?.placeables ?? []).filter(o => {
+export function ehUsavel(o) {
   const c = cfgDe(o.document);
   if (!c) return false;
   if (game.user.isGM) return true;
@@ -21,13 +20,15 @@ export const usaveis = () => (canvas.tiles?.placeables ?? []).filter(o => {
   if (armadilha) return true;
   if (fechaduraTrancada(o.document)) return true;
   return c.interacao === "clicar";
-});
-export const tileNoPonto = p => (canvas.tiles?.placeables ?? []).filter(o => o.visible !== false && noTile(o.document, p))
-  .sort((a, b) => (b.document.sort ?? 0) - (a.document.sort ?? 0))[0] ?? null;
-export const objetoNoPonto = p => {
-  const lista = usaveis().filter(o => o.visible !== false && noTile(o.document, p));
-  return lista.sort((a, b) => (b.document.sort ?? 0) - (a.document.sort ?? 0))[0] ?? null;
-};
+}
+// A lista de objetos usáveis do mapa fica guardada e só é refeita quando um tile muda (antes era
+// refeita a cada movimento do mouse, percorrendo todos os tiles do mapa)
+let cacheUsaveis = null;
+export const esquecerUsaveis = () => { cacheUsaveis = null; };
+export const usaveis = () => (cacheUsaveis ??= (canvas.tiles?.placeables ?? []).filter(ehUsavel));
+const noTopo = lista => lista.length > 1 ? lista.sort((a, b) => (b.document.sort ?? 0) - (a.document.sort ?? 0))[0] : lista[0] ?? null;
+export const tileNoPonto = p => noTopo((canvas.tiles?.placeables ?? []).filter(o => o.visible !== false && noTile(o.document, p)));
+export const objetoNoPonto = p => noTopo(usaveis().filter(o => !o.destroyed && o.visible !== false && noTile(o.document, p)));
 export const pontoDoMouse = (x, y) => canvas.canvasCoordinatesFromClient?.({ x, y }) ?? canvas.stage.worldTransform.applyInverse({ x, y });
 export function meusTokens() {
   return (canvas.tokens?.placeables ?? []).filter(tk => tk.isOwner && (game.user.isGM ? tk.controlled : true));
@@ -88,11 +89,9 @@ export function ligarMapa() {
     });
   });
 }
-export function lembrarPosicoes(cena) { for (const tk of cena?.tokens ?? []) posicoes.set(tk.uuid, centroToken(tk)); }
-// updateToken: só guarda a posição (brilho e reserva). Quem dispara pisar/perto/atravessar é o moveToken.
+// updateToken: só atualiza o brilho (no máximo uma vez por quadro). Quem dispara pisar/perto/atravessar é o moveToken.
 export function aoMoverToken(tk, mud) {
-  if (!("x" in mud || "y" in mud || "level" in mud)) return;
-  posicoes.set(tk.uuid, centroToken(tk));
+  if (game.user.isGM || !("x" in mud || "y" in mud || "level" in mud)) return;
   if (tk.parent?.id === canvas.scene?.id) atualizarBrilho();
 }
 

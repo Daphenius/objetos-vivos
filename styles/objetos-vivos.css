@@ -269,3 +269,15 @@ body.ov-encaixando #board { cursor: crosshair !important; }
 .ov-bib-vazio.ov-folgado { padding: 20px; }
 .ov-lado-item[data-nivel="1"] { padding-left: 24px; } .ov-lado-item[data-nivel="2"] { padding-left: 38px; }
 .ov-lado-item[data-nivel="3"] { padding-left: 52px; } .ov-lado-item[data-nivel="4"] { padding-left: 66px; }
+
+/* Mapa interativo: botão "Voltar ao mapa" (aparece no mapa de destino, acima da barra de macros) */
+#ov-voltar {
+  position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 70;
+  display: inline-flex; align-items: center; gap: 8px; width: auto; height: auto; margin: 0;
+  padding: 8px 18px; border-radius: 999px; border: 1px solid var(--ov-borda, #343041);
+  background: var(--ov-fundo, #17151c); color: var(--ov-texto, #ece8f1);
+  font-size: 14px; font-weight: 600; line-height: 1.2; cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+}
+#ov-voltar:hover { border-color: var(--ov-borda-hover, #6b6378); background: var(--ov-cartao-hover, #2a2533); }
+#ov-voltar i { color: #e6c25a; }

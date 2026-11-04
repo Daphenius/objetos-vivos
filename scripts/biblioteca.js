@@ -1,7 +1,6 @@
-import { icone } from "./editor.js";
 import { criarObjeto, encaixar, escolherImagem, nomeDoArquivo } from "./encaixe.js";
 import { DD_PX_POR_CASA, fecharPacote, lerPacoteDD, pacotes, tipoImagem, urlDaMiniatura } from "./gdpc.js";
-import { ID, PRONTOS, clone, comparar, decodificar, esc, imgPreset, nomeObjeto, novoId, t } from "./nucleo.js";
+import { ID, PRONTOS, clone, comparar, decodificar, esc, icone, imgPreset, nomeObjeto, novoId, t } from "./nucleo.js";
 
 // "Meus objetos": objetos que o mestre salvou para reaproveitar em qualquer mapa
 // Nada do estado de jogo vai para a biblioteca: o objeto salvo sempre começa do zero

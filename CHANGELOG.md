@@ -1,5 +1,30 @@
 # Changelog
 
+## v3.1.0
+
+Mapa interativo e um módulo bem mais leve.
+
+### Novidades: mapa interativo
+- **Modelo "Cidade / destino"** na biblioteca: um botão para pôr em cima das cidades do mapa-múndi. Clica de qualquer distância (não precisa de token no mapa).
+- **Nova ação "Ir para o mapa"**: leva só quem clicou, todos os jogadores do mapa ou todos os conectados para a cena da cidade. Não precisa do Navegador de Mundos.
+- **Botão "Voltar para (mapa)"**: aparece no mapa de destino. Se o grupo foi junto, volta junto. O mestre confere quem pediu antes de levar.
+- **Cadeado à vista**: objetos trancados podem mostrar um cadeado em cima. Clicar numa cidade trancada só avisa.
+- **Névoa do mapa**: o mapa fica coberto e só abre em volta das cidades liberadas, com borda suave e tamanho ajustável. Não depende de token nem da visão do Foundry.
+- **Cadeado no HUD do tile**: tranca ou destranca o objeto com um clique (é assim que se libera uma cidade no meio do jogo).
+
+### Desempenho
+- **Carregamento sob demanda**: editor, biblioteca, encaixe, minijogos e leitura de pacotes do Dungeondraft só são baixados quando alguém usa. Os jogadores deixam de carregar mais da metade do código do módulo.
+- **Mouse em cima do mapa**: a lista de objetos clicáveis fica guardada e só é refeita quando um tile muda (antes era refeita a cada movimento do mouse, percorrendo todos os tiles).
+- **Brilho**: refeito no máximo uma vez por quadro, e a animação de pulso só roda quando há brilho na tela (antes rodava sempre, até no mestre).
+- **Câmera andando**: a profundidade é refeita no máximo uma vez por quadro e, sem mudar o zoom, só nos objetos com parallax.
+- **Sombra** com 9 amostras em vez de 25: quase a mesma aparência, bem menos trabalho para a placa de vídeo.
+- **Tiles comuns** (que não são objetos) saem na primeira linha quando o Foundry os redesenha.
+- **Qualidade dos efeitos** (Configurar Definições, por computador): Completa, Leve (sem sombra e sem parallax) ou Mínima (só a imagem).
+- Removido código que guardava a posição de todos os tokens de todos os mapas ao entrar no mundo e a cada movimento (não era mais usado).
+- Ao trocar de mapa, o que o módulo desenhou no mapa anterior é solto da memória.
+- 8 testes novos (37 no total).
+
+
 ## v3.0.2
 
 ### Correções

@@ -22,7 +22,8 @@
       "Estado2": "Usado",
       "Novo": "Aparência {n}",
       "Quebrado": "Quebrado",
-      "Consertado": "Consertado"
+      "Consertado": "Consertado",
+      "Cidade": "Cidade"
     },
     "Preset": {
       "alavanca": {
@@ -48,6 +49,10 @@
       "livre": {
         "Nome": "Personalizado",
         "Desc": "Do zero, do seu jeito"
+      },
+      "destino": {
+        "Nome": "Cidade / destino",
+        "Desc": "Leva ao mapa da cidade"
       }
     },
     "Anim": {
@@ -210,7 +215,12 @@
       "jogadores": "Todos os tokens de jogadores do mapa",
       "subindo": "Escurece: \"Subindo...\"",
       "descendo": "Escurece: \"Descendo...\"",
-      "semTela": "Sem tela, só leva"
+      "semTela": "Sem tela, só leva",
+      "quemUsou": "Só quem clicou",
+      "osDoMapa": "Todos os jogadores deste mapa",
+      "todosJogadores": "Todos os jogadores conectados",
+      "comVolta": "Mostrar \"Voltar ao mapa\" lá",
+      "semVolta": "Sem botão de volta"
     },
     "Acao": {
       "som": "Efeito sonoro",
@@ -225,7 +235,8 @@
       "musica": "Música",
       "mover": "Levar a outro mapa",
       "esperar": "Esperar",
-      "escada": "Escada / nível"
+      "escada": "Escada / nível",
+      "viajar": "Ir para o mapa"
     },
     "AcaoDesc": {
       "som": "Porta, botão, grito",
@@ -240,7 +251,8 @@
       "musica": "Tocar ou parar",
       "mover": "Com o Navegador de Mundos",
       "esperar": "Pausa entre ações",
-      "escada": "Subir ou descer no mesmo mapa"
+      "escada": "Subir ou descer no mesmo mapa",
+      "viajar": "Mapa interativo: leva à cena da cidade"
     },
     "AcaoDica": {
       "som": "Toca uma vez. Para sons longos ou ambiente, use Música.",
@@ -255,7 +267,8 @@
       "musica": "Usa as playlists nativas do Foundry e toca para a mesa toda.",
       "mover": "Leva o token (com vida e efeitos) e o jogador dono dele, com a tela de transição do Navegador de Mundos.",
       "esperar": "Pausa antes da próxima ação.",
-      "escada": "Mapa com Níveis (aba Níveis da configuração da cena): escolha o nível e, se quiser, a região onde chega. Mapa com os andares desenhados lado a lado: escolha só a região de chegada. Quem sobe ou desce não dispara placas nem fios no caminho."
+      "escada": "Mapa com Níveis (aba Níveis da configuração da cena): escolha o nível e, se quiser, a região onde chega. Mapa com os andares desenhados lado a lado: escolha só a região de chegada. Quem sobe ou desce não dispara placas nem fios no caminho.",
+      "viajar": "Troca a cena que os jogadores estão vendo (não precisa de token nem do Navegador de Mundos). No mapa de destino aparece o botão \"Voltar ao mapa\". Se foram juntos, voltam juntos."
     },
     "Campo": {
       "som": "Som",
@@ -294,7 +307,8 @@
       "tela": "Tela",
       "MesmoNivel": "— Continua no mesmo nível —",
       "MesmoLugar": "No mesmo lugar onde está",
-      "SemNiveis": "Este mapa não tem níveis. Use a região de chegada."
+      "SemNiveis": "Este mapa não tem níveis. Use a região de chegada.",
+      "volta": "Botão de volta"
     },
     "Resumo": {
       "Configurar": "Clique em Editar para configurar",
@@ -316,7 +330,9 @@
       "RemoverPergunta": "Remover o objeto vivo? As aparências e as ações configuradas serão perdidas (o tile ou a parede continua no mapa)."
     },
     "Hud": {
-      "Alternar": "Trocar a aparência (teste do mestre)"
+      "Alternar": "Trocar a aparência (teste do mestre)",
+      "Trancar": "Trancar (cadeado)",
+      "Destrancar": "Destrancar (liberar)"
     },
     "Aviso": {
       "SalvePrimeiro": "Salve o tile ou a parede primeiro.",
@@ -586,6 +602,29 @@
     "Escada": {
       "subindo": "Subindo...",
       "descendo": "Descendo..."
+    },
+    "Mapa": {
+      "Titulo": "Mapa interativo",
+      "Dica": "Para liberar uma cidade trancada: botão de cadeado no HUD do tile (clique direito) ou a ação \"Objeto → Destrancar\" em outro objeto.",
+      "Cadeado": "Mostrar cadeado quando trancado",
+      "CadeadoDica": "Um cadeado aparece em cima do objeto enquanto ele estiver trancado",
+      "Revela": "Abrir a névoa em volta",
+      "RevelaDica": "O mapa fica coberto pela névoa; ela só abre em volta dos objetos liberados (não trancados e à vista)",
+      "Raio": "Tamanho da área aberta",
+      "RaioDica": "Quantas casas em volta do objeto a névoa abre",
+      "Voltar": "Voltar para {mapa}",
+      "VoltarSo": "Volta só você",
+      "VoltarGrupo": "Vocês vieram juntos: o grupo volta junto",
+      "VoltarMestre": "Só o mestre volta (os jogadores ficam)",
+      "Foi": "{quem} foi para {mapa}",
+      "SemAcesso": "Esse mapa não está disponível para você. Peça ao mestre."
+    },
+    "Config": {
+      "Qualidade": "Objetos Vivos: qualidade dos efeitos",
+      "QualidadeDica": "Só neste computador. Em computadores mais fracos, \"Leve\" tira a sombra e o parallax; \"Mínima\" mostra só a imagem dos objetos.",
+      "Completa": "Completa",
+      "Leve": "Leve (sem sombra e sem parallax)",
+      "Minima": "Mínima (só a imagem)"
     }
   }
 }

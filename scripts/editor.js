@@ -1,13 +1,13 @@
 import { salvarNaBiblioteca } from "./biblioteca.js";
 import { atualizarSecoes } from "./interface.js";
 import { dificuldade } from "./minijogos.js";
-import { ACOES, ANIMS, ID, INTERACOES, PARA, PRESETS, PROFS, QUEM, cfgDe, clone, comparar, decodificar, ehObjeto, ehTile, fechaduraTrancada, gazua, momentosDe, navegador, niveisDe, nomeObjeto, novaAcao, novoId, padrao, profPadrao, t, temFechadura, testeDe, volumeDe } from "./nucleo.js";
+import { ACOES, ANIMS, ID, icone, INTERACOES, PARA, PRESETS, PROFS, QUEM, cfgDe, clone, comparar, decodificar, ehObjeto, ehTile, fechaduraTrancada, gazua, momentosDe, navegador, niveisDe, nomeObjeto, novaAcao, novoId, padrao, profPadrao, t, temFechadura, testeDe, volumeDe } from "./nucleo.js";
 import { jogarMinijogo, opcoesDeTeste } from "./testes.js";
 import { VISAO_MAX, VISOES, aplicarCamaleao, aplicarProfundidade, aplicarVisao } from "./visual.js";
 
-export const icone = nome => `<i class="fa-solid ${nome}" aria-hidden="true"></i>`;
+export { icone };
 export const ICONES = { som: "fa-volume-high", portas: "fa-door-open", visibilidade: "fa-eye-low-vision", objeto: "fa-arrows-rotate", chat: "fa-comment",
-  imagem: "fa-image", diario: "fa-book-open", camera: "fa-video", escuridao: "fa-moon", musica: "fa-music", mover: "fa-map-location-dot", escada: "fa-stairs", esperar: "fa-hourglass-half" };
+  imagem: "fa-image", diario: "fa-book-open", camera: "fa-video", escuridao: "fa-moon", musica: "fa-music", mover: "fa-map-location-dot", viajar: "fa-map-pin", escada: "fa-stairs", esperar: "fa-hourglass-half" };
 
 export function nomeDoc(uuid) {
   try { const d = fromUuidSync(uuid); return d?.name || (d?.documentName === "Tile" ? nomeObjeto(d) : d?.documentName) || uuid; } catch { return uuid; }
@@ -32,6 +32,7 @@ export function resumoBase(a) {
     case "escuridao": return `${Math.round((Number(a.valor) || 0) * 100)}% · ${a.duracao}s`;
     case "musica": return a.modo === "pararTodas" ? t("Opc.pararTodas") : a.playlist ? `${t(`Opc.${a.modo}`)} · ${game.playlists.get(a.playlist)?.name ?? "?"}` : t("Resumo.Configurar");
     case "mover": return a.destino ? `${game.scenes.get(a.destino)?.name ?? "?"} · ${t(`Opc.${a.quem}`)}` : t("Resumo.Configurar");
+    case "viajar": return a.destino ? `${game.scenes.get(a.destino)?.name ?? "?"} · ${t(`Opc.${a.quem}`)}` : t("Resumo.Configurar");
     case "esperar": return t("Resumo.Segundos", { n: a.segundos });
     case "escada": {
       const partes = [];
@@ -51,7 +52,7 @@ const TEXTOS = ["Editor.Etapas", "Editor.Nome", "Editor.Testar", "Editor.Estados
   "Editor.Inicial", "Editor.AdicionarEstado", "Editor.MesmaImagem", "Editor.Cancelar", "Editor.Salvar", "Editor.Arquivo", "Editor.Escolher", "Editor.Ouvir",
   "Editor.Subir", "Editor.Descer", "Editor.Remover", "Bib.Salvar", "Bib.SalvarDica", "Visao.Titulo", "Visao.Dica", "Prof.Titulo", "Prof.Dica",
   "Camaleao.Titulo", "Camaleao.Revelado", "Camaleao.Reesconder", "Camaleao.SemProf", "Aparencia.Anim", "Aparencia.AnimDica", "Aparencia.Som",
-  "Aparencia.SomDica", "Uso.Titulo", "Uso.Ajudas", "Uso.MestreDica", "Regras.Quem", "Regras.ArrasteAtor", "Regras.Zerar", "Quem.ator",
+  "Aparencia.SomDica", "Uso.Titulo", "Uso.Ajudas", "Uso.MestreDica", "Mapa.Titulo", "Mapa.Dica", "Regras.Quem", "Regras.ArrasteAtor", "Regras.Zerar", "Quem.ator",
   "Acoes.Titulo", "Acoes.Vazio", "Acoes.Adicionar", "Mais.Titulo", "Gazua.Titulo", "Gazua.Instale", "Teste.Pergunta", "Teste.DesarmarDica",
   "Teste.EstaDesarmada", "Teste.Rearmar", "Teste.Qual", "Teste.Grupo.outro", "Teste.Formula", "Teste.Quem", "Teste.AoFalhar", "Teste.Zerar",
   "Teste.Mensagem", "Teste.AoFalharDica", "Teste.Depois", "Teste.ConsertarDica", "Mini.Testar", "Campo.atraso", "Campo.AtrasoDica",
@@ -122,7 +123,9 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
     this.comandos = new Set();
     this.tile = ehTile(doc);
     this.aba = this.tile ? "aparencia" : "acoes";
-    this.momento = momentosDe(doc, this.dados)[0].id;
+    // abre no primeiro momento que já tem ações (no modelo Cidade, "Sempre que for usado")
+    const momentos = momentosDe(doc, this.dados);
+    this.momento = (momentos.find(m => this.dados.acoes?.[m.id]?.length) ?? momentos[0]).id;
     this.abertas = new Set();
     this.previa = this.dados.estado ?? 0;
   }
@@ -210,7 +213,11 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
       voltar: chave(d.voltar > 0, "voltar", t("Regras.Voltar"), t("Regras.VoltarDica")),
       tempo: d.voltar > 0 ? passo("voltar", t("Valor.Segundos", { n: d.voltar }), t("Regras.VoltarTempo"), t("Regras.VoltarTempoDica")) : null,
       mao: chave(d.mao !== false, "mao", t("Uso.Mao"), t("Uso.MaoDica")),
-      brilho: chave(d.brilho !== false, "brilho", t("Uso.Brilho"), t("Uso.BrilhoDica"))
+      brilho: chave(d.brilho !== false, "brilho", t("Uso.Brilho"), t("Uso.BrilhoDica")),
+      // Mapa interativo: cadeado à vista e névoa que abre em volta do objeto
+      cadeado: chave(!!d.cadeado, "cadeado", t("Mapa.Cadeado"), t("Mapa.CadeadoDica")),
+      revela: chave(!!d.revela, "revela", t("Mapa.Revela"), t("Mapa.RevelaDica")),
+      raio: d.revela ? passo("raio", t("Valor.Casas", { n: Number(d.raio) || 0 }), t("Mapa.Raio"), t("Mapa.RaioDica")) : null
     };
   }
 
@@ -551,7 +558,7 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
     if (ds.menos || ds.mais) {
       const campo = ds.menos || ds.mais, delta = ds.menos ? -1 : 1;
       const minimo = campo === "voltar" ? 1 : 0;
-      d[campo] = Math.min(campo === "distancia" ? 20 : 999, Math.max(minimo, (Number(d[campo]) || 0) + delta));
+      d[campo] = Math.min(campo === "distancia" ? 20 : campo === "raio" ? 50 : 999, Math.max(minimo, (Number(d[campo]) || 0) + delta));
       return this.render();
     }
     if (ds.nova) {

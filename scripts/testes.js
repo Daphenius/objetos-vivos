@@ -1,6 +1,5 @@
 import { efeito, executarAcoes, gastarUso, mudarEstado, passaFiltro, podeAgir, rodarLista } from "./estados.js";
-import { MinijogoConserto, conferirJogadas, gerarDesafio, tempoDeMostrar } from "./minijogos.js";
-import { ID, alvos, cfgDe, comparar, consertado, ehTile, emitir, esc, estaTrancado, fechaduraTrancada, nomeObjeto, pausa, precisaTeste, souMestreAtivo, t, testeDe, tokenDoUsuario } from "./nucleo.js";
+import { ID, alvos, carregar, cfgDe, comparar, consertado, ehTile, emitir, esc, estaTrancado, fechaduraTrancada, nomeObjeto, pausa, precisaTeste, souMestreAtivo, t, testeDe, tokenDoUsuario } from "./nucleo.js";
 
 // Opções de teste do sistema D&D 5e (perícias, ferramentas, atributos, salvaguardas)
 export function opcoesDeTeste() {
@@ -56,6 +55,7 @@ export async function rolarTeste(ator, tt, { escondido = false } = {}) {
 // resultado true = conseguiu, false = falhou/acabou o tempo, null = fechou a janela.
 export async function abrirMinijogo(doc, tt, { desarmar = false, estado = null } = {}) {
   const c = cfgDe(doc);
+  const { MinijogoConserto } = await carregar.minijogos();
   const app = new MinijogoConserto({
     jogo: tt.minijogo || "aneis",
     img: tt._img || c?.estados?.[0]?.img || doc.texture?.src || "",
@@ -73,7 +73,8 @@ export async function jogarMinijogo(doc, tt, opcoes = {}) { return (await abrirM
 // do estado inicial que ele precisa ver para jogar)
 export const desafios = new Map();
 const VALIDADE_DESAFIO = 15 * 60 * 1000;
-function criarDesafio(doc, tt, { userId, token, total, desarmar }) {
+async function criarDesafio(doc, tt, { userId, token, total, desarmar }) {
+  const { gerarDesafio } = await carregar.minijogos();
   const agora = Date.now();
   for (const [id, d] of desafios) if (agora - d.criado > VALIDADE_DESAFIO) desafios.delete(id);
   const jogo = tt.minijogo || "aneis";
@@ -92,6 +93,7 @@ export async function receberMinijogo(data, remetente) {
   if (data.cancelou) return; // fechou a janela: não conta como tentativa
   const doc = await fromUuid(d.uuid).catch(() => null);
   if (!doc) return;
+  const { conferirJogadas, tempoDeMostrar } = await carregar.minijogos();
   const prazo = d.tempo ? d.tempo * 1000 + tempoDeMostrar(d.jogo, d.estado) + 10000 : VALIDADE_DESAFIO;
   const noPrazo = Date.now() - d.criado <= prazo;
   const conseguiu = noPrazo && conferirJogadas(d.jogo, d.cd, d.estado, data.jogadas);
@@ -148,7 +150,7 @@ export async function avaliarTeste(doc, c, { token, userId, rolagem, desarmar = 
         // primeiro a rolagem (na tela do jogador); o minijogo, se houver, vem depois
         aguardando.set(`${doc.uuid}|${quem}`, Date.now());
         emitir({ acao: "jogar", uuid: doc.uuid, tokenUuid: token?.uuid ?? null, userIds: [quem], desarmar });
-      } else criarDesafio(doc, tt, { userId: quem, token, total, desarmar });
+      } else await criarDesafio(doc, tt, { userId: quem, token, total, desarmar });
       return null;
     }
     if (faltaMini) { ui.notifications.info(t("Mini.SemJogador", { objeto: nomeObjeto(doc) })); return null; }

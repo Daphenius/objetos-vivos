@@ -24,6 +24,21 @@ export const novoId = () => foundry.utils.randomID(8);
 export const decodificar = texto => { try { return decodeURIComponent(String(texto ?? "")); } catch { return String(texto ?? ""); } };
 export const clone = x => foundry.utils.deepClone(x);
 export const navegador = () => { const m = game.modules.get("navegador-mapas"); return m?.active ? m.api : null; };
+export const icone = nome => `<i class="fa-solid ${nome}" aria-hidden="true"></i>`;
+
+// Partes pesadas (editor, biblioteca, encaixe, minijogos, pacotes do Dungeondraft) só são baixadas
+// quando alguém usa. Os jogadores quase nunca precisam delas.
+export const carregar = {
+  editor: () => import("./editor.js"),
+  biblioteca: () => import("./biblioteca.js"),
+  encaixe: () => import("./encaixe.js"),
+  minijogos: () => import("./minijogos.js")
+};
+export const abrirEditor = async doc => doc && (await carregar.editor()).abrirEditor(doc);
+export const abrirBiblioteca = async () => (await carregar.biblioteca()).abrirBiblioteca();
+
+// Qualidade dos efeitos neste computador: "completa", "leve" (sem sombra e sem parallax) ou "minima" (só a imagem)
+export const qualidade = () => { try { return game.settings.get(ID, "qualidade") || "completa"; } catch { return "completa"; } };
 
 // Níveis do mapa (Foundry v14): andares empilhados na mesma cena
 export function niveisDe(cena) {
@@ -54,9 +69,12 @@ export const PRESETS = {
   bau:      { estados: ["Est.Fechado", "Est.Aberto"], imgs: ["bau-fechado", "bau-aberto"], anim: "pulsar", interacao: "clicar", voltar: 0, prof: "medio" },
   placa:    { estados: ["Est.Solta", "Est.Pressionada"], imgs: ["placa-solta", "placa-pressionada"], anim: "nenhuma", interacao: "pisar", voltar: 3, prof: "plano" },
   runa:     { estados: ["Est.Apagada", "Est.Acesa"], imgs: ["runa-apagada", "runa-acesa"], anim: "pulsar", interacao: "perto", voltar: 0, prof: "leve" },
+  // Mapa interativo: um botão em cima da cidade que leva os jogadores ao mapa dela
+  destino:  { estados: ["Est.Cidade"], imgs: ["destino"], anim: "pulsar", interacao: "clicar", voltar: 0, prof: "plano",
+    extra: { distancia: 0, brilho: false, cadeado: true, revela: true, raio: 3 }, acoes: { sempre: ["viajar"] } },
   livre:    { estados: ["Est.Estado1", "Est.Estado2"], imgs: null, anim: "deslizar", interacao: "clicar", voltar: 0, prof: "medio" }
 };
-export const PRONTOS = ["alavanca", "botao", "bau", "placa", "runa"];
+export const PRONTOS = ["destino", "alavanca", "botao", "bau", "placa", "runa"];
 export const imgPreset = (p, i) => PRESETS[p]?.imgs ? `${ASSETS}/${PRESETS[p].imgs[i]}.svg` : "";
 
 // Profundidade (efeito 3D): sombra, altura (o quanto "salta" do mapa) e inclinação
@@ -81,6 +99,7 @@ export const ACOES = {
   escuridao:    { campos: { valor: ["faixa", 1], duracao: ["numero", 2] } },
   musica:       { campos: { playlist: ["playlist", ""], modo: ["opcao", "tocar", ["tocar", "parar", "pararTodas"]] } },
   mover:        { campos: { destino: ["cena", ""], regiao: ["regiaoDestino", ""], quem: ["opcao", "token", ["token", "jogadores"]] } },
+  viajar:       { campos: { destino: ["cena", ""], quem: ["opcao", "quemUsou", ["quemUsou", "osDoMapa", "todosJogadores"]], volta: ["opcao", "comVolta", ["comVolta", "semVolta"]] } },
   escada:       { campos: { nivel: ["nivel", ""], chegada: ["regiaoChegada", ""], quem: ["opcao", "token", ["token", "jogadores"]], tela: ["opcao", "subindo", ["subindo", "descendo", "semTela"]] } },
   esperar:      { campos: { segundos: ["numero", 1] } }
 };
@@ -98,10 +117,12 @@ export function padrao(doc, preset = null, img = null) {
   const nome = preset ?? "livre";
   const p = PRESETS[nome];
   const imagem = img ?? doc?.texture?.src ?? "";
+  const acoes = {};
+  for (const [momento, tipos] of Object.entries(p.acoes ?? {})) acoes[momento] = tipos.map(novaAcao);
   return {
     ...base, preset: nome, estados: p.estados.map((n, i) => ({ id: novoId(), nome: t(n), img: imgPreset(nome, i) || imagem })), estado: 0,
     anim: p.anim, som: "", interacao: p.interacao, distancia: 1, mao: true, brilho: true, voltar: p.voltar, trancado: false,
-    prof: profPadrao(p.prof)
+    prof: profPadrao(p.prof), ...clone(p.extra ?? {}), acoes
   };
 }
 

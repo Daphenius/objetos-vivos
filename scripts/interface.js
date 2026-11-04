@@ -1,8 +1,6 @@
-import { abrirBiblioteca } from "./biblioteca.js";
-import { abrirEditor, icone } from "./editor.js";
-import { escolherImagem } from "./encaixe.js";
+import { definirTrancado } from "./estados.js";
 import { CONTROLE } from "./gatilhos.js";
-import { ID, cfgDe, ehObjeto, ehTile, esc, t } from "./nucleo.js";
+import { ID, abrirBiblioteca, abrirEditor, carregar, cfgDe, ehObjeto, ehTile, esc, estaTrancado, icone, t } from "./nucleo.js";
 import { usarObjeto } from "./testes.js";
 
 // Botão "Objetos Vivos" na barra de ferramentas da esquerda (só para o mestre)
@@ -11,7 +9,7 @@ export function botaoNaBarra(controles) {
   const ferramentas = {
     select: { name: "select", order: 1, title: "OV.Controle.Editar", icon: "fa-solid fa-hand-pointer" },
     biblioteca: { name: "biblioteca", order: 2, title: "OV.Controle.Biblioteca", icon: "fa-solid fa-shapes", button: true, onChange: () => abrirBiblioteca() },
-    imagem: { name: "imagem", order: 3, title: "OV.Controle.Imagem", icon: "fa-solid fa-image", button: true, onChange: () => escolherImagem() }
+    imagem: { name: "imagem", order: 3, title: "OV.Controle.Imagem", icon: "fa-solid fa-image", button: true, onChange: async () => (await carregar.encaixe()).escolherImagem() }
   };
   const base = { name: CONTROLE, title: "OV.Controle.Titulo", icon: "fa-solid fa-cube", layer: "tiles", visible: true, activeTool: "select" };
   controles[CONTROLE] = {
@@ -84,4 +82,12 @@ export function botoesHud(hud, html) {
   };
   botao("fa-wand-sparkles", t(ehObjeto(doc) ? "Secao.Editar" : "Secao.Transformar"), () => abrirEditor(doc));
   if (ehObjeto(doc)) botao("fa-arrows-rotate", t("Hud.Alternar"), () => usarObjeto(doc, { userId: game.user.id, forcar: true }));
+  // Cadeado: tranca/destranca na hora (no mapa interativo, é assim que uma cidade é liberada)
+  if (ehObjeto(doc) && ehTile(doc)) {
+    const trancado = estaTrancado(doc);
+    botao(trancado ? "fa-lock-open" : "fa-lock", t(trancado ? "Hud.Destrancar" : "Hud.Trancar"), async () => {
+      await definirTrancado(doc, !estaTrancado(doc), { cena: doc.parent, token: null, userId: game.user.id, fonte: doc, profundidade: 0 });
+      hud.render?.();
+    });
+  }
 }

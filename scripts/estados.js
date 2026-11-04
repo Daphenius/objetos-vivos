@@ -1,4 +1,5 @@
 import { ID, alvos, centroDaRegiao, centroDe, centroToken, cfgDe, ehTile, emitir, esc, estaTrancado, gazua, navegador, niveisDe, nomeObjeto, pausa, preencher, t, testeDe, volumeDe } from "./nucleo.js";
+import { quemViaja } from "./mapa.js";
 import { usarObjeto } from "./testes.js";
 
 // Efeitos na tela de quem precisa ver/ouvir
@@ -18,6 +19,11 @@ export async function aplicarEfeito(e) {
     else if (e.tipo === "camera" && canvas.scene?.id === e.cena) canvas.animatePan({ x: e.x, y: e.y, scale: e.zoom || undefined, duration: 900 });
     else if (e.tipo === "aviso") ui.notifications.info(e.texto);
     else if (e.tipo === "escada") await efeitoEscada(e);
+    else if (e.tipo === "verCena") {
+      const cena = game.scenes.get(e.cena);
+      if (!cena) ui.notifications.warn(t("Mapa.SemAcesso"));
+      else if (canvas.scene?.id !== cena.id) await cena.view();
+    }
   } catch (err) { console.warn(`${ID} | efeito falhou`, err); }
 }
 
@@ -114,6 +120,25 @@ export const EXECUTAR = {
     const tokens = a.quem === "jogadores" ? ctx.cena.tokens.filter(tk => tk.actor?.hasPlayerOwner) : [ctx.token].filter(Boolean);
     for (const tk of tokens) await nav.portal(tk, a.destino, a.regiao || null);
   },
+  // Mapa interativo: leva quem usou (ou o grupo) para outro mapa e deixa lá o botão "Voltar ao mapa"
+  async viajar(a, ctx) {
+    const destino = game.scenes.get(a.destino);
+    if (!destino) return;
+    const origem = ctx.cena;
+    if (a.volta !== "semVolta" && origem && destino.id !== origem.id) {
+      const volta = { cena: origem.id, grupo: a.quem !== "quemUsou" };
+      const atual = destino.getFlag(ID, "volta");
+      if (atual?.cena !== volta.cena || !!atual?.grupo !== volta.grupo) await destino.setFlag(ID, "volta", volta);
+    }
+    const ids = quemViaja(a.quem, ctx);
+    if (!ids.length) return;
+    efeito(ids, { tipo: "verCena", cena: destino.id });
+    // O mestre fica sabendo quem foi (quando não foi ele mesmo)
+    if (!ids.includes(game.user.id)) {
+      const nomes = ids.map(id => game.users.get(id)?.name).filter(Boolean).join(", ");
+      ui.notifications.info(t("Mapa.Foi", { quem: nomes, mapa: destino.navName || destino.name }));
+    }
+  },
   async escada(a, ctx) {
     const cena = ctx.cena;
     const nivel = a.nivel ? niveisDe(cena).find(l => l.id === a.nivel) : null;
@@ -149,7 +174,7 @@ export const EXECUTAR = {
     // teleporte não dispara placas, "chegar perto" nem fios de parede no caminho
     for (const tk of tokens) teleportados.add(tk.uuid);
     try { await cena.updateEmbeddedDocuments("Token", upd, { animate: false, ovInterno: true }); }
-    finally { for (const tk of tokens) { teleportados.delete(tk.uuid); posicoes.set(tk.uuid, centroToken(tk)); } }
+    finally { for (const tk of tokens) teleportados.delete(tk.uuid); }
     for (const tk of tokens) {
       const c = centroToken(tk);
       efeito([...new Set([...donos(tk), ...ids])], { tipo: "escada", fase: "fim", cena: cena.id, nivel: nivel?.id ?? null, x: c.x, y: c.y, token: tk.id, tela: a.tela !== "semTela" });
@@ -269,7 +294,5 @@ export async function mudarEstado(doc, idx, ctx) {
   }, c.voltar * 1000));
 }
 
-// Tokens andando: pisar em cima, chegar perto e atravessar paredes
-export const posicoes = new Map();
-
+// Tokens levados por uma ação (escada): não disparam placas, "chegar perto" nem fios de parede no caminho
 export const teleportados = new Set();

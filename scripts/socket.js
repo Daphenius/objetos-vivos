@@ -1,4 +1,5 @@
 import { aplicarEfeito } from "./estados.js";
+import { receberVolta } from "./mapa.js";
 import { ID, SOCKET, cfgDe, ehTile, pausa, souMestreAtivo, testeDe } from "./nucleo.js";
 import { aguardando, eventoParede, jogarDesafio, pedirUso, receberMinijogo, usarObjeto } from "./testes.js";
 
@@ -66,6 +67,7 @@ export function registrarSocket() {
     }
     if (!souMestreAtivo()) return;
     if (data.acao === "minijogo") return receberMinijogo(data, remetente);
+    if (data.acao === "voltar") return receberVolta(data, remetente);
     const doc = typeof data.uuid === "string" ? await fromUuid(data.uuid).catch(() => null) : null;
     if (!doc) return;
     if (data.acao === "usar") return receberUso(doc, data, remetente);

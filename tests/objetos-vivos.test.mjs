@@ -414,3 +414,110 @@ test("editor: sem clicar em comando, o jogo continua valendo", async () => {
   await ed._salvar();
   assert.equal(cfg(d).usados, 1);
 });
+
+// ---------- 3.1.0: mapa interativo e efeitos mais leves
+const { padrao } = await import("../scripts/nucleo.js");
+const { quemViaja, voltaDe, raioRevelado, abreNevoa, mostraCadeado } = await import("../scripts/mapa.js");
+const { profDe } = await import("../scripts/visual.js");
+
+class Cenas extends Map { [Symbol.iterator]() { return this.values(); } get contents() { return [...this.values()]; } }
+const novaCena = (id, nome) => ({ id, name: nome, flags: {}, tiles: new Map(), tokens: [], walls: [],
+  getFlag(m, k) { return this.flags[m]?.[k]; }, async setFlag(m, k, v) { (this.flags[m] ??= {})[k] = v; } });
+const cidade = novaCena("c2", "Cidade");
+F.cena.getFlag ??= function (m, k) { return this.flags?.[m]?.[k]; };
+game.scenes = new Cenas([["c1", F.cena], ["c2", cidade]]);
+const viagem = (quem, volta = "comVolta") => ({ acoes: { sempre: [{ id: "v", tipo: "viajar", atraso: 0, destino: "c2", quem, volta }] }, distancia: 0 });
+const efeitosVerCena = () => F.emitidos.filter(e => e.acao === "efeito" && e.efeito.tipo === "verCena");
+
+test("modelo Cidade: clica de qualquer distância, com cadeado, névoa e a ação Ir para o mapa", () => {
+  const c = padrao(null, "destino");
+  assert.equal(c.distancia, 0);
+  assert.equal(c.cadeado, true);
+  assert.equal(c.revela, true);
+  assert.equal(c.estados.length, 1);
+  assert.equal(c.acoes.sempre[0].tipo, "viajar");
+});
+
+test("Ir para o mapa: só quem clicou vai, e o mapa de destino ganha o botão de volta", async () => {
+  comoMestre();
+  F.ana.viewedScene = "c1"; F.beto.viewedScene = "c1";
+  delete cidade.flags["objetos-vivos"];
+  const d = F.tile("cid1", objeto(viagem("quemUsou")));
+  F.emitidos.length = 0;
+  await F.socket({ acao: "usar", uuid: d.uuid }, "ana");
+  await F.espera(20);
+  const ef = efeitosVerCena();
+  assert.equal(ef.length, 1);
+  assert.deepEqual(ef[0].userIds, ["ana"]);
+  assert.equal(ef[0].efeito.cena, "c2");
+  assert.deepEqual(voltaDe(cidade), { cena: "c1", grupo: false });
+});
+
+test("Ir para o mapa em grupo: todos os jogadores do mapa vão, e voltam juntos", async () => {
+  comoMestre();
+  F.ana.viewedScene = "c1"; F.beto.viewedScene = "c1";
+  const d = F.tile("cid2", objeto(viagem("osDoMapa")));
+  F.emitidos.length = 0;
+  await F.socket({ acao: "usar", uuid: d.uuid }, "ana");
+  await F.espera(20);
+  assert.deepEqual(efeitosVerCena()[0].userIds.sort(), ["ana", "beto"]);
+  assert.equal(voltaDe(cidade).grupo, true);
+  // na cidade, Ana clica em "Voltar ao mapa": o grupo volta
+  F.ana.viewedScene = "c2"; F.beto.viewedScene = "c2";
+  F.emitidos.length = 0;
+  await F.socket({ acao: "voltar", cena: "c2" }, "ana");
+  const volta = efeitosVerCena();
+  assert.equal(volta[0].efeito.cena, "c1");
+  assert.deepEqual(volta[0].userIds.sort(), ["ana", "beto"]);
+});
+
+test("Voltar ao mapa: quem não está naquele mapa não arrasta ninguém", async () => {
+  comoMestre();
+  F.ana.viewedScene = "c1";
+  F.emitidos.length = 0;
+  await F.socket({ acao: "voltar", cena: "c2" }, "ana");
+  assert.equal(efeitosVerCena().length, 0);
+});
+
+test("cidade trancada: não leva, avisa, mostra cadeado e não abre a névoa", async () => {
+  comoMestre();
+  const d = F.tile("cid3", objeto({ ...viagem("quemUsou"), trancado: true, cadeado: true, revela: true }));
+  F.emitidos.length = 0;
+  await F.socket({ acao: "usar", uuid: d.uuid }, "ana");
+  await F.espera(20);
+  assert.equal(efeitosVerCena().length, 0);
+  assert.ok(F.emitidos.some(e => e.efeito?.tipo === "aviso"), "o jogador é avisado");
+  const o = { document: d };
+  assert.equal(mostraCadeado(o), true);
+  assert.equal(abreNevoa(o), false);
+  cfg(d).trancado = false;
+  assert.equal(mostraCadeado(o), false);
+  assert.equal(abreNevoa(o), true);
+  d.hidden = true;
+  assert.equal(abreNevoa(o), false, "escondida não abre a névoa");
+});
+
+test("névoa: raio = metade do objeto + casas em volta", () => {
+  assert.equal(raioRevelado({ width: 100, height: 60 }, { raio: 3 }, 100), 350);
+  assert.equal(raioRevelado({ width: 100, height: 100 }, {}, 100), 50);
+});
+
+test("quem viaja: 'todos os jogadores' não leva o mestre (só se foi ele quem usou)", () => {
+  F.ana.viewedScene = "c1"; F.beto.viewedScene = "c9";
+  assert.deepEqual(quemViaja("todosJogadores", { cena: F.cena, userId: "ana" }).sort(), ["ana", "beto"]);
+  assert.deepEqual(quemViaja("osDoMapa", { cena: F.cena, userId: "gm" }).sort(), ["ana", "gm"]);
+});
+
+test("qualidade dos efeitos: leve tira sombra e parallax, mínima tira tudo", () => {
+  const prof = { sombra: 60, altura: 12, incl: 16, parallax: true };
+  const tile = { document: { getFlag: () => ({ prof }) } };
+  F.config.qualidade = "completa";
+  assert.deepEqual(profDe(tile), prof);
+  F.config.qualidade = "leve";
+  assert.deepEqual([profDe(tile).sombra, profDe(tile).parallax, profDe(tile).altura], [0, false, 12]);
+  F.config.qualidade = "minima";
+  assert.equal(profDe(tile), null);
+  tile._ovPrevia = prof;
+  assert.deepEqual(profDe(tile), prof, "a prévia do editor sempre aparece");
+  F.config.qualidade = "completa";
+});

@@ -65,6 +65,25 @@ O editor abre sozinho. Ele tem três passos:
 
 O botão **Salvar na biblioteca** guarda o objeto em **Meus objetos**. Portas e objetos escolhidos nas ações ficam de fora, porque pertencem ao mapa onde foram escolhidos.
 
+## Mapa interativo
+
+Transforme um mapa-múndi (ou de região) num menu de viagem: cada cidade vira um botão que leva os jogadores ao mapa dela.
+
+1. No mapa-múndi, abra a biblioteca e coloque o modelo **Cidade / destino** em cima de cada cidade (ou transforme um tile seu). Dica: ligue o **Camaleão** para o botão ficar invisível em cima do desenho do próprio mapa.
+2. No editor, aba **Ações**, abra a ação **Ir para o mapa** e escolha o mapa da cidade e **quem vai**: só quem clicou, todos os jogadores deste mapa ou todos os conectados.
+3. Na aba **Como usar**, seção **Mapa interativo**:
+   - **Mostrar cadeado quando trancado**: um cadeado aparece em cima da cidade enquanto ela estiver trancada. Clicar numa cidade trancada só avisa o jogador.
+   - **Abrir a névoa em volta**: o mapa fica coberto por uma névoa e ela só abre em volta das cidades liberadas (não trancadas e à vista), com o tamanho que você escolher.
+4. Deixe só a cidade inicial liberada e tranque as outras. Para liberar uma cidade durante o jogo: botão de **cadeado no HUD** do tile (clique direito) ou a ação **Outro objeto → Destrancar** em outro objeto (por exemplo, chegar à cidade A destrava a estrada para a cidade B).
+5. No mapa da cidade aparece, para todos, o botão **Voltar para (mapa)**. Se o grupo foi junto, volta junto; se foi só um jogador, volta só ele. O mestre, ao clicar, volta sozinho.
+
+A névoa do mapa interativo é desenhada uma vez numa imagem e só é refeita quando uma cidade muda: não pesa durante o jogo. Ela não depende de token nem da visão do Foundry. O mestre vê a névoa clara, para conseguir trabalhar no mapa.
+
+## Desempenho
+
+- As partes pesadas (editor, biblioteca, minijogos, pacotes do Dungeondraft) só são carregadas quando alguém usa. Os jogadores quase nunca baixam nada disso.
+- Em **Configurar Definições → Objetos Vivos: qualidade dos efeitos**, cada pessoa escolhe para o próprio computador: **Completa**, **Leve** (sem sombra e sem parallax) ou **Mínima** (só a imagem dos objetos). Não muda nada para os outros jogadores.
+
 ## Teste, Consertar e Desarmar
 
 O passo **Teste** do editor faz o objeto pedir um teste:
@@ -139,6 +158,7 @@ Com o módulo [Gazua da Mesa](https://github.com/Daphenius/gazua-mesa) ativo, qu
 | Escuridão | Muda a escuridão do mapa, com animação |
 | Música | Toca ou para uma playlist nativa |
 | Levar a outro mapa | Leva o token (e o jogador dono dele) para outro mapa. Precisa do módulo [Navegador de Mundos (navegador-mapas)](https://github.com/Daphenius/navegador-mapas) ativo |
+| Ir para o mapa | Mapa interativo: troca a cena que quem clicou (ou o grupo) está vendo e deixa lá o botão "Voltar ao mapa". Não precisa de token nem de outro módulo |
 | Escada / nível | Sobe ou desce o token no mesmo mapa: para outro nível do mapa (Níveis do Foundry v14) e/ou para uma região de chegada, com tela escura "Subindo..." / "Descendo..." |
 | Esperar | Pausa entre uma ação e outra |
 
@@ -146,7 +166,7 @@ As ações são executadas pelo mestre conectado. Sem mestre online, os objetos 
 
 ## Dicas
 
-- O botão de setas no HUD do tile troca a aparência na hora, sem conferir distância nem regras (bom para testar).
+- O botão de setas no HUD do tile troca a aparência na hora, sem conferir distância nem regras (bom para testar). O botão de cadeado, ao lado, tranca ou destranca o objeto na hora.
 - Uma **armadilha camuflada** (Camaleão, ainda não revelada) não responde ao clique dos jogadores, para não entregar onde está; ela continua disparando ao pisar ou chegar perto. Um botão secreto camuflado de clicar continua clicável (sem mãozinha nem brilho).
 - **Guardar no Foundry** (pacotes do Dungeondraft): o Foundry só aceita enviar alguns tipos de arquivo. Se ele não aceitar o `.dungeondraft_pack`, o módulo avisa; nesse caso, copie o pacote para a sua pasta de assets e ele aparece na barra lateral.
 - Um tile **escondido** não pode ser usado pelos jogadores. Esconda e mostre objetos com a ação "Mostrar / esconder" para revelar alavancas secretas.
@@ -167,13 +187,14 @@ api.mudarEstado(uuid, indice);    // vai direto para uma aparência (0 = a prime
 api.trancar(uuid, true | false);  // tranca ou destranca (a fechadura da Gazua junto)
 await api.estaTrancado(uuid);     // true se o objeto ou a fechadura dele está trancado
 api.minijogo({ jogo: "aneis" | "runa", img, cd, tempo }); // abre um minijogo; devolve true, false ou null
+api.voltarAoMapa();               // o mesmo que clicar em "Voltar ao mapa"
 ```
 
 Ganchos (`Hooks`) para outros módulos: `objetosVivos.usado` (objeto usado), `objetosVivos.trancado` (alguém tentou usar um objeto trancado), `objetosVivos.teste` (resultado de um teste), `objetosVivos.falhou` (falhou no teste) e `objetosVivos.desarmado` (armadilha desarmada).
 
 ## English
 
-**Living Objects** *(in testing — not complete yet and may contain many bugs and AI quirks)* places interactive objects on Foundry VTT maps (levers, buttons, chests, pressure plates, runes or your own images) from a library opened by its own button on the left bar. Objects get depth (shadow, height and tilt), looks that change when used, and a list of actions for each moment. Doors and walls can also run actions when they open, close, lock, unlock, are tried while locked, or are walked through. The interface is translated into English. Tested on Foundry VTT v14 with the D&D 5e system.
+**Living Objects** *(in testing — not complete yet and may contain many bugs and AI quirks)* places interactive objects on Foundry VTT maps (levers, buttons, chests, pressure plates, runes or your own images) from a library opened by its own button on the left bar. Objects get depth (shadow, height and tilt), looks that change when used, and a list of actions for each moment. Doors and walls can also run actions when they open, close, lock, unlock, are tried while locked, or are walked through. **Interactive map**: city buttons that take players to the city scene, a "Back to map" button there, a padlock on locked cities and a fog that only clears around released cities. A per-computer **effects quality** setting (Full, Light, Minimal) helps on weaker machines. The interface is translated into English. Tested on Foundry VTT v14 with the D&D 5e system.
 
 ## Licença
 

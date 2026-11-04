@@ -1,5 +1,5 @@
 import { maisPerto, usaveis } from "./gatilhos.js";
-import { ID, cfgDe, fechaduraTrancada } from "./nucleo.js";
+import { ID, cfgDe, fechaduraTrancada, qualidade } from "./nucleo.js";
 
 // Animação do objeto ao mudar de estado (em todos os navegadores)
 export function animar(tile, tipo) {
@@ -40,13 +40,14 @@ uniform float uBorrao;
 void main(void) {
   vec4 cor = texture2D(uSampler, vTextureCoord);
   vec2 px = inputSize.zw;
+  // 9 amostras (3×3, mais espaçadas) em vez de 25: quase a mesma sombra, bem menos trabalho para a placa de vídeo
   float a = 0.0;
-  for (int x = -2; x <= 2; x++) {
-    for (int y = -2; y <= 2; y++) {
-      a += texture2D(uSampler, vTextureCoord - uDesloc * px + vec2(float(x), float(y)) * uBorrao * px).a;
+  for (int x = -1; x <= 1; x++) {
+    for (int y = -1; y <= 1; y++) {
+      a += texture2D(uSampler, vTextureCoord - uDesloc * px + vec2(float(x), float(y)) * uBorrao * 1.6 * px).a;
     }
   }
-  a = a / 25.0 * uForca;
+  a = a / 9.0 * uForca;
   gl_FragColor = cor + vec4(0.0, 0.0, 0.0, a) * (1.0 - cor.a);
 }`;
 export let ClasseSombra = null;
@@ -199,10 +200,17 @@ export function aplicarVisao(tile) {
 }
 
 // O que vale para este tile agora (a prévia do editor aberto tem prioridade)
+// Qualidade "leve": mantém altura e inclinação (custam quase nada), tira sombra e parallax.
+// Qualidade "mínima": só a imagem (a prévia do editor aberto continua aparecendo para o mestre).
 export function profDe(tile) {
   if (camuflado(tile)) return null;
-  const p = tile?._ovPrevia ?? cfgDe(tile?.document)?.prof;
-  return p && (p.sombra > 0 || p.altura > 0 || p.incl > 0) ? p : null;
+  const previa = tile?._ovPrevia;
+  const p = previa ?? cfgDe(tile?.document)?.prof;
+  if (!p || !(p.sombra > 0 || p.altura > 0 || p.incl > 0)) return null;
+  const q = previa ? "completa" : qualidade();
+  if (q === "minima") return null;
+  if (q === "leve") return { ...p, sombra: 0, parallax: false };
+  return p;
 }
 
 export function aplicarProfundidade(tile) {
@@ -269,30 +277,66 @@ export function aplicarProfundidade(tile) {
   mesh.filters = filtros.length ? filtros : null;
   tile._ovMarca = { x, y, sy: mesh.scale.y };
 }
-export function atualizarProfundidades() {
-  for (const tile of canvas.tiles?.placeables ?? []) if (tile._ovSombra || profDe(tile)) aplicarProfundidade(tile);
+// Câmera andou: no máximo uma vez por quadro. Se o zoom não mudou, só os objetos com parallax
+// precisam ser refeitos (a sombra depende do zoom; a posição, só no parallax).
+let quadroPan = 0, zoomAnterior = null;
+export function atualizarProfundidades({ tudo = false } = {}) {
+  if (tudo) { zoomAnterior = null; return refazerProfundidades(true); }
+  if (quadroPan) return;
+  quadroPan = requestAnimationFrame(() => { quadroPan = 0; refazerProfundidades(false); });
+}
+function refazerProfundidades(tudo) {
+  const zoom = canvas.stage?.scale?.x ?? 1;
+  const mudouZoom = tudo || zoom !== zoomAnterior;
+  zoomAnterior = zoom;
+  for (const tile of canvas.tiles?.placeables ?? []) {
+    if (tile.destroyed) continue;
+    if (!tile._ovSombra && !tile._ovMarca && !cfgDe(tile.document)?.prof && !tile._ovPrevia) continue;
+    const p = profDe(tile);
+    if (tudo || (mudouZoom ? (tile._ovSombra || p) : p?.parallax)) aplicarProfundidade(tile);
+  }
 }
 
+// Brilho em volta do que o jogador alcança. Refeito no máximo uma vez por quadro, e o pulso só
+// roda enquanto há algum brilho na tela (antes rodava em todo quadro, até no mestre, que nunca vê brilho).
 export let brilhos = null, pulsoBrilho = null;
+let quadroBrilho = 0;
+const pulsar = () => { if (brilhos && !brilhos.destroyed) brilhos.alpha = 0.55 + 0.35 * Math.sin(performance.now() / 260); };
+function ligarPulso(ligar) {
+  const ticker = canvas.app?.ticker;
+  if (!ticker) return;
+  if (ligar && !pulsoBrilho) { pulsoBrilho = pulsar; ticker.add(pulsoBrilho); }
+  else if (!ligar && pulsoBrilho) { ticker.remove(pulsoBrilho); pulsoBrilho = null; }
+}
 export function atualizarBrilho() {
-  if (!canvas.ready) return;
+  if (game.user.isGM || quadroBrilho || !canvas.ready) return;
+  quadroBrilho = requestAnimationFrame(() => { quadroBrilho = 0; desenharBrilho(); });
+}
+export function soltarBrilho() {
+  if (quadroBrilho) cancelAnimationFrame(quadroBrilho);
+  quadroBrilho = 0;
+  ligarPulso(false);
+  if (brilhos && !brilhos.destroyed) brilhos.destroy();
+  brilhos = null;
+}
+function desenharBrilho() {
+  if (!canvas.ready || !globalThis.PIXI) return;
+  const lista = [];
+  for (const o of usaveis()) {
+    if (o.destroyed) continue;
+    const doc = o.document, c = cfgDe(doc);
+    if (!c || c.brilho === false || (c.trancado && !fechaduraTrancada(doc)) || camuflado(o)) continue;
+    const alcance = c.distancia > 0 ? c.distancia : 1;
+    if (maisPerto(doc).dist > alcance) continue;
+    lista.push(doc);
+  }
+  if (!lista.length && !brilhos) return;
   if (!brilhos || brilhos.destroyed) {
-    if (!globalThis.PIXI) return;
     brilhos = new PIXI.Graphics();
     brilhos.eventMode = "none";
     (canvas.controls ?? canvas.interface)?.addChild(brilhos);
-    // um só pulso por vez: tira o anterior antes de pôr outro (senão acumulam a cada mapa)
-    if (pulsoBrilho) canvas.app.ticker.remove(pulsoBrilho);
-    pulsoBrilho = () => { if (brilhos && !brilhos.destroyed) brilhos.alpha = 0.55 + 0.35 * Math.sin(performance.now() / 260); };
-    canvas.app.ticker.add(pulsoBrilho);
   }
   brilhos.clear();
-  if (game.user.isGM) return;
-  for (const o of usaveis()) {
-    const doc = o.document, c = cfgDe(doc);
-    if (c.brilho === false || (c.trancado && !fechaduraTrancada(doc)) || camuflado(o)) continue;
-    const alcance = c.distancia > 0 ? c.distancia : 1;
-    if (maisPerto(doc).dist > alcance) continue;
-    brilhos.lineStyle(4, 0xffc27a, 1).drawRoundedRect(doc.x - 4, doc.y - 4, doc.width + 8, doc.height + 8, 10);
-  }
+  for (const doc of lista) brilhos.lineStyle(4, 0xffc27a, 1).drawRoundedRect(doc.x - 4, doc.y - 4, doc.width + 8, doc.height + 8, 10);
+  ligarPulso(lista.length > 0);
 }
