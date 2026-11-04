@@ -624,7 +624,36 @@
       "QualidadeDica": "Só neste computador. Em computadores mais fracos, \"Leve\" tira a sombra e o parallax; \"Mínima\" mostra só a imagem dos objetos.",
       "Completa": "Completa",
       "Leve": "Leve (sem sombra e sem parallax)",
-      "Minima": "Mínima (só a imagem)"
+      "Minima": "Mínima (só a imagem)",
+      "Titulo": "Objetos Vivos: névoa e efeitos",
+      "Abrir": "Abrir configurações",
+      "MenuDica": "Cor e transparência da névoa do mapa interativo, brilho mágico em volta dos lugares liberados e qualidade dos efeitos.",
+      "NevoaTitulo": "Névoa do mapa interativo",
+      "NevoaIntro": "Mexa nos controles e veja o resultado no mapa na hora. Nada é gravado até clicar em Salvar.",
+      "Estilos": "Estilos prontos",
+      "Estilo": {
+        "noite": "Noite",
+        "pergaminho": "Pergaminho",
+        "arcano": "Arcano",
+        "bruma": "Bruma"
+      },
+      "Cores": "Cores e ajustes",
+      "Cor": "Cor da névoa",
+      "CorDica": "A cor que cobre o que ainda não foi explorado",
+      "CorBrilho": "Cor do brilho",
+      "CorBrilhoDica": "O halo mágico em volta dos lugares liberados",
+      "OpJog": "Névoa para os jogadores",
+      "OpJogDica": "Quanto a névoa esconde o mapa (100% = nada aparece por baixo)",
+      "OpMestre": "Névoa para o mestre",
+      "OpMestreDica": "Mais clara, para você conseguir trabalhar no mapa",
+      "Borda": "Suavidade da borda",
+      "BordaDica": "0% = corte seco; 100% = bem esfumaçada",
+      "Brilho": "Brilho mágico",
+      "BrilhoDica": "Força do halo em volta dos lugares liberados (0% desliga)",
+      "NevoaDica": "A névoa é desenhada uma vez e só é refeita quando um lugar é liberado: não pesa durante o jogo.",
+      "Salvar": "Salvar",
+      "Cancelar": "Cancelar",
+      "Padrao": "Voltar ao padrão"
     }
   }
 }

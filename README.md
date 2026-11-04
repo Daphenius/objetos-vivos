@@ -79,10 +79,12 @@ Transforme um mapa-múndi (ou de região) num menu de viagem: cada cidade vira u
 
 A névoa do mapa interativo é desenhada uma vez numa imagem e só é refeita quando uma cidade muda: não pesa durante o jogo. Ela não depende de token nem da visão do Foundry. O mestre vê a névoa clara, para conseguir trabalhar no mapa.
 
+**Configurar a névoa**: em **Configurar Definições → Objetos Vivos → Abrir configurações** (ou `api.configurar()`), com estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor da névoa, quanto ela esconde para os jogadores e para o mestre, suavidade da borda e um brilho mágico em volta dos lugares liberados. Mexeu, vê no mapa na hora; só grava ao clicar em Salvar.
+
 ## Desempenho
 
 - As partes pesadas (editor, biblioteca, minijogos, pacotes do Dungeondraft) só são carregadas quando alguém usa. Os jogadores quase nunca baixam nada disso.
-- Em **Configurar Definições → Objetos Vivos: qualidade dos efeitos**, cada pessoa escolhe para o próprio computador: **Completa**, **Leve** (sem sombra e sem parallax) ou **Mínima** (só a imagem dos objetos). Não muda nada para os outros jogadores.
+- Na mesma janela de configurações (ou em **Objetos Vivos: qualidade dos efeitos**), cada pessoa escolhe para o próprio computador: **Completa**, **Leve** (sem sombra e sem parallax) ou **Mínima** (só a imagem dos objetos). Não muda nada para os outros jogadores.
 
 ## Teste, Consertar e Desarmar
 
@@ -188,6 +190,7 @@ api.trancar(uuid, true | false);  // tranca ou destranca (a fechadura da Gazua j
 await api.estaTrancado(uuid);     // true se o objeto ou a fechadura dele está trancado
 api.minijogo({ jogo: "aneis" | "runa", img, cd, tempo }); // abre um minijogo; devolve true, false ou null
 api.voltarAoMapa();               // o mesmo que clicar em "Voltar ao mapa"
+api.configurar();                 // abre a janela de névoa e efeitos
 ```
 
 Ganchos (`Hooks`) para outros módulos: `objetosVivos.usado` (objeto usado), `objetosVivos.trancado` (alguém tentou usar um objeto trancado), `objetosVivos.teste` (resultado de um teste), `objetosVivos.falhou` (falhou no teste) e `objetosVivos.desarmado` (armadilha desarmada).

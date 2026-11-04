@@ -624,7 +624,36 @@
       "QualidadeDica": "This computer only. On weaker computers, \"Light\" removes shadow and parallax; \"Minimal\" shows only the object images.",
       "Completa": "Full",
       "Leve": "Light (no shadow, no parallax)",
-      "Minima": "Minimal (image only)"
+      "Minima": "Minimal (image only)",
+      "Titulo": "Living Objects: fog and effects",
+      "Abrir": "Open settings",
+      "MenuDica": "Color and transparency of the interactive-map fog, magical glow around released places, and effects quality.",
+      "NevoaTitulo": "Interactive map fog",
+      "NevoaIntro": "Move the controls and see the result on the map right away. Nothing is saved until you click Save.",
+      "Estilos": "Presets",
+      "Estilo": {
+        "noite": "Night",
+        "pergaminho": "Parchment",
+        "arcano": "Arcane",
+        "bruma": "Mist"
+      },
+      "Cores": "Colors and tuning",
+      "Cor": "Fog color",
+      "CorDica": "The color covering what has not been explored yet",
+      "CorBrilho": "Glow color",
+      "CorBrilhoDica": "The magical halo around released places",
+      "OpJog": "Fog for players",
+      "OpJogDica": "How much the fog hides the map (100% = nothing shows through)",
+      "OpMestre": "Fog for the GM",
+      "OpMestreDica": "Lighter, so you can work on the map",
+      "Borda": "Edge softness",
+      "BordaDica": "0% = hard cut; 100% = very smoky",
+      "Brilho": "Magical glow",
+      "BrilhoDica": "Strength of the halo around released places (0% turns it off)",
+      "NevoaDica": "The fog is drawn once and only redrawn when a place is released: no cost during play.",
+      "Salvar": "Save",
+      "Cancelar": "Cancel",
+      "Padrao": "Reset to default"
     }
   }
 }

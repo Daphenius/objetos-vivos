@@ -32,8 +32,20 @@ export const carregar = {
   editor: () => import("./editor.js"),
   biblioteca: () => import("./biblioteca.js"),
   encaixe: () => import("./encaixe.js"),
-  minijogos: () => import("./minijogos.js")
+  minijogos: () => import("./minijogos.js"),
+  config: () => import("./config.js")
 };
+
+// Névoa do mapa interativo: cor, opacidade para jogadores e mestre, suavidade da borda e brilho mágico
+export const PADRAO_NEVOA = { cor: "#0c0f17", opJog: 94, opMestre: 40, borda: 50, brilho: 35, corBrilho: "#f0a03c" };
+export function nevoaCfg() {
+  if (nevoaCfg.previa) return { ...PADRAO_NEVOA, ...nevoaCfg.previa };
+  let salvo = {};
+  try { salvo = game.settings.get(ID, "nevoa") ?? {}; } catch {}
+  return { ...PADRAO_NEVOA, ...salvo };
+}
+nevoaCfg.previa = null;
+export const corHex = c => { const n = parseInt(String(c ?? "").replace("#", ""), 16); return Number.isFinite(n) ? n : 0; };
 export const abrirEditor = async doc => doc && (await carregar.editor()).abrirEditor(doc);
 export const abrirBiblioteca = async () => (await carregar.biblioteca()).abrirBiblioteca();
 

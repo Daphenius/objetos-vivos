@@ -416,7 +416,7 @@ test("editor: sem clicar em comando, o jogo continua valendo", async () => {
 });
 
 // ---------- 3.1.0: mapa interativo e efeitos mais leves
-const { padrao } = await import("../scripts/nucleo.js");
+const { padrao, nevoaCfg, PADRAO_NEVOA, corHex } = await import("../scripts/nucleo.js");
 const { quemViaja, voltaDe, raioRevelado, abreNevoa, mostraCadeado } = await import("../scripts/mapa.js");
 const { profDe } = await import("../scripts/visual.js");
 
@@ -520,4 +520,15 @@ test("qualidade dos efeitos: leve tira sombra e parallax, mínima tira tudo", ()
   tile._ovPrevia = prof;
   assert.deepEqual(profDe(tile), prof, "a prévia do editor sempre aparece");
   F.config.qualidade = "completa";
+});
+
+test("névoa configurável: padrão, valor salvo e prévia da janela", () => {
+  F.config.nevoa = { cor: "#3b2f1e", opJog: 80 };
+  assert.deepEqual(nevoaCfg(), { ...PADRAO_NEVOA, cor: "#3b2f1e", opJog: 80 });
+  nevoaCfg.previa = { cor: "#1a1030" };
+  assert.equal(nevoaCfg().cor, "#1a1030");
+  nevoaCfg.previa = null;
+  assert.equal(corHex("#f0a03c"), 0xf0a03c);
+  assert.equal(corHex("lixo"), 0);
+  delete F.config.nevoa;
 });

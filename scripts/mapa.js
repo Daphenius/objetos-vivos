@@ -2,7 +2,7 @@
 // "Voltar ao mapa", o cadeado à vista nos objetos trancados e a névoa que só abre em volta dos
 // lugares liberados. Tudo aqui é desenhado uma vez e só é refeito quando um objeto muda.
 import { efeito } from "./estados.js";
-import { ASSETS, ID, cfgDe, emitir, esc, estaTrancado, icone, souMestreAtivo, t } from "./nucleo.js";
+import { ASSETS, ID, cfgDe, corHex, emitir, esc, estaTrancado, icone, nevoaCfg, souMestreAtivo, t } from "./nucleo.js";
 
 // ---------- Voltar ao mapa
 // O mapa de destino guarda de onde a pessoa veio: flags.objetos-vivos.volta = { cena, grupo }
@@ -126,34 +126,45 @@ function desenharMapa() {
 function desenharNevoa(liberados) {
   const apagar = PIXI.BLEND_MODES?.ERASE;
   if (apagar === undefined) return null;
+  const n = nevoaCfg();
   const dims = canvas.dimensions;
   const W = dims.width, H = dims.height, gs = dims.size;
   const k = Math.min(1, 2048 / Math.max(W, H));
   const rt = PIXI.RenderTexture.create({ width: Math.ceil(W * k), height: Math.ceil(H * k) });
   const fundo = new PIXI.Graphics();
-  fundo.beginFill(0x0c0f17, 1).drawRect(0, 0, W, H).endFill();
+  fundo.beginFill(corHex(n.cor), 1).drawRect(0, 0, W, H).endFill();
   fundo.scale.set(k);
   canvas.app.renderer.render(fundo, { renderTexture: rt, clear: true });
   fundo.destroy();
   if (liberados.length) {
     const furos = new PIXI.Graphics();
     furos.blendMode = apagar;
-    const ANEIS = 6;
-    for (const o of liberados) {
-      const d = o.document;
-      const cx = d.x + d.width / 2, cy = d.y + d.height / 2;
-      const r = raioRevelado(d, cfgDe(d), gs);
-      // borda suave: anéis cada vez menores, cada um apaga um pouco mais; no meio, tudo limpo
-      for (let i = ANEIS; i >= 1; i--) furos.beginFill(0xffffff, 0.3).drawCircle(cx, cy, r * (1 + 0.5 * i / ANEIS)).endFill();
+    // borda: 0 = corte seco, 100 = bem esfumaçada (anéis cada vez menores, cada um apaga um pouco mais)
+    const ANEIS = 8, largura = 0.1 + (n.borda / 100) * 0.9;
+    const lugares = liberados.map(o => { const d = o.document; return { cx: d.x + d.width / 2, cy: d.y + d.height / 2, r: raioRevelado(d, cfgDe(d), gs) }; });
+    for (const { cx, cy, r } of lugares) {
+      for (let i = ANEIS; i >= 1; i--) furos.beginFill(0xffffff, 0.22).drawCircle(cx, cy, r * (1 + largura * i / ANEIS)).endFill();
       furos.beginFill(0xffffff, 1).drawCircle(cx, cy, r).endFill();
     }
     furos.scale.set(k);
     canvas.app.renderer.render(furos, { renderTexture: rt, clear: false });
     furos.destroy();
+    // brilho mágico: um halo da cor escolhida em volta de cada lugar liberado
+    if (n.brilho > 0) {
+      const halo = new PIXI.Graphics();
+      halo.blendMode = PIXI.BLEND_MODES.ADD;
+      const forca = n.brilho / 100, cor = corHex(n.corBrilho);
+      for (const { cx, cy, r } of lugares) {
+        for (let i = 1; i <= 5; i++) halo.lineStyle(r * 0.08 * (1 + largura), cor, forca * 0.18 * (1 - i / 6)).drawCircle(cx, cy, r * (1 + largura * 0.35 * i / 5));
+      }
+      halo.scale.set(k);
+      canvas.app.renderer.render(halo, { renderTexture: rt, clear: false });
+      halo.destroy();
+    }
   }
   const sprite = new PIXI.Sprite(rt);
   sprite.scale.set(1 / k);
-  sprite.alpha = game.user.isGM ? 0.4 : 0.94;
+  sprite.alpha = (game.user.isGM ? n.opMestre : n.opJog) / 100;
   sprite.eventMode = "none";
   return sprite;
 }

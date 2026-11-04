@@ -13,6 +13,13 @@ Hooks.once("init", () => {
   game.settings.register(ID, "pastaAssets", { scope: "client", config: false, type: Object, default: {} });
   game.settings.register(ID, "pacotesGuardados", { scope: "world", config: false, type: Array, default: [] });
   game.settings.register(ID, "tamMiniatura", { scope: "client", config: false, type: String, default: "m" });
+  // Névoa do mapa interativo (para o mundo todo) e a janela que a configura
+  game.settings.register(ID, "nevoa", { scope: "world", config: false, type: Object, default: {}, onChange: () => { if (canvas.ready) atualizarMapa(); } });
+  game.settings.registerMenu(ID, "menu", {
+    name: "OV.Config.Titulo", label: "OV.Config.Abrir", hint: "OV.Config.MenuDica", icon: "fa-solid fa-wand-magic-sparkles", restricted: true,
+    // Atalho leve: o Foundry exige uma classe de janela aqui; esta só carrega a janela de verdade quando aberta
+    type: class extends foundry.applications.api.ApplicationV2 { async render() { (await carregar.config()).ConfigObjetosVivos.abrir(); return this; } }
+  });
   // Cada pessoa escolhe no próprio computador (computador fraco: "leve" ou "mínima")
   game.settings.register(ID, "qualidade", {
     name: "OV.Config.Qualidade", hint: "OV.Config.QualidadeDica", scope: "client", config: true, type: String, default: "completa",
@@ -123,6 +130,8 @@ Hooks.once("ready", () => {
     },
     // Mapa interativo
     voltarAoMapa: () => voltarAoMapa(),
+    atualizarMapa: () => atualizarMapa(),
+    configurar: async () => new (await carregar.config()).ConfigObjetosVivos().render({ force: true }),
     editar: async uuid => abrirEditor(await fromUuid(uuid)),
     usar: async (uuid, tokenUuid = null) => { const d = await fromUuid(uuid); if (d && ehObjeto(d)) pedirUso(d, tokenUuid); },
     mudarEstado: async (uuid, indice) => { if (!game.user.isGM) return; const d = await fromUuid(uuid); if (cfgDe(d)) mudarEstado(d, indice, { cena: d.parent, token: null, userId: game.user.id, fonte: d, profundidade: 0 }); },

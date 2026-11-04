@@ -11,6 +11,7 @@ Mapa interativo e um módulo bem mais leve.
 - **Cadeado à vista**: objetos trancados podem mostrar um cadeado em cima. Clicar numa cidade trancada só avisa.
 - **Névoa do mapa**: o mapa fica coberto e só abre em volta das cidades liberadas, com borda suave e tamanho ajustável. Não depende de token nem da visão do Foundry.
 - **Cadeado no HUD do tile**: tranca ou destranca o objeto com um clique (é assim que se libera uma cidade no meio do jogo).
+- **Janela de configurações** (Configurar Definições → Objetos Vivos): estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor da névoa, quanto ela esconde para jogadores e mestre, suavidade da borda, brilho mágico em volta dos lugares liberados e a qualidade dos efeitos. Mostra o resultado no mapa na hora; só grava ao salvar.
 
 ### Desempenho
 - **Carregamento sob demanda**: editor, biblioteca, encaixe, minijogos e leitura de pacotes do Dungeondraft só são baixados quando alguém usa. Os jogadores deixam de carregar mais da metade do código do módulo.
