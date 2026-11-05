@@ -40,6 +40,8 @@
   </section>
 
   <section>
+    <div class="ov-faixa"><div class="ov-txt"><b>{{L.MestreVe}}</b><span>{{L.MestreVeDica}}</span></div>
+      <button type="button" role="switch" aria-checked="{{mestreVe}}" aria-label="{{L.MestreVe}}" class="ov-chave {{#if mestreVe}}ov-on{{/if}}" data-chave="mestreVe"><span></span></button></div>
     <div class="ov-faixa"><div class="ov-txt"><b>{{L.Qualidade}}</b><span>{{L.QualidadeDica}}</span></div>
       <select name="qualidade" class="ov-select">{{#each qualidade.opcoes}}<option value="{{v}}" {{#if (eq v ../qualidade.valor)}}selected{{/if}}>{{nome}}</option>{{/each}}</select></div>
   </section>

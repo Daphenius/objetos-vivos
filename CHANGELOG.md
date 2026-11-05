@@ -1,6 +1,6 @@
 # Changelog
 
-## v3.7.0
+## v3.8.0
 
 A névoa do jeito certo: só onde deve.
 
@@ -11,6 +11,8 @@ A névoa do jeito certo: só onde deve.
 - A névoa de uma cidade que está dentro de uma Região com névoa densa é recortada pela borda da Região: não passa dela.
 - O botão **"Voltar para (mapa)"** fica sempre em cima da lista de jogadores.
 - Uma **cidade escondida** (tile oculto) continua funcionando: dá para clicar, mostra o cadeado e a névoa. Assim o mestre esconde a imagem do botão e o mapa fica limpo. Objetos comuns escondidos continuam fora do alcance dos jogadores.
+- **Mestre vê através** (janela de configurações, ligado por padrão): a névoa das cidades nem aparece para o mestre, só o cadeado. Com a janela aberta, ele vê como os jogadores, para ajustar.
+- As Regiões com **Névoa densa** usam por padrão o mesmo visual da névoa das cidades; "Visual próprio" na ficha do comportamento libera os campos de cor, nuvens etc. "Mestre vê através" ali também passa a esconder a névoa de vez para o mestre.
 - 3 testes novos (41 no total).
 
 

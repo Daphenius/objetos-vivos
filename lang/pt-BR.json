@@ -645,12 +645,12 @@
       "OpJog": "Névoa para os jogadores",
       "OpJogDica": "Quanto a névoa esconde a cidade (100% = nada aparece por baixo)",
       "OpMestre": "Névoa para o mestre",
-      "OpMestreDica": "Mais clara, para você ver o que está coberto",
+      "OpMestreDica": "Só vale com \"Mestre vê através\" desligado: mais clara, para você saber o que está coberto",
       "Borda": "Suavidade da borda",
       "BordaDica": "0% = corte seco; 100% = bem esfumaçada",
       "Brilho": "Brilho mágico",
       "BrilhoDica": "Força do halo na borda das áreas cobertas (0% desliga)",
-      "NevoaDica": "Vale para as cidades trancadas. As Regiões com \"Névoa densa\" têm o próprio visual, na ficha do comportamento.",
+      "NevoaDica": "Vale para as cidades trancadas e, por padrão, para as Regiões com \"Névoa densa\" (cada Região pode ter um visual próprio na ficha do comportamento).",
       "Salvar": "Salvar",
       "Cancelar": "Cancelar",
       "Padrao": "Voltar ao padrão",
@@ -659,7 +659,9 @@
       "Densidade": "Densidade das nuvens",
       "DensidadeDica": "Quanto mais, mais fechada e enrolada",
       "Velocidade": "Velocidade",
-      "VelocidadeDica": "Quão rápido as nuvens deslizam"
+      "VelocidadeDica": "Quão rápido as nuvens deslizam",
+      "MestreVe": "Mestre vê através",
+      "MestreVeDica": "Para você a névoa das cidades nem aparece (só o cadeado). Com esta janela aberta, você vê como os jogadores, para ajustar o visual."
     },
     "NevoaDensa": {
       "FIELDS": {
@@ -677,7 +679,7 @@
         },
         "mestre": {
           "label": "Mestre vê através",
-          "hint": "Para você a névoa aparece clara, só para saber onde está"
+          "hint": "Para você a névoa nem aparece. Desligado, aparece clara, só para saber onde está"
         },
         "cor": {
           "label": "Cor da névoa",
@@ -710,6 +712,10 @@
         "velocidade": {
           "label": "Velocidade das nuvens (%)",
           "hint": ""
+        },
+        "visualProprio": {
+          "label": "Visual próprio",
+          "hint": "Desligado, usa o mesmo visual da névoa das cidades (configurações do módulo) e os campos abaixo são ignorados"
         }
       }
     }

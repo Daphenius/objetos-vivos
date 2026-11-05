@@ -22,6 +22,7 @@ export function criarTipoNevoa() {
       itens: new F.StringField({ required: true, blank: true, initial: "" }),
       objeto: new F.StringField({ required: true, blank: true, initial: "" }),
       mestre: new F.BooleanField({ initial: true }),
+      visualProprio: new F.BooleanField({ initial: false }),
       cor: new F.ColorField({ required: true, nullable: false, initial: "#b4bcc6" }),
       opacidade: numero(100, 30, 100),
       borda: numero(100, 0, 100),
@@ -53,7 +54,8 @@ export function nevoasDoMapa(cena = canvas.scene) {
 
 // Como este usuário vê a névoa: "nao" (cobre), "mestre" (clara, só para o mestre) ou "sim" (não aparece)
 export function visaoDaNevoa(d, user = game.user, atores = atoresDoUsuario(user)) {
-  if (user.isGM) return d.mestre ? "mestre" : "nao";
+  // mestre: "vê através" = nada desenhado; senão, névoa clara, só para saber onde está
+  if (user.isGM) return d.mestre ? "sim" : "mestre";
   if (d.objeto) { const o = globalThis.fromUuidSync?.(d.objeto); if (o && !estaTrancado(o)) return "sim"; }
   const ids = d.atores instanceof Set ? d.atores : new Set(d.atores ?? []);
   const nomes = String(d.itens ?? "").split(",").map(x => x.trim().toLowerCase()).filter(Boolean);

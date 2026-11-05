@@ -81,13 +81,13 @@ Transforme um mapa-múndi (ou de região) num menu de viagem: cada cidade vira u
 
 ## Névoa densa (Regiões)
 
-Para cobrir um território inteiro, não só uma cidade: desenhe uma **Região** no mapa (camada de Regiões do Foundry) e, na aba **Comportamentos** dela, adicione **Névoa densa (Objetos Vivos)**. A área da Região fica coberta por uma névoa espessa, com o visual configurado ali mesmo (cor, quanto esconde, borda, brilho, névoa viva).
+Para cobrir um território inteiro, não só uma cidade: desenhe uma **Região** no mapa (camada de Regiões do Foundry) e, na aba **Comportamentos** dela, adicione **Névoa densa (Objetos Vivos)**. A área da Região fica coberta por uma névoa espessa, com o mesmo visual da névoa das cidades (ou um **visual próprio**, ligando a opção na ficha: cor, quanto esconde, borda, brilho, névoa viva).
 
 Quem enxerga através:
 - os **personagens escolhidos** pelo mestre;
 - quem tiver no personagem um **item ou efeito** com um dos nomes combinados (ex.: *Lanterna Élfica, Visão Verdadeira*);
 - **todo mundo**, quando o **objeto ligado** (uma cidade do mapa interativo) é destrancado;
-- o mestre vê a névoa clara, só para saber onde está (dá para desligar).
+- o mestre, com **Mestre vê através** (padrão), não vê a névoa; desligado, ela aparece clara para ele saber onde está.
 
 A névoa é desenhada uma vez por mapa e só é refeita quando uma Região, um comportamento, um cadeado ou o que o jogador carrega muda. Com a névoa viva, o único trabalho por quadro é deslizar as nuvens, e só com a qualidade dos efeitos em **Completa**.
 

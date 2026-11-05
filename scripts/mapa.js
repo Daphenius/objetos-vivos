@@ -114,8 +114,11 @@ function desenharMapa() {
   const dims = canvas.dimensions, W = dims.width, H = dims.height, gs = dims.size;
   const k = Math.min(1, 2048 / Math.max(W, H));
   // Cidades trancadas: um círculo de névoa em volta de cada uma, com o visual das configurações
-  if (cobertos.length) {
-    const n = nevoaCfg();
+  // Mestre: com "Mestre vê através" ligado, a névoa das cidades nem é desenhada para ele (só o cadeado);
+  // com a janela de configurações aberta, ele vê como os jogadores, para ajustar o visual
+  const n = nevoaCfg();
+  const opMestre = nevoaCfg.previa ? n.opJog : n.mestreVe ? 0 : n.opMestre;
+  if (cobertos.length && (!game.user.isGM || opMestre > 0)) {
     // se a cidade está dentro de uma Região com névoa densa, o círculo dela não passa da borda da Região
     const todas = nevoasDoMapa();
     const lugares = cobertos.map(o => {
@@ -126,16 +129,22 @@ function desenharMapa() {
     });
     const tex = PIXI.Texture.from(imagemNevoa(n, W, H, k, lugares));
     camada._ovTexturas.push(tex);
-    camada.addChild(montarNevoa(tex, n, (game.user.isGM ? n.opMestre : n.opJog) / 100, W, H, gs, nuvens));
+    camada.addChild(montarNevoa(tex, n, (game.user.isGM ? opMestre : n.opJog) / 100, W, H, gs, nuvens));
   }
-  // Regiões com "Névoa densa": cada uma com o próprio visual
+  // Regiões com "Névoa densa": o mesmo visual das cidades (configurações do módulo) ou um visual próprio
   for (const { regiao, dados, visao } of regioes) {
     const formas = formasDaRegiao(regiao);
     if (!formas.length) continue;
-    const look = { cor: dados.cor, borda: dados.borda, brilho: dados.brilho, corBrilho: dados.corBrilho, animada: dados.viva, densidade: dados.densidade, velocidade: dados.velocidade };
+    const proprio = !!dados.visualProprio;
+    const look = proprio
+      ? { cor: dados.cor, borda: dados.borda, brilho: dados.brilho, corBrilho: dados.corBrilho, animada: dados.viva, densidade: dados.densidade, velocidade: dados.velocidade }
+      : n;
+    let opacidade = (proprio ? dados.opacidade : n.opJog) / 100;
+    if (visao === "mestre") opacidade = (proprio ? dados.opacidade * 0.45 : (nevoaCfg.previa ? n.opJog : n.opMestre)) / 100;
+    if (opacidade <= 0) continue;
     const tex = PIXI.Texture.from(imagemNevoa(look, W, H, k, [{ formas }]));
     camada._ovTexturas.push(tex);
-    camada.addChild(montarNevoa(tex, look, visao === "mestre" ? 0.35 : dados.opacidade / 100, W, H, gs, nuvens));
+    camada.addChild(montarNevoa(tex, look, opacidade, W, H, gs, nuvens));
   }
   if (nuvens.length) ligarNuvens(nuvens);
   const tex = PIXI.Texture.from(`${ASSETS}/cadeado.svg`);

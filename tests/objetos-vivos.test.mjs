@@ -547,8 +547,8 @@ test("névoa densa da Região: quem enxerga através", () => {
   assert.equal(visaoDaNevoa(d, jogador, [ator("outro", ["lanterna élfica"])]), "sim", "item com o nome (sem diferenciar maiúsculas)");
   assert.equal(visaoDaNevoa(d, jogador, [ator("outro", [], ["Visão Verdadeira"])]), "sim", "efeito com o nome");
   assert.equal(visaoDaNevoa(d, jogador, []), "nao", "sem personagem: coberto");
-  assert.equal(visaoDaNevoa(d, mestre, []), "mestre");
-  assert.equal(visaoDaNevoa({ ...d, mestre: false }, mestre, []), "nao");
+  assert.equal(visaoDaNevoa(d, mestre, []), "sim", "mestre vê através: nada desenhado");
+  assert.equal(visaoDaNevoa({ ...d, mestre: false }, mestre, []), "mestre", "senão, névoa clara");
 });
 
 test("névoa densa da Região: some para todos quando o objeto ligado é destrancado", () => {
