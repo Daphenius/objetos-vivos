@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.9.0
+
+- **Correção**: uma cidade trancada dentro de uma Região com névoa densa ficava mais densa que o resto da Região, porque as duas névoas eram empilhadas. Agora, se a Região já está coberta para quem está vendo, o círculo da cidade não é desenhado; ele só aparece para quem enxerga através da Região (ou fora dela).
+
+
 ## v3.8.0
 
 A névoa do jeito certo: só onde deve.

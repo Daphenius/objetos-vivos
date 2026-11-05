@@ -120,16 +120,23 @@ function desenharMapa() {
   const opMestre = nevoaCfg.previa ? n.opJog : n.mestreVe ? 0 : n.opMestre;
   if (cobertos.length && (!game.user.isGM || opMestre > 0)) {
     // se a cidade está dentro de uma Região com névoa densa, o círculo dela não passa da borda da Região
+    // Se a Região que contém a cidade já está coberta para este usuário, o círculo dela não é desenhado
+    // (senão as duas névoas se somam e a cidade fica mais densa que o resto da Região)
     const todas = nevoasDoMapa();
-    const lugares = cobertos.map(o => {
+    const cobertas = new Set(regioes.map(r => r.id));
+    const lugares = [];
+    for (const o of cobertos) {
       const d = o.document, cx = d.x + d.width / 2, cy = d.y + d.height / 2;
       const dentro = todas.filter(({ regiao }) => regiao.testPoint?.({ x: cx, y: cy }) ?? false);
+      if (dentro.some(r => cobertas.has(r.id))) continue;
       const limite = dentro.flatMap(({ regiao }) => formasDaRegiao(regiao).filter(f => !f.hole));
-      return { cx, cy, r: raioRevelado(d, cfgDe(d), gs), limite: limite.length ? limite : null };
-    });
-    const tex = PIXI.Texture.from(imagemNevoa(n, W, H, k, lugares));
-    camada._ovTexturas.push(tex);
-    camada.addChild(montarNevoa(tex, n, (game.user.isGM ? opMestre : n.opJog) / 100, W, H, gs, nuvens));
+      lugares.push({ cx, cy, r: raioRevelado(d, cfgDe(d), gs), limite: limite.length ? limite : null });
+    }
+    if (lugares.length) {
+      const tex = PIXI.Texture.from(imagemNevoa(n, W, H, k, lugares));
+      camada._ovTexturas.push(tex);
+      camada.addChild(montarNevoa(tex, n, (game.user.isGM ? opMestre : n.opJog) / 100, W, H, gs, nuvens));
+    }
   }
   // Regiões com "Névoa densa": o mesmo visual das cidades (configurações do módulo) ou um visual próprio
   for (const { regiao, dados, visao } of regioes) {
