@@ -4,10 +4,10 @@
 import { ID, PADRAO_NEVOA, esc, icone, nevoaCfg, t } from "./nucleo.js";
 
 export const ESTILOS = {
+  bruma:      { cor: "#b4bcc6", opJog: 100, opMestre: 45, borda: 100, brilho: 0, corBrilho: "#ffffff", animada: true, densidade: 85, velocidade: 35 },
   noite:      { cor: "#0c0f17", opJog: 94, opMestre: 40, borda: 50, brilho: 35, corBrilho: "#f0a03c", animada: true, densidade: 60, velocidade: 40 },
   pergaminho: { cor: "#3b2f1e", opJog: 88, opMestre: 35, borda: 70, brilho: 25, corBrilho: "#ffd79a", animada: true, densidade: 45, velocidade: 25 },
-  arcano:     { cor: "#1a1030", opJog: 90, opMestre: 40, borda: 80, brilho: 55, corBrilho: "#9d7bff", animada: true, densidade: 75, velocidade: 55 },
-  bruma:      { cor: "#6e7a86", opJog: 80, opMestre: 30, borda: 100, brilho: 0, corBrilho: "#ffffff", animada: true, densidade: 90, velocidade: 70 }
+  arcano:     { cor: "#1a1030", opJog: 90, opMestre: 40, borda: 80, brilho: 55, corBrilho: "#9d7bff", animada: true, densidade: 75, velocidade: 55 }
 };
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -45,7 +45,7 @@ export class ConfigObjetosVivos extends HandlebarsApplicationMixin(ApplicationV2
       cor: { chave: "cor", nome: t("Config.Cor"), desc: t("Config.CorDica"), valor: d.cor },
       corBrilho: { chave: "corBrilho", nome: t("Config.CorBrilho"), desc: t("Config.CorBrilhoDica"), valor: d.corBrilho },
       faixas: [
-        campo("opJog", "Config.OpJog", "Config.OpJogDica", 30, 100),
+        campo("opJog", "Config.OpJog", "Config.OpJogDica", 50, 100),
         campo("opMestre", "Config.OpMestre", "Config.OpMestreDica", 0, 100),
         campo("borda", "Config.Borda", "Config.BordaDica", 0, 100),
         campo("brilho", "Config.Brilho", "Config.BrilhoDica", 0, 100)

@@ -279,6 +279,7 @@ body.ov-encaixando #board { cursor: crosshair !important; }
   font-size: 14px; font-weight: 600; line-height: 1.2; cursor: pointer;
   box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
 }
+#ov-voltar.ov-na-lista { position: static; transform: none; align-self: flex-start; margin: 0 0 6px 0; pointer-events: all; }
 #ov-voltar:hover { border-color: var(--ov-borda-hover, #6b6378); background: var(--ov-cartao-hover, #2a2533); }
 #ov-voltar i { color: #e6c25a; }
 

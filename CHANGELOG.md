@@ -1,13 +1,17 @@
 # Changelog
 
-## v3.6.0
+## v3.7.0
 
 A névoa do jeito certo: só onde deve.
 
 - **Névoa das cidades invertida**: antes cobria o mapa inteiro e abria em volta das cidades liberadas, deixando o mapa do jogador escuro. Agora cobre só a área em volta de cada cidade **trancada**; o resto do mapa fica livre, e a escuridão do mapa continua sendo do calendário/Foundry.
 - **Comportamento de Região "Névoa densa"** (aba Comportamentos da Região): cobre o território da Região com névoa espessa, com visual próprio. Enxergam através os personagens escolhidos, quem tiver um item ou efeito com o nome combinado, e todo mundo quando o objeto ligado é destrancado. O mestre vê clara.
 - **Correção**: mundos que já tinham o comportamento "Névoa densa" numa Região davam erro ao carregar a cena (`objetos-vivos.nevoaDensa is not a valid type`) porque a v3.5.0 não o registrava.
-- 2 testes novos (40 no total).
+- **Bruma branca e fechada por padrão**: a névoa (das cidades e das Regiões) agora vem clara, como bruma, 100% opaca para os jogadores (não dá para ver nada por baixo) e com três camadas de nuvens rolando em sentidos diferentes. Os estilos escuros continuam na janela de configurações.
+- A névoa de uma cidade que está dentro de uma Região com névoa densa é recortada pela borda da Região: não passa dela.
+- O botão **"Voltar para (mapa)"** fica sempre em cima da lista de jogadores.
+- Uma **cidade escondida** (tile oculto) continua funcionando: dá para clicar, mostra o cadeado e a névoa. Assim o mestre esconde a imagem do botão e o mapa fica limpo. Objetos comuns escondidos continuam fora do alcance dos jogadores.
+- 3 testes novos (41 no total).
 
 
 ## v3.5.0

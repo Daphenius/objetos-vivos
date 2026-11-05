@@ -69,13 +69,13 @@ O botão **Salvar na biblioteca** guarda o objeto em **Meus objetos**. Portas e 
 
 Transforme um mapa-múndi (ou de região) num menu de viagem: cada cidade vira um botão que leva os jogadores ao mapa dela.
 
-1. No mapa-múndi, abra a biblioteca e coloque o modelo **Cidade / destino** em cima de cada cidade (ou transforme um tile seu). Dica: ligue o **Camaleão** para o botão ficar invisível em cima do desenho do próprio mapa.
+1. No mapa-múndi, abra a biblioteca e coloque o modelo **Cidade / destino** em cima de cada cidade (ou transforme um tile seu). Dica: ligue o **Camaleão** ou simplesmente **esconda o tile** para o botão ficar invisível em cima do desenho do próprio mapa; uma cidade escondida continua clicável, com cadeado e névoa.
 2. No editor, aba **Ações**, abra a ação **Ir para o mapa** e escolha o mapa da cidade e **quem vai**: só quem clicou, todos os jogadores deste mapa ou todos os conectados.
 3. Na aba **Como usar**, seção **Mapa interativo**:
    - **Mostrar cadeado quando trancado**: um cadeado aparece em cima da cidade enquanto ela estiver trancada. Clicar numa cidade trancada só avisa o jogador.
    - **Cobrir com névoa enquanto trancado**: enquanto a cidade estiver trancada, uma névoa cobre a área em volta dela (tamanho em casas). O resto do mapa fica livre; a escuridão do mapa continua sendo do calendário/Foundry.
 4. Deixe só a cidade inicial liberada e tranque as outras. Para liberar uma cidade durante o jogo: botão de **cadeado no HUD** do tile (clique direito) ou a ação **Outro objeto → Destrancar** em outro objeto (por exemplo, chegar à cidade A destrava a estrada para a cidade B).
-5. No mapa da cidade aparece, para todos, o botão **Voltar para (mapa)**. Se o grupo foi junto, volta junto; se foi só um jogador, volta só ele. O mestre, ao clicar, volta sozinho.
+5. No mapa da cidade aparece, para todos, o botão **Voltar para (mapa)**, em cima da lista de jogadores. Se o grupo foi junto, volta junto; se foi só um jogador, volta só ele. O mestre, ao clicar, volta sozinho.
 
 **Visual da névoa das cidades**: em **Configurar Definições → Objetos Vivos → Abrir configurações** (ou `api.configurar()`): estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor, quanto esconde para jogadores e mestre, suavidade da borda, brilho mágico e a **névoa viva** (nuvens densas deslizando por cima, com densidade e velocidade). Mexeu, vê no mapa na hora; só grava ao clicar em Salvar.
 

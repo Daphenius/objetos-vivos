@@ -24,6 +24,10 @@ export const novoId = () => foundry.utils.randomID(8);
 export const decodificar = texto => { try { return decodeURIComponent(String(texto ?? "")); } catch { return String(texto ?? ""); } };
 export const clone = x => foundry.utils.deepClone(x);
 export const navegador = () => { const m = game.modules.get("navegador-mapas"); return m?.active ? m.api : null; };
+// Objeto de mapa interativo: tem a ação "Ir para o mapa" em algum momento. Um tile escondido desses
+// continua usável (o mestre esconde a imagem do botão e o clique na cidade segue funcionando).
+export const ehDestino = c => Object.values(c?.acoes ?? {}).some(lista => lista?.some?.(a => a?.tipo === "viajar"));
+export const escondido = (doc, c = cfgDe(doc)) => !!doc?.hidden && !ehDestino(c);
 export const icone = nome => `<i class="fa-solid ${nome}" aria-hidden="true"></i>`;
 
 // Partes pesadas (editor, biblioteca, encaixe, minijogos, pacotes do Dungeondraft) só são baixadas
@@ -37,7 +41,7 @@ export const carregar = {
 };
 
 // Névoa do mapa interativo: cor, opacidade para jogadores e mestre, suavidade da borda e brilho mágico
-export const PADRAO_NEVOA = { cor: "#0c0f17", opJog: 94, opMestre: 40, borda: 50, brilho: 35, corBrilho: "#f0a03c", animada: true, densidade: 60, velocidade: 40 };
+export const PADRAO_NEVOA = { cor: "#b4bcc6", opJog: 100, opMestre: 45, borda: 100, brilho: 0, corBrilho: "#ffffff", animada: true, densidade: 85, velocidade: 35 };
 export function nevoaCfg() {
   if (nevoaCfg.previa) return { ...PADRAO_NEVOA, ...nevoaCfg.previa };
   let salvo = {};

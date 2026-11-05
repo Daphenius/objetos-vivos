@@ -416,7 +416,8 @@ test("editor: sem clicar em comando, o jogo continua valendo", async () => {
 });
 
 // ---------- 3.1.0: mapa interativo e efeitos mais leves
-const { padrao, nevoaCfg, PADRAO_NEVOA, corHex } = await import("../scripts/nucleo.js");
+const nucleo = await import("../scripts/nucleo.js");
+const { padrao, nevoaCfg, PADRAO_NEVOA, corHex } = nucleo;
 const { quemViaja, voltaDe, raioRevelado, abreNevoa, cobreNevoa, mostraCadeado } = await import("../scripts/mapa.js");
 const { visaoDaNevoa } = await import("../scripts/regiao.js");
 const { profDe } = await import("../scripts/visual.js");
@@ -497,7 +498,8 @@ test("cidade trancada: não leva, avisa, mostra cadeado e não abre a névoa", a
   assert.equal(cobreNevoa(o), false, "liberada: sem névoa");
   assert.equal(abreNevoa(o), true);
   cfg(d).trancado = true; d.hidden = true;
-  assert.equal(cobreNevoa(o), false, "escondida não desenha névoa (o jogador nem sabe que existe)");
+  assert.equal(cobreNevoa(o), true, "cidade escondida ainda é coberta (o botão só perde a imagem)");
+  assert.equal(mostraCadeado(o), true);
 });
 
 test("névoa: raio = metade do objeto + casas em volta", () => {
@@ -557,4 +559,14 @@ test("névoa densa da Região: some para todos quando o objeto ligado é destran
   cfg(d).trancado = false;
   assert.equal(visaoDaNevoa(n, { isGM: false }, []), "sim");
   delete globalThis.fromUuidSync;
+});
+
+test("cidade escondida continua usável para viagem (mas um objeto comum escondido, não)", () => {
+  const { ehDestino, escondido } = nucleo;
+  const cidade = { hidden: true };
+  const c = { acoes: { sempre: [{ tipo: "viajar", destino: "c2" }] } };
+  assert.equal(ehDestino(c), true);
+  assert.equal(escondido(cidade, c), false, "escondida, mas é destino: usável, com cadeado e névoa");
+  assert.equal(escondido(cidade, { acoes: { sempre: [{ tipo: "som" }] } }), true);
+  assert.equal(escondido({ hidden: false }, {}), false);
 });

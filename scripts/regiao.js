@@ -22,14 +22,14 @@ export function criarTipoNevoa() {
       itens: new F.StringField({ required: true, blank: true, initial: "" }),
       objeto: new F.StringField({ required: true, blank: true, initial: "" }),
       mestre: new F.BooleanField({ initial: true }),
-      cor: new F.ColorField({ required: true, nullable: false, initial: "#0c0f17" }),
-      opacidade: numero(94, 30, 100),
-      borda: numero(50, 0, 100),
+      cor: new F.ColorField({ required: true, nullable: false, initial: "#b4bcc6" }),
+      opacidade: numero(100, 30, 100),
+      borda: numero(100, 0, 100),
       brilho: numero(0, 0, 100),
-      corBrilho: new F.ColorField({ required: true, nullable: false, initial: "#f0a03c" }),
+      corBrilho: new F.ColorField({ required: true, nullable: false, initial: "#ffffff" }),
       viva: new F.BooleanField({ initial: true }),
-      densidade: numero(60, 0, 100),
-      velocidade: numero(40, 0, 100)
+      densidade: numero(85, 0, 100),
+      velocidade: numero(35, 0, 100)
     };
   }
   };

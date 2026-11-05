@@ -1,5 +1,5 @@
 import { teleportados } from "./estados.js";
-import { ID, abrirEditor, cfgDe, cruza, distanciaAoTile, ehObjeto, emitir, fechaduraTrancada, gazua, mesmoNivel, noTile, objetosDe, souMestreAtivo, t, testeDe } from "./nucleo.js";
+import { ID, abrirEditor, cfgDe, escondido, cruza, distanciaAoTile, ehObjeto, emitir, fechaduraTrancada, gazua, mesmoNivel, noTile, objetosDe, souMestreAtivo, t, testeDe } from "./nucleo.js";
 import { escolherArmadilha, eventoParede, pedirUso, usarObjeto } from "./testes.js";
 import { atualizarBrilho, camuflado } from "./visual.js";
 
@@ -13,7 +13,7 @@ export function ehUsavel(o) {
   const c = cfgDe(o.document);
   if (!c) return false;
   if (game.user.isGM) return true;
-  if (o.document.hidden) return false;
+  if (escondido(o.document, c)) return false;
   const armadilha = testeDe(c).modo === "desarmar" && !c.desarmado;
   // Camuflado: armadilha não responde ao clique (não entrega que está ali); botão secreto de clicar, sim
   if (camuflado(o)) return !armadilha && c.interacao === "clicar";
