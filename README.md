@@ -69,32 +69,17 @@ O botão **Salvar na biblioteca** guarda o objeto em **Meus objetos**. Portas e 
 
 Transforme um mapa-múndi (ou de região) num menu de viagem: cada cidade vira um botão que leva os jogadores ao mapa dela.
 
-1. No mapa-múndi, abra a biblioteca e coloque o modelo **Cidade / destino** em cima de cada cidade (ou transforme um tile seu). Dica: ligue o **Camaleão** ou simplesmente **esconda o tile** para o botão ficar invisível em cima do desenho do próprio mapa; uma cidade escondida continua clicável, com cadeado e névoa.
+1. No mapa-múndi, abra a biblioteca e coloque o modelo **Cidade / destino** em cima de cada cidade (ou transforme um tile seu). Dica: ligue o **Camaleão** ou simplesmente **esconda o tile** para o botão ficar invisível em cima do desenho do próprio mapa; uma cidade escondida continua clicável e com cadeado.
 2. No editor, aba **Ações**, abra a ação **Ir para o mapa** e escolha o mapa da cidade e **quem vai**: só quem clicou, todos os jogadores deste mapa ou todos os conectados.
 3. Na aba **Como usar**, seção **Mapa interativo**:
    - **Mostrar cadeado quando trancado**: um cadeado aparece em cima da cidade enquanto ela estiver trancada. Clicar numa cidade trancada só avisa o jogador.
-   - **Cobrir com névoa enquanto trancado**: enquanto a cidade estiver trancada, uma névoa cobre a área em volta dela (tamanho em casas). O resto do mapa fica livre; a escuridão do mapa continua sendo do calendário/Foundry.
 4. Deixe só a cidade inicial liberada e tranque as outras. Para liberar uma cidade durante o jogo: botão de **cadeado no HUD** do tile (clique direito) ou a ação **Outro objeto → Destrancar** em outro objeto (por exemplo, chegar à cidade A destrava a estrada para a cidade B).
 5. No mapa da cidade aparece, para todos, o botão **Voltar para (mapa)**, em cima da lista de jogadores. Se o grupo foi junto, volta junto; se foi só um jogador, volta só ele. O mestre, ao clicar, volta sozinho.
-
-**Visual da névoa das cidades**: em **Configurar Definições → Objetos Vivos → Abrir configurações** (ou `api.configurar()`): estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor, quanto esconde para jogadores e mestre, suavidade da borda, brilho mágico e a **névoa viva** (nuvens densas deslizando por cima, com densidade e velocidade). Mexeu, vê no mapa na hora; só grava ao clicar em Salvar.
-
-## Névoa densa (Regiões)
-
-Para cobrir um território inteiro, não só uma cidade: desenhe uma **Região** no mapa (camada de Regiões do Foundry) e, na aba **Comportamentos** dela, adicione **Névoa densa (Objetos Vivos)**. A área da Região fica coberta por uma névoa espessa, com o mesmo visual da névoa das cidades (ou um **visual próprio**, ligando a opção na ficha: cor, quanto esconde, borda, brilho, névoa viva).
-
-Quem enxerga através:
-- os **personagens escolhidos** pelo mestre;
-- quem tiver no personagem um **item ou efeito** com um dos nomes combinados (ex.: *Lanterna Élfica, Visão Verdadeira*);
-- **todo mundo**, quando o **objeto ligado** (uma cidade do mapa interativo) é destrancado;
-- o mestre, com **Mestre vê através** (padrão), não vê a névoa; desligado, ela aparece clara para ele saber onde está.
-
-A névoa é desenhada uma vez por mapa e só é refeita quando uma Região, um comportamento, um cadeado ou o que o jogador carrega muda. Com a névoa viva, o único trabalho por quadro é deslizar as nuvens, e só com a qualidade dos efeitos em **Completa**.
 
 ## Desempenho
 
 - As partes pesadas (editor, biblioteca, minijogos, pacotes do Dungeondraft) só são carregadas quando alguém usa. Os jogadores quase nunca baixam nada disso.
-- Na mesma janela de configurações (ou em **Objetos Vivos: qualidade dos efeitos**), cada pessoa escolhe para o próprio computador: **Completa**, **Leve** (sem sombra e sem parallax) ou **Mínima** (só a imagem dos objetos). Não muda nada para os outros jogadores.
+- Em **Configurar Definições → Objetos Vivos: qualidade dos efeitos**, cada pessoa escolhe para o próprio computador: **Completa**, **Leve** (sem sombra e sem parallax) ou **Mínima** (só a imagem dos objetos). Não muda nada para os outros jogadores.
 
 ## Teste, Consertar e Desarmar
 
@@ -199,14 +184,13 @@ api.trancar(uuid, true | false);  // tranca ou destranca (a fechadura da Gazua j
 await api.estaTrancado(uuid);     // true se o objeto ou a fechadura dele está trancado
 api.minijogo({ jogo: "aneis" | "runa", img, cd, tempo }); // abre um minijogo; devolve true, false ou null
 api.voltarAoMapa();               // o mesmo que clicar em "Voltar ao mapa"
-api.configurar();                 // abre a janela de névoa e efeitos
 ```
 
 Ganchos (`Hooks`) para outros módulos: `objetosVivos.usado` (objeto usado), `objetosVivos.trancado` (alguém tentou usar um objeto trancado), `objetosVivos.teste` (resultado de um teste), `objetosVivos.falhou` (falhou no teste) e `objetosVivos.desarmado` (armadilha desarmada).
 
 ## English
 
-**Living Objects** *(in testing — not complete yet and may contain many bugs and AI quirks)* places interactive objects on Foundry VTT maps (levers, buttons, chests, pressure plates, runes or your own images) from a library opened by its own button on the left bar. Objects get depth (shadow, height and tilt), looks that change when used, and a list of actions for each moment. Doors and walls can also run actions when they open, close, lock, unlock, are tried while locked, or are walked through. **Interactive map**: city buttons that take players to the city scene, a "Back to map" button there, a padlock on locked cities and a fog that only clears around released cities. A per-computer **effects quality** setting (Full, Light, Minimal) helps on weaker machines. The interface is translated into English. Tested on Foundry VTT v14 with the D&D 5e system.
+**Living Objects** *(in testing — not complete yet and may contain many bugs and AI quirks)* places interactive objects on Foundry VTT maps (levers, buttons, chests, pressure plates, runes or your own images) from a library opened by its own button on the left bar. Objects get depth (shadow, height and tilt), looks that change when used, and a list of actions for each moment. Doors and walls can also run actions when they open, close, lock, unlock, are tried while locked, or are walked through. **Interactive map**: city buttons that take players to the city scene, a "Back to map" button there, and a padlock on locked cities. A per-computer **effects quality** setting (Full, Light, Minimal) helps on weaker machines. The interface is translated into English. Tested on Foundry VTT v14 with the D&D 5e system.
 
 ## Licença
 

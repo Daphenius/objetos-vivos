@@ -343,7 +343,8 @@
       "SemToken": "Coloque o seu token perto do objeto primeiro.",
       "SemNivel": "O nível escolhido na escada não existe mais neste mapa.",
       "NaoPode": "Você não pode usar “{objeto}” agora.",
-      "PedidoFalhou": "Objetos Vivos: o pedido \"{acao}\" de {quem} falhou. Veja o console (F12)."
+      "PedidoFalhou": "Objetos Vivos: o pedido \"{acao}\" de {quem} falhou. Veja o console (F12).",
+      "NevoaRemovida": "Objetos Vivos: a névoa saiu deste módulo. {n} Região(ões) ainda têm o comportamento \"Névoa densa\", que agora não faz nada. Apague-o nessas Regiões (a lista está no console, F12)."
     },
     "Bib": {
       "Titulo": "Objetos Vivos",
@@ -602,13 +603,9 @@
     },
     "Mapa": {
       "Titulo": "Mapa interativo",
-      "Dica": "Para liberar uma cidade trancada: botão de cadeado no HUD do tile (clique direito) ou a ação \"Objeto → Destrancar\" em outro objeto. Para cobrir um território inteiro, use o comportamento \"Névoa densa\" numa Região.",
+      "Dica": "Para liberar uma cidade trancada: botão de cadeado no HUD do tile (clique direito) ou a ação \"Objeto → Destrancar\" em outro objeto.",
       "Cadeado": "Mostrar cadeado quando trancado",
       "CadeadoDica": "Um cadeado aparece em cima do objeto enquanto ele estiver trancado",
-      "Revela": "Cobrir com névoa enquanto trancado",
-      "RevelaDica": "Enquanto o objeto estiver trancado, uma névoa cobre a área em volta dele (os jogadores não enxergam a cidade)",
-      "Raio": "Tamanho da área coberta",
-      "RaioDica": "Quantas casas em volta do objeto a névoa cobre",
       "Voltar": "Voltar para {mapa}",
       "VoltarSo": "Volta só você",
       "VoltarGrupo": "Vocês vieram juntos: o grupo volta junto",
@@ -621,105 +618,12 @@
       "QualidadeDica": "Só neste computador. Em computadores mais fracos, \"Leve\" tira a sombra e o parallax; \"Mínima\" mostra só a imagem dos objetos.",
       "Completa": "Completa",
       "Leve": "Leve (sem sombra e sem parallax)",
-      "Minima": "Mínima (só a imagem)",
-      "Titulo": "Objetos Vivos: névoa e efeitos",
-      "Abrir": "Abrir configurações",
-      "MenuDica": "Cor e transparência da névoa do mapa interativo, brilho mágico em volta dos lugares liberados e qualidade dos efeitos.",
-      "NevoaTitulo": "Névoa do mapa interativo",
-      "NevoaIntro": "O visual da névoa que cobre as cidades trancadas. Mexa nos controles e veja no mapa na hora; nada é gravado até clicar em Salvar.",
-      "Estilos": "Estilos prontos",
-      "Estilo": {
-        "noite": "Noite",
-        "pergaminho": "Pergaminho",
-        "arcano": "Arcano",
-        "bruma": "Bruma"
-      },
-      "Cores": "Cores e ajustes",
-      "Cor": "Cor da névoa",
-      "CorDica": "A cor que cobre o que ainda não foi explorado",
-      "CorBrilho": "Cor do brilho",
-      "CorBrilhoDica": "O halo mágico em volta dos lugares liberados",
-      "OpJog": "Névoa para os jogadores",
-      "OpJogDica": "Quanto a névoa esconde a cidade (100% = nada aparece por baixo)",
-      "OpMestre": "Névoa para o mestre",
-      "OpMestreDica": "Só vale com \"Mestre vê através\" desligado: mais clara, para você saber o que está coberto",
-      "Borda": "Suavidade da borda",
-      "BordaDica": "0% = corte seco; 100% = bem esfumaçada",
-      "Brilho": "Brilho mágico",
-      "BrilhoDica": "Força do halo na borda das áreas cobertas (0% desliga)",
-      "NevoaDica": "Vale para as cidades trancadas e, por padrão, para as Regiões com \"Névoa densa\" (cada Região pode ter um visual próprio na ficha do comportamento).",
-      "Salvar": "Salvar",
-      "Cancelar": "Cancelar",
-      "Padrao": "Voltar ao padrão",
-      "Viva": "Névoa viva (animada)",
-      "VivaDica": "Nuvens densas deslizando por cima das áreas cobertas. Só com a qualidade dos efeitos em Completa; nas outras, a névoa fica parada.",
-      "Densidade": "Densidade das nuvens",
-      "DensidadeDica": "Quanto mais, mais fechada e enrolada",
-      "Velocidade": "Velocidade",
-      "VelocidadeDica": "Quão rápido as nuvens deslizam",
-      "MestreVe": "Mestre vê através",
-      "MestreVeDica": "Para você a névoa das cidades nem aparece (só o cadeado). Com esta janela aberta, você vê como os jogadores, para ajustar o visual."
-    },
-    "NevoaDensa": {
-      "FIELDS": {
-        "atores": {
-          "label": "Quem enxerga através",
-          "hint": "Personagens dos jogadores que veem o que está dentro da Região"
-        },
-        "itens": {
-          "label": "Item ou efeito que permite ver",
-          "hint": "Nomes separados por vírgula (ex.: Lanterna Élfica, Visão Verdadeira). Quem tiver um deles no personagem enxerga"
-        },
-        "objeto": {
-          "label": "Some quando este objeto for destrancado",
-          "hint": "Uma cidade do mapa interativo, por exemplo: destrancou, a névoa da Região vai embora para todos"
-        },
-        "mestre": {
-          "label": "Mestre vê através",
-          "hint": "Para você a névoa nem aparece. Desligado, aparece clara, só para saber onde está"
-        },
-        "cor": {
-          "label": "Cor da névoa",
-          "hint": ""
-        },
-        "opacidade": {
-          "label": "Quanto esconde (%)",
-          "hint": "100 = nada aparece por baixo"
-        },
-        "borda": {
-          "label": "Suavidade da borda (%)",
-          "hint": "0 = corte seco; 100 = bem esfumaçada"
-        },
-        "brilho": {
-          "label": "Brilho mágico (%)",
-          "hint": "Halo na borda da Região (0 desliga)"
-        },
-        "corBrilho": {
-          "label": "Cor do brilho",
-          "hint": ""
-        },
-        "viva": {
-          "label": "Névoa viva (animada)",
-          "hint": "Nuvens deslizando por cima. Só com a qualidade dos efeitos em Completa"
-        },
-        "densidade": {
-          "label": "Densidade das nuvens (%)",
-          "hint": ""
-        },
-        "velocidade": {
-          "label": "Velocidade das nuvens (%)",
-          "hint": ""
-        },
-        "visualProprio": {
-          "label": "Visual próprio",
-          "hint": "Desligado, usa o mesmo visual da névoa das cidades (configurações do módulo) e os campos abaixo são ignorados"
-        }
-      }
+      "Minima": "Mínima (só a imagem)"
     }
   },
   "TYPES": {
     "RegionBehavior": {
-      "objetos-vivos.nevoaDensa": "Névoa densa (Objetos Vivos)"
+      "objetos-vivos.nevoaDensa": "Névoa densa (removida, apague)"
     }
   }
 }

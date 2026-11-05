@@ -213,10 +213,8 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
       tempo: d.voltar > 0 ? passo("voltar", t("Valor.Segundos", { n: d.voltar }), t("Regras.VoltarTempo"), t("Regras.VoltarTempoDica")) : null,
       mao: chave(d.mao !== false, "mao", t("Uso.Mao"), t("Uso.MaoDica")),
       brilho: chave(d.brilho !== false, "brilho", t("Uso.Brilho"), t("Uso.BrilhoDica")),
-      // Mapa interativo: cadeado à vista e névoa cobrindo o objeto enquanto está trancado
-      cadeado: chave(!!d.cadeado, "cadeado", t("Mapa.Cadeado"), t("Mapa.CadeadoDica")),
-      revela: chave(!!d.revela, "revela", t("Mapa.Revela"), t("Mapa.RevelaDica")),
-      raio: d.revela ? passo("raio", t("Valor.Casas", { n: Number(d.raio) || 0 }), t("Mapa.Raio"), t("Mapa.RaioDica")) : null
+      // Mapa interativo: cadeado à vista enquanto o objeto está trancado
+      cadeado: chave(!!d.cadeado, "cadeado", t("Mapa.Cadeado"), t("Mapa.CadeadoDica"))
     };
   }
 
@@ -549,7 +547,7 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
     if (ds.menos || ds.mais) {
       const campo = ds.menos || ds.mais, delta = ds.menos ? -1 : 1;
       const minimo = campo === "voltar" ? 1 : 0;
-      d[campo] = Math.min(campo === "distancia" ? 20 : campo === "raio" ? 50 : 999, Math.max(minimo, (Number(d[campo]) || 0) + delta));
+      d[campo] = Math.min(campo === "distancia" ? 20 : 999, Math.max(minimo, (Number(d[campo]) || 0) + delta));
       return this.render();
     }
     if (ds.nova) {

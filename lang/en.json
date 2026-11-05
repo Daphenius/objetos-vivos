@@ -343,7 +343,8 @@
       "SemToken": "Move your token near the object first.",
       "SemNivel": "The level chosen on the stairs no longer exists on this map.",
       "NaoPode": "You can’t use “{objeto}” right now.",
-      "PedidoFalhou": "Living Objects: the \"{acao}\" request from {quem} failed. See the console (F12)."
+      "PedidoFalhou": "Living Objects: the \"{acao}\" request from {quem} failed. See the console (F12).",
+      "NevoaRemovida": "Living Objects: fog was removed from this module. {n} Region(s) still have the \"Dense fog\" behavior, which now does nothing. Delete it from those Regions (the list is in the console, F12)."
     },
     "Bib": {
       "Titulo": "Living Objects",
@@ -602,13 +603,9 @@
     },
     "Mapa": {
       "Titulo": "Interactive map",
-      "Dica": "To release a locked city: padlock button on the tile HUD (right click) or the \"Object → Unlock\" action on another object. To cover a whole territory, use the \"Dense fog\" behavior on a Region.",
+      "Dica": "To release a locked city: padlock button on the tile HUD (right click) or the \"Object → Unlock\" action on another object.",
       "Cadeado": "Show padlock while locked",
       "CadeadoDica": "A padlock shows on top of the object while it is locked",
-      "Revela": "Cover with fog while locked",
-      "RevelaDica": "While the object is locked, fog covers the area around it (players cannot see the city)",
-      "Raio": "Size of the covered area",
-      "RaioDica": "How many squares around the object the fog covers",
       "Voltar": "Back to {mapa}",
       "VoltarSo": "Only you go back",
       "VoltarGrupo": "You came together: the group goes back together",
@@ -621,105 +618,12 @@
       "QualidadeDica": "This computer only. On weaker computers, \"Light\" removes shadow and parallax; \"Minimal\" shows only the object images.",
       "Completa": "Full",
       "Leve": "Light (no shadow, no parallax)",
-      "Minima": "Minimal (image only)",
-      "Titulo": "Living Objects: fog and effects",
-      "Abrir": "Open settings",
-      "MenuDica": "Color and transparency of the interactive-map fog, magical glow around released places, and effects quality.",
-      "NevoaTitulo": "Interactive map fog",
-      "NevoaIntro": "The look of the fog covering locked cities. Move the controls and see it on the map right away; nothing is saved until you click Save.",
-      "Estilos": "Presets",
-      "Estilo": {
-        "noite": "Night",
-        "pergaminho": "Parchment",
-        "arcano": "Arcane",
-        "bruma": "Mist"
-      },
-      "Cores": "Colors and tuning",
-      "Cor": "Fog color",
-      "CorDica": "The color covering what has not been explored yet",
-      "CorBrilho": "Glow color",
-      "CorBrilhoDica": "The magical halo around released places",
-      "OpJog": "Fog for players",
-      "OpJogDica": "How much the fog hides the city (100% = nothing shows through)",
-      "OpMestre": "Fog for the GM",
-      "OpMestreDica": "Only with \"GM sees through\" off: lighter, so you know what is covered",
-      "Borda": "Edge softness",
-      "BordaDica": "0% = hard cut; 100% = very smoky",
-      "Brilho": "Magical glow",
-      "BrilhoDica": "Strength of the halo on the edge of covered areas (0% turns it off)",
-      "NevoaDica": "Applies to locked cities and, by default, to Regions with \"Dense fog\" (each Region can have its own look in the behavior sheet).",
-      "Salvar": "Save",
-      "Cancelar": "Cancel",
-      "Padrao": "Reset to default",
-      "Viva": "Living fog (animated)",
-      "VivaDica": "Dense clouds drifting over the covered areas. Only with effects quality set to Full; otherwise the fog stays still.",
-      "Densidade": "Cloud density",
-      "DensidadeDica": "The more, the thicker and more rolling",
-      "Velocidade": "Speed",
-      "VelocidadeDica": "How fast the clouds drift",
-      "MestreVe": "GM sees through",
-      "MestreVeDica": "For you the city fog does not show at all (only the padlock). While this window is open you see it as the players do, to tune the look."
-    },
-    "NevoaDensa": {
-      "FIELDS": {
-        "atores": {
-          "label": "Who sees through",
-          "hint": "Player characters who can see what is inside the Region"
-        },
-        "itens": {
-          "label": "Item or effect that grants sight",
-          "hint": "Names separated by commas (e.g. Elven Lantern, True Seeing). Anyone whose character has one of them sees through"
-        },
-        "objeto": {
-          "label": "Goes away when this object is unlocked",
-          "hint": "A city of the interactive map, for example: once unlocked, the Region fog disappears for everyone"
-        },
-        "mestre": {
-          "label": "GM sees through",
-          "hint": "For you the fog does not show at all. Off, it shows lightly, just to know where it is"
-        },
-        "cor": {
-          "label": "Fog color",
-          "hint": ""
-        },
-        "opacidade": {
-          "label": "How much it hides (%)",
-          "hint": "100 = nothing shows through"
-        },
-        "borda": {
-          "label": "Edge softness (%)",
-          "hint": "0 = hard cut; 100 = very smoky"
-        },
-        "brilho": {
-          "label": "Magical glow (%)",
-          "hint": "Halo on the edge of the Region (0 turns it off)"
-        },
-        "corBrilho": {
-          "label": "Glow color",
-          "hint": ""
-        },
-        "viva": {
-          "label": "Living fog (animated)",
-          "hint": "Clouds drifting over it. Only with effects quality set to Full"
-        },
-        "densidade": {
-          "label": "Cloud density (%)",
-          "hint": ""
-        },
-        "velocidade": {
-          "label": "Cloud speed (%)",
-          "hint": ""
-        },
-        "visualProprio": {
-          "label": "Own look",
-          "hint": "Off, uses the same look as the city fog (module settings) and the fields below are ignored"
-        }
-      }
+      "Minima": "Minimal (image only)"
     }
   },
   "TYPES": {
     "RegionBehavior": {
-      "objetos-vivos.nevoaDensa": "Dense fog (Living Objects)"
+      "objetos-vivos.nevoaDensa": "Dense fog (removed, delete it)"
     }
   }
 }

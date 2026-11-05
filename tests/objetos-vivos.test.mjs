@@ -417,9 +417,9 @@ test("editor: sem clicar em comando, o jogo continua valendo", async () => {
 
 // ---------- 3.1.0: mapa interativo e efeitos mais leves
 const nucleo = await import("../scripts/nucleo.js");
-const { padrao, nevoaCfg, PADRAO_NEVOA, corHex } = nucleo;
-const { quemViaja, voltaDe, raioRevelado, cobreNevoa, mostraCadeado } = await import("../scripts/mapa.js");
-const { visaoDaNevoa } = await import("../scripts/regiao.js");
+const { padrao } = nucleo;
+const { quemViaja, voltaDe, mostraCadeado } = await import("../scripts/mapa.js");
+const { regioesComNevoaLegada, TIPO_NEVOA } = await import("../scripts/regiao.js");
 const { profDe } = await import("../scripts/visual.js");
 
 class Cenas extends Map { [Symbol.iterator]() { return this.values(); } get contents() { return [...this.values()]; } }
@@ -431,11 +431,10 @@ game.scenes = new Cenas([["c1", F.cena], ["c2", cidade]]);
 const viagem = (quem, volta = "comVolta") => ({ acoes: { sempre: [{ id: "v", tipo: "viajar", atraso: 0, destino: "c2", quem, volta }] }, distancia: 0 });
 const efeitosVerCena = () => F.emitidos.filter(e => e.acao === "efeito" && e.efeito.tipo === "verCena");
 
-test("modelo Cidade: clica de qualquer distância, com cadeado, névoa e a ação Ir para o mapa", () => {
+test("modelo Cidade: clica de qualquer distância, com cadeado e a ação Ir para o mapa", () => {
   const c = padrao(null, "destino");
   assert.equal(c.distancia, 0);
   assert.equal(c.cadeado, true);
-  assert.equal(c.revela, true);
   assert.equal(c.estados.length, 1);
   assert.equal(c.acoes.sempre[0].tipo, "viajar");
 });
@@ -481,9 +480,9 @@ test("Voltar ao mapa: quem não está naquele mapa não arrasta ninguém", async
   assert.equal(efeitosVerCena().length, 0);
 });
 
-test("cidade trancada: não leva, avisa, mostra cadeado e não abre a névoa", async () => {
+test("cidade trancada: não leva, avisa e mostra cadeado", async () => {
   comoMestre();
-  const d = F.tile("cid3", objeto({ ...viagem("quemUsou"), trancado: true, cadeado: true, revela: true }));
+  const d = F.tile("cid3", objeto({ ...viagem("quemUsou"), trancado: true, cadeado: true }));
   F.emitidos.length = 0;
   await F.socket({ acao: "usar", uuid: d.uuid }, "ana");
   await F.espera(20);
@@ -491,19 +490,12 @@ test("cidade trancada: não leva, avisa, mostra cadeado e não abre a névoa", a
   assert.ok(F.emitidos.some(e => e.efeito?.tipo === "aviso"), "o jogador é avisado");
   const o = { document: d };
   assert.equal(mostraCadeado(o), true);
-  assert.equal(cobreNevoa(o), true, "trancada: coberta pela névoa");
   cfg(d).trancado = false;
   assert.equal(mostraCadeado(o), false);
-  assert.equal(cobreNevoa(o), false, "liberada: sem névoa");
   cfg(d).trancado = true; d.hidden = true;
-  assert.equal(cobreNevoa(o), true, "cidade escondida ainda é coberta (o botão só perde a imagem)");
   assert.equal(mostraCadeado(o), true);
 });
 
-test("névoa: raio = metade do objeto + casas em volta", () => {
-  assert.equal(raioRevelado({ width: 100, height: 60 }, { raio: 3 }, 100), 350);
-  assert.equal(raioRevelado({ width: 100, height: 100 }, {}, 100), 50);
-});
 
 test("quem viaja: 'todos os jogadores' não leva o mestre (só se foi ele quem usou)", () => {
   F.ana.viewedScene = "c1"; F.beto.viewedScene = "c9";
@@ -525,39 +517,8 @@ test("qualidade dos efeitos: leve tira sombra e parallax, mínima tira tudo", ()
   F.config.qualidade = "completa";
 });
 
-test("névoa configurável: padrão, valor salvo e prévia da janela", () => {
-  F.config.nevoa = { cor: "#3b2f1e", opJog: 80 };
-  assert.deepEqual(nevoaCfg(), { ...PADRAO_NEVOA, cor: "#3b2f1e", opJog: 80 });
-  nevoaCfg.previa = { cor: "#1a1030" };
-  assert.equal(nevoaCfg().cor, "#1a1030");
-  nevoaCfg.previa = null;
-  assert.equal(corHex("#f0a03c"), 0xf0a03c);
-  assert.equal(corHex("lixo"), 0);
-  delete F.config.nevoa;
-});
 
-test("névoa densa da Região: quem enxerga através", () => {
-  const ator = (id, itens = [], efeitos = []) => ({ id, items: itens.map(name => ({ name })), appliedEffects: efeitos.map(name => ({ name, disabled: false })) });
-  const d = { atores: new Set(["heroi"]), itens: "Lanterna Élfica, visão verdadeira", objeto: "", mestre: true };
-  const jogador = { isGM: false }, mestre = { isGM: true };
-  assert.equal(visaoDaNevoa(d, jogador, [ator("heroi")]), "sim", "personagem escolhido");
-  assert.equal(visaoDaNevoa(d, jogador, [ator("outro")]), "nao");
-  assert.equal(visaoDaNevoa(d, jogador, [ator("outro", ["lanterna élfica"])]), "sim", "item com o nome (sem diferenciar maiúsculas)");
-  assert.equal(visaoDaNevoa(d, jogador, [ator("outro", [], ["Visão Verdadeira"])]), "sim", "efeito com o nome");
-  assert.equal(visaoDaNevoa(d, jogador, []), "nao", "sem personagem: coberto");
-  assert.equal(visaoDaNevoa(d, mestre, []), "sim", "mestre vê através: nada desenhado");
-  assert.equal(visaoDaNevoa({ ...d, mestre: false }, mestre, []), "mestre", "senão, névoa clara");
-});
 
-test("névoa densa da Região: some para todos quando o objeto ligado é destrancado", () => {
-  const d = F.tile("cid9", objeto({ trancado: true }));
-  globalThis.fromUuidSync = uuid => uuid === d.uuid ? d : null;
-  const n = { atores: new Set(), itens: "", objeto: d.uuid, mestre: true };
-  assert.equal(visaoDaNevoa(n, { isGM: false }, []), "nao");
-  cfg(d).trancado = false;
-  assert.equal(visaoDaNevoa(n, { isGM: false }, []), "sim");
-  delete globalThis.fromUuidSync;
-});
 
 test("cidade escondida continua usável para viagem (mas um objeto comum escondido, não)", () => {
   const { ehDestino, escondido } = nucleo;
@@ -647,4 +608,12 @@ test("socket: erro dentro de um pedido não derruba o canal (fica no console)", 
   await assert.doesNotReject(F.socket({ acao: "usar", uuid: d.uuid }, "ana"));
   console.error = original;
   assert.ok(avisos.some(a => String(a[0]).includes("falha ao tratar")), "a falha foi registrada com a ação e quem pediu");
+});
+
+test("névoa removida: Regiões antigas com 'Névoa densa' são só listadas para o mestre apagar", () => {
+  const velha = { name: "Floresta", regions: [{ name: "Bruma", behaviors: [{ type: TIPO_NEVOA }] }, { name: "Outra", behaviors: [{ type: "teleportToken" }] }] };
+  const antes = game.scenes;
+  game.scenes = [velha];
+  assert.deepEqual(regioesComNevoaLegada(), ["Floresta → Bruma"]);
+  game.scenes = antes;
 });

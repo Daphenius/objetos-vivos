@@ -3,25 +3,18 @@ import { aoMoverToken, aoMovimentoToken, esquecerUsaveis, estadosPorta, lembrarP
 import { botaoNaBarra, botoesHud, injetarSecao } from "./interface.js";
 import { atualizarMapa, botaoVolta, soltarMapa, voltarAoMapa } from "./mapa.js";
 import { ID, abrirBiblioteca, abrirEditor, carregar, cfgDe, ehObjeto, ehTile, estaTrancado, souMestreAtivo } from "./nucleo.js";
-import { TIPO_NEVOA, escolhasNevoa, nevoasDoMapa, registrarNevoaDensa } from "./regiao.js";
+import { avisarNevoaLegada, registrarNevoaLegada } from "./regiao.js";
 import { registrarSocket } from "./socket.js";
 import { eventoParede, pedirUso } from "./testes.js";
 import { animar, aplicarCamaleao, aplicarProfundidade, aplicarVisao, atualizarBrilho, atualizarProfundidades, camoMestre, camuflado, liberarVisao, profDe, soltarBrilho, visaoDe } from "./visual.js";
 
 // Registro
 Hooks.once("init", () => {
-  registrarNevoaDensa();
+  registrarNevoaLegada();
   game.settings.register(ID, "biblioteca", { scope: "world", config: false, type: Array, default: [] });
   game.settings.register(ID, "pastaAssets", { scope: "client", config: false, type: Object, default: {} });
   game.settings.register(ID, "pacotesGuardados", { scope: "world", config: false, type: Array, default: [] });
   game.settings.register(ID, "tamMiniatura", { scope: "client", config: false, type: String, default: "m" });
-  // Névoa do mapa interativo (para o mundo todo) e a janela que a configura
-  game.settings.register(ID, "nevoa", { scope: "world", config: false, type: Object, default: {}, onChange: () => { if (canvas.ready) atualizarMapa(); } });
-  game.settings.registerMenu(ID, "menu", {
-    name: "OV.Config.Titulo", label: "OV.Config.Abrir", hint: "OV.Config.MenuDica", icon: "fa-solid fa-wand-magic-sparkles", restricted: true,
-    // Atalho leve: o Foundry exige uma classe de janela aqui; esta só carrega a janela de verdade quando aberta
-    type: class extends foundry.applications.api.ApplicationV2 { async render() { (await carregar.config()).ConfigObjetosVivos.abrir(); return this; } }
-  });
   // Cada pessoa escolhe no próprio computador (computador fraco: "leve" ou "mínima")
   game.settings.register(ID, "qualidade", {
     name: "OV.Config.Qualidade", hint: "OV.Config.QualidadeDica", scope: "client", config: true, type: String, default: "completa",
@@ -85,34 +78,6 @@ Hooks.on("updateTile", (doc, mud) => {
 });
 Hooks.on("createTile", doc => { if (doc.parent?.id === canvas.scene?.id) { esquecerUsaveis(); if (ehObjeto(doc)) { atualizarBrilho(); atualizarMapa(); } } });
 Hooks.on("deleteTile", doc => { if (doc.parent?.id === canvas.scene?.id) { esquecerUsaveis(); if (ehObjeto(doc)) { atualizarBrilho(); atualizarMapa(); } } });
-// Névoa densa nas Regiões: redesenha quando a Região ou o comportamento muda, e quando o que o
-// jogador tem (personagem, itens, efeitos) muda
-const noMapa = doc => (doc.parent?.documentName === "Region" ? doc.parent.parent : doc.parent)?.id === canvas.scene?.id;
-for (const h of ["createRegion", "updateRegion", "deleteRegion", "createRegionBehavior", "updateRegionBehavior", "deleteRegionBehavior"]) Hooks.on(h, doc => { if (noMapa(doc)) atualizarMapa(); });
-// Jogador: só se há névoa densa no mapa e a mudança é num personagem dele (item/efeito que dá visão)
-const temNevoaDensa = () => !game.user.isGM && nevoasDoMapa().length > 0;
-const meuAtor = doc => { const a = doc?.parent?.documentName === "Actor" ? doc.parent : doc; return a?.documentName === "Actor" && a.isOwner; };
-for (const h of ["createItem", "deleteItem", "createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) Hooks.on(h, doc => { if (temNevoaDensa() && meuAtor(doc)) atualizarMapa(); });
-Hooks.on("updateActor", (a, mud) => { if (temNevoaDensa() && "ownership" in mud) atualizarMapa(); });
-Hooks.on("updateUser", (u, mud) => { if (u.id === game.user.id && "character" in mud) atualizarMapa(); });
-for (const h of ["createToken", "deleteToken"]) Hooks.on(h, doc => { if (temNevoaDensa() && doc.parent?.id === canvas.scene?.id) atualizarMapa(); });
-// Ficha do comportamento: personagens e objetos viram listas de escolha
-Hooks.on("renderRegionBehaviorConfig", (app, html) => {
-  if (app.document?.type !== TIPO_NEVOA) return;
-  const raiz = html instanceof HTMLElement ? html : html?.[0];
-  const { atores, objetos } = escolhasNevoa();
-  const atual = app.document.system;
-  const campoAtores = raiz?.querySelector('[name="system.atores"]');
-  if (campoAtores && campoAtores.tagName !== "MULTI-SELECT") {
-    const ms = foundry.applications.fields.createMultiSelectInput({ name: "system.atores", options: Object.entries(atores).map(([value, label]) => ({ value, label })), value: [...(atual.atores ?? [])] });
-    campoAtores.replaceWith(ms);
-  }
-  const campoObjeto = raiz?.querySelector('[name="system.objeto"]');
-  if (campoObjeto && campoObjeto.tagName !== "SELECT") {
-    const sel = foundry.applications.fields.createSelectInput({ name: "system.objeto", options: Object.entries(objetos).map(([value, label]) => ({ value, label })), value: atual.objeto ?? "" });
-    campoObjeto.replaceWith(sel);
-  }
-});
 // Voltar ao mapa: o botão aparece/some quando o mapa atual ganha ou perde de onde voltar
 Hooks.on("updateScene", (cena, mud) => { if (cena.id === canvas.scene?.id && foundry.utils.hasProperty(mud, `flags.${ID}`)) botaoVolta(); });
 Hooks.on("deleteScene", () => botaoVolta());
@@ -143,6 +108,7 @@ Hooks.on("gazua-mesa.trancou", async doc => {
 
 Hooks.once("ready", () => {
   if (game.user.isGM) for (const cena of game.scenes) lembrarPortas(cena);
+  avisarNevoaLegada();
 
   registrarSocket();
 
@@ -160,8 +126,6 @@ Hooks.once("ready", () => {
     },
     // Mapa interativo
     voltarAoMapa: () => voltarAoMapa(),
-    atualizarMapa: () => atualizarMapa(),
-    configurar: async () => new (await carregar.config()).ConfigObjetosVivos().render({ force: true }),
     editar: async uuid => abrirEditor(await fromUuid(uuid)),
     usar: async (uuid, tokenUuid = null) => { const d = await fromUuid(uuid); if (d && ehObjeto(d)) pedirUso(d, tokenUuid); },
     mudarEstado: async (uuid, indice) => { if (!game.user.isGM) return; const d = await fromUuid(uuid); if (cfgDe(d)) mudarEstado(d, indice, { cena: d.parent, token: null, userId: game.user.id, fonte: d, profundidade: 0 }); },

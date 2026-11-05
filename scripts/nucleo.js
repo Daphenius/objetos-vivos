@@ -36,20 +36,9 @@ export const carregar = {
   editor: () => import("./editor.js"),
   biblioteca: () => import("./biblioteca.js"),
   encaixe: () => import("./encaixe.js"),
-  minijogos: () => import("./minijogos.js"),
-  config: () => import("./config.js")
+  minijogos: () => import("./minijogos.js")
 };
 
-// Névoa do mapa interativo: cor, opacidade para jogadores e mestre, suavidade da borda e brilho mágico
-export const PADRAO_NEVOA = { cor: "#b4bcc6", opJog: 100, opMestre: 45, borda: 100, brilho: 0, corBrilho: "#ffffff", animada: true, densidade: 85, velocidade: 35, mestreVe: true };
-export function nevoaCfg() {
-  if (nevoaCfg.previa) return { ...PADRAO_NEVOA, ...nevoaCfg.previa };
-  let salvo = {};
-  try { salvo = game.settings.get(ID, "nevoa") ?? {}; } catch {}
-  return { ...PADRAO_NEVOA, ...salvo };
-}
-nevoaCfg.previa = null;
-export const corHex = c => { const n = parseInt(String(c ?? "").replace("#", ""), 16); return Number.isFinite(n) ? n : 0; };
 export const abrirEditor = async doc => doc && (await carregar.editor()).abrirEditor(doc);
 export const abrirBiblioteca = async () => (await carregar.biblioteca()).abrirBiblioteca();
 
@@ -87,7 +76,7 @@ export const PRESETS = {
   runa:     { estados: ["Est.Apagada", "Est.Acesa"], imgs: ["runa-apagada", "runa-acesa"], anim: "pulsar", interacao: "perto", voltar: 0, prof: "leve" },
   // Mapa interativo: um botão em cima da cidade que leva os jogadores ao mapa dela
   destino:  { estados: ["Est.Cidade"], imgs: ["destino"], anim: "pulsar", interacao: "clicar", voltar: 0, prof: "plano",
-    extra: { distancia: 0, brilho: false, cadeado: true, revela: true, raio: 3 }, acoes: { sempre: ["viajar"] } },
+    extra: { distancia: 0, brilho: false, cadeado: true }, acoes: { sempre: ["viajar"] } },
   livre:    { estados: ["Est.Estado1", "Est.Estado2"], imgs: null, anim: "deslizar", interacao: "clicar", voltar: 0, prof: "medio" }
 };
 export const PRONTOS = ["destino", "alavanca", "botao", "bau", "placa", "runa"];

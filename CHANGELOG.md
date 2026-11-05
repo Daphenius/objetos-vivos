@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.13.0
+
+A névoa sai do Objetos Vivos (vai para um módulo próprio).
+
+- **Removido**: névoa das cidades trancadas (opção "Cobrir com névoa enquanto trancado"), névoa viva, a janela de configurações da névoa (Configurar Definições → Objetos Vivos → Abrir configurações) e `api.configurar()`.
+- **Removido**: o comportamento de Região "Névoa densa". Para não quebrar mundos que já o usam, o tipo continua registrado, vazio: não desenha nada e aparece como "Névoa densa (removida, apague)". Ao entrar no mundo, o mestre recebe um aviso com quantas Regiões ainda o têm; a lista sai no console (F12).
+- Continua igual: modelo Cidade / destino, ação "Ir para o mapa", botão "Voltar ao mapa", cadeado à vista e no HUD, e a configuração "qualidade dos efeitos" (agora só em Configurar Definições).
+- Testes da névoa retirados e 1 novo para as Regiões antigas (43 no total).
+
+
 ## v3.12.0
 
 - **Ação "Abrir diário" removida** (pedido do autor). Objetos antigos que a usavam continuam funcionando; essa ação é simplesmente ignorada. O módulo não altera permissão de documento em nenhum ponto.
