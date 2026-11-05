@@ -1,6 +1,6 @@
 # Changelog
 
-## v3.2.0
+## v3.5.0
 
 Névoa configurável e viva.
 
