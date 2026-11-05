@@ -73,28 +73,15 @@ Transforme um mapa-múndi (ou de região) num menu de viagem: cada cidade vira u
 2. No editor, aba **Ações**, abra a ação **Ir para o mapa** e escolha o mapa da cidade e **quem vai**: só quem clicou, todos os jogadores deste mapa ou todos os conectados.
 3. Na aba **Como usar**, seção **Mapa interativo**:
    - **Mostrar cadeado quando trancado**: um cadeado aparece em cima da cidade enquanto ela estiver trancada. Clicar numa cidade trancada só avisa o jogador.
-   - **Cobrir com névoa enquanto trancado**: o mapa fica à vista, e uma mancha de névoa cobre só a cidade enquanto ela estiver trancada (ou escondida), do tamanho dela mais as casas em volta que você escolher em **Tamanho da névoa**. Liberou a cidade, a mancha some.
+   - **Abrir a névoa em volta**: o mapa fica coberto por uma névoa e ela só abre em volta das cidades liberadas (não trancadas e à vista), com o tamanho que você escolher.
 4. Deixe só a cidade inicial liberada e tranque as outras. Para liberar uma cidade durante o jogo: botão de **cadeado no HUD** do tile (clique direito) ou a ação **Outro objeto → Destrancar** em outro objeto (por exemplo, chegar à cidade A destrava a estrada para a cidade B).
 5. No mapa da cidade aparece, para todos, o botão **Voltar para (mapa)**. Se o grupo foi junto, volta junto; se foi só um jogador, volta só ele. O mestre, ao clicar, volta sozinho.
 
-A névoa do mapa interativo é desenhada uma vez numa imagem e só é refeita quando uma cidade é trancada ou liberada: não pesa durante o jogo. Ela não depende de token nem da visão do Foundry. O mestre vê a névoa clara, para conseguir trabalhar no mapa.
+A névoa do mapa interativo é desenhada uma vez numa imagem e só é refeita quando uma cidade muda: não pesa durante o jogo. Ela não depende de token nem da visão do Foundry. O mestre vê a névoa clara, para conseguir trabalhar no mapa.
 
-**Configurar a névoa**: em **Configurar Definições → Objetos Vivos → Abrir configurações** (ou `api.configurar()`), com estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor da névoa, quanto ela esconde o lugar para os jogadores e para o mestre, suavidade da borda e um brilho mágico em volta dos lugares liberados. Mexeu, vê no mapa na hora; só grava ao clicar em Salvar.
+**Configurar a névoa**: em **Configurar Definições → Objetos Vivos → Abrir configurações** (ou `api.configurar()`), com estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor da névoa, quanto ela esconde para os jogadores e para o mestre, suavidade da borda, um brilho mágico em volta dos lugares liberados e a **névoa viva**: nuvens densas deslizando por cima do que não foi explorado, com densidade e velocidade ajustáveis. Mexeu, vê no mapa na hora; só grava ao clicar em Salvar.
 
-### Região de névoa densa
-
-Uma área do mapa onde não dá para ver nada, a não ser quem tem permissão. Usa as **Regiões nativas** do Foundry:
-
-1. No mapa, use a ferramenta nativa de **Regiões** e desenhe a área (um pântano, um vale, uma sala).
-2. Na configuração da Região, em **Comportamentos**, adicione **Névoa densa (Objetos Vivos)**.
-3. Escolha quem enxerga lá dentro, de um jeito ou dos dois:
-   - **Personagens que enxergam**: marque os personagens dos jogadores na lista.
-   - **Item ou efeito que deixa enxergar**: o nome exato de um item ou de um efeito ativo (ex.: *Lanterna da Bruma*). Quem tiver um personagem com ele enxerga; perdeu o item ou o efeito acabou, a névoa volta.
-4. Se quiser, mude a **cor** e **quanto a névoa esconde** (100% = nada aparece por baixo).
-
-Para quem não tem permissão, a região fica coberta, com tudo o que há dentro (mapa, tokens, objetos). Para quem tem, a névoa simplesmente não aparece. O mestre sempre vê a névoa bem clara, para saber onde ela está. Vale o personagem do jogador e os tokens que ele controla no mapa; não importa onde o token está.
-
-A névoa densa é um desenho por cima do mapa, feito uma vez e refeito só quando a Região, uma ficha ou um token muda. Ela esconde na tela, mas não muda a visão nem as regras do Foundry: um jogador ainda pode selecionar e mover o próprio token lá dentro.
+A névoa viva só anima com a qualidade dos efeitos em **Completa**; em Leve ou Mínima ela fica parada. Mesmo animada, o único trabalho por quadro é deslizar duas camadas de nuvens já desenhadas.
 
 ## Desempenho
 
@@ -212,7 +199,7 @@ Ganchos (`Hooks`) para outros módulos: `objetosVivos.usado` (objeto usado), `ob
 
 ## English
 
-**Living Objects** *(in testing — not complete yet and may contain many bugs and AI quirks)* places interactive objects on Foundry VTT maps (levers, buttons, chests, pressure plates, runes or your own images) from a library opened by its own button on the left bar. Objects get depth (shadow, height and tilt), looks that change when used, and a list of actions for each moment. Doors and walls can also run actions when they open, close, lock, unlock, are tried while locked, or are walked through. **Interactive map**: city buttons that take players to the city scene, a "Back to map" button there, a padlock on locked cities and a fog patch that covers only locked cities. A **Dense fog** behavior for native Regions hides an area from everyone except chosen characters or holders of a named item or effect. A per-computer **effects quality** setting (Full, Light, Minimal) helps on weaker machines. The interface is translated into English. Tested on Foundry VTT v14 with the D&D 5e system.
+**Living Objects** *(in testing — not complete yet and may contain many bugs and AI quirks)* places interactive objects on Foundry VTT maps (levers, buttons, chests, pressure plates, runes or your own images) from a library opened by its own button on the left bar. Objects get depth (shadow, height and tilt), looks that change when used, and a list of actions for each moment. Doors and walls can also run actions when they open, close, lock, unlock, are tried while locked, or are walked through. **Interactive map**: city buttons that take players to the city scene, a "Back to map" button there, a padlock on locked cities and a fog that only clears around released cities. A per-computer **effects quality** setting (Full, Light, Minimal) helps on weaker machines. The interface is translated into English. Tested on Foundry VTT v14 with the D&D 5e system.
 
 ## Licença
 

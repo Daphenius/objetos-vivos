@@ -2,24 +2,12 @@
 
 ## v3.2.0
 
-Névoa só onde precisa e uma névoa densa para as Regiões.
+Névoa configurável e viva.
 
-### Correção: a névoa do mapa interativo cobria o mapa todo
-- Ligar a névoa numa cidade cobria o mapa inteiro e abria só um círculo em volta das cidades liberadas. Agora é o contrário: **o mapa fica à vista e a névoa cobre só cada cidade trancada** (ou escondida), do tamanho dela mais as casas em volta escolhidas. Liberou a cidade, a mancha some.
-- A opção passou a se chamar **Cobrir com névoa enquanto trancado**, e o tamanho, **Tamanho da névoa**. Objetos já configurados continuam valendo, sem refazer nada.
-- A borda esfumaçada fica dentro das casas pedidas (a mancha não passa do tamanho escolhido) e nunca deixa o próprio objeto aparecendo.
-- O brilho mágico continua em volta das cidades liberadas. A janela de configurações (cor, transparência, borda, brilho) vale para as manchas.
-- A névoa não usa mais o modo de "apagar" da placa de vídeo.
-
-### Novidade: região de névoa densa
-- Novo comportamento para as **Regiões nativas** do Foundry: **Névoa densa (Objetos Vivos)**. Dentro da área não dá para ver nada (mapa, tokens, objetos).
-- **Quem enxerga**: os personagens marcados na Região e/ou quem tiver um item ou efeito ativo com o nome escolhido (ex.: Lanterna da Bruma). Para esses a névoa não aparece. O mestre vê a névoa bem clara.
-- Cor e quanto a névoa esconde são escolhidos em cada Região.
-- Desenhada uma vez; só é refeita quando a Região, uma ficha ou um token muda, e só em mapas que têm névoa densa.
-
-### Por dentro
-- 7 testes novos (45 no total), incluindo um que confere o que é desenhado: nenhuma cobertura do mapa todo, só a mancha em cima do lugar trancado.
-- Feito sobre a documentação da API do Foundry 14, com testes num Foundry simulado; falta o teste na mesa.
+- **Correção: a névoa estava invertida** em alguns computadores (cobria só a cidade trancada e deixava o resto do mapa limpo). O desenho agora é feito numa imagem comum do navegador, com o mesmo resultado em qualquer placa de vídeo: mapa inteiro coberto, abertura só nas cidades liberadas.
+- **Janela de configurações** (Configurar Definições → Objetos Vivos → Abrir configurações, ou `api.configurar()`): estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor da névoa, quanto ela esconde para jogadores e para o mestre, suavidade da borda, brilho mágico em volta dos lugares liberados e a qualidade dos efeitos. Mostra o resultado no mapa na hora; só grava ao salvar.
+- **Névoa viva**: nuvens densas deslizando por cima do que não foi explorado, com densidade e velocidade ajustáveis. Só anima com a qualidade em Completa; o único trabalho por quadro é deslizar as nuvens.
+- 1 teste novo (38 no total).
 
 
 ## v3.1.0
@@ -33,7 +21,6 @@ Mapa interativo e um módulo bem mais leve.
 - **Cadeado à vista**: objetos trancados podem mostrar um cadeado em cima. Clicar numa cidade trancada só avisa.
 - **Névoa do mapa**: o mapa fica coberto e só abre em volta das cidades liberadas, com borda suave e tamanho ajustável. Não depende de token nem da visão do Foundry.
 - **Cadeado no HUD do tile**: tranca ou destranca o objeto com um clique (é assim que se libera uma cidade no meio do jogo).
-- **Janela de configurações** (Configurar Definições → Objetos Vivos): estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor da névoa, quanto ela esconde para jogadores e mestre, suavidade da borda, brilho mágico em volta dos lugares liberados e a qualidade dos efeitos. Mostra o resultado no mapa na hora; só grava ao salvar.
 
 ### Desempenho
 - **Carregamento sob demanda**: editor, biblioteca, encaixe, minijogos e leitura de pacotes do Dungeondraft só são baixados quando alguém usa. Os jogadores deixam de carregar mais da metade do código do módulo.

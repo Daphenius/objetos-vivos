@@ -26,6 +26,16 @@
       <input type="range" data-campo="{{chave}}" data-unidade="{{unidade}}" min="{{min}}" max="{{max}}" step="1" value="{{valor}}" aria-label="{{nome}}">
       <output data-saida="{{chave}}">{{valor}}{{unidade}}</output></div>
     {{/each}}
+  </section>
+
+  <section>
+    <div class="ov-faixa ov-faixa-viva"><div class="ov-txt"><b>{{L.Viva}}</b><span>{{L.VivaDica}}</span></div>
+      <button type="button" role="switch" aria-checked="{{animada}}" aria-label="{{L.Viva}}" class="ov-chave {{#if animada}}ov-on{{/if}}" data-chave="animada"><span></span></button></div>
+    {{#if animada}}{{#each nuvens}}
+    <div class="ov-faixa ov-faixa-range"><div class="ov-txt"><b>{{nome}}</b><span>{{desc}}</span></div>
+      <input type="range" data-campo="{{chave}}" data-unidade="{{unidade}}" min="{{min}}" max="{{max}}" step="1" value="{{valor}}" aria-label="{{nome}}">
+      <output data-saida="{{chave}}">{{valor}}{{unidade}}</output></div>
+    {{/each}}{{/if}}
     <p class="ov-dica">{{L.Dica}}</p>
   </section>
 

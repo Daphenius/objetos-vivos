@@ -214,7 +214,7 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
       tempo: d.voltar > 0 ? passo("voltar", t("Valor.Segundos", { n: d.voltar }), t("Regras.VoltarTempo"), t("Regras.VoltarTempoDica")) : null,
       mao: chave(d.mao !== false, "mao", t("Uso.Mao"), t("Uso.MaoDica")),
       brilho: chave(d.brilho !== false, "brilho", t("Uso.Brilho"), t("Uso.BrilhoDica")),
-      // Mapa interativo: cadeado à vista e névoa que cobre o objeto enquanto trancado
+      // Mapa interativo: cadeado à vista e névoa que abre em volta do objeto
       cadeado: chave(!!d.cadeado, "cadeado", t("Mapa.Cadeado"), t("Mapa.CadeadoDica")),
       revela: chave(!!d.revela, "revela", t("Mapa.Revela"), t("Mapa.RevelaDica")),
       raio: d.revela ? passo("raio", t("Valor.Casas", { n: Number(d.raio) || 0 }), t("Mapa.Raio"), t("Mapa.RaioDica")) : null

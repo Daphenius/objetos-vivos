@@ -1,7 +1,7 @@
 {
   "id": "objetos-vivos",
   "title": "Objetos Vivos (Em testes)",
-  "description": "Coloque no mapa alavancas, botões, baús, placas de pressão, runas ou imagens suas como objetos vivos, com profundidade (efeito 3D), aparências que trocam ao serem usados e uma lista do que acontece em cada momento. Portas e paredes também podem ter ações. Inclui mapa interativo: cidades que levam aos mapas delas, cadeado e névoa sobre as cidades trancadas. E regiões de névoa densa, que só alguns personagens enxergam.",
+  "description": "Coloque no mapa alavancas, botões, baús, placas de pressão, runas ou imagens suas como objetos vivos, com profundidade (efeito 3D), aparências que trocam ao serem usados e uma lista do que acontece em cada momento. Portas e paredes também podem ter ações. Inclui mapa interativo: cidades que levam aos mapas delas, cadeado e névoa que abre conforme exploram.",
   "version": "3.2.0",
   "authors": [
     {
@@ -22,11 +22,6 @@
   "esmodules": [
     "scripts/objetos-vivos.js"
   ],
-  "documentTypes": {
-    "RegionBehavior": {
-      "nevoaDensa": {}
-    }
-  },
   "socket": true,
   "languages": [
     {

@@ -4,10 +4,10 @@
 import { ID, PADRAO_NEVOA, esc, icone, nevoaCfg, t } from "./nucleo.js";
 
 export const ESTILOS = {
-  noite:      { cor: "#0c0f17", opJog: 94, opMestre: 40, borda: 50, brilho: 35, corBrilho: "#f0a03c" },
-  pergaminho: { cor: "#3b2f1e", opJog: 88, opMestre: 35, borda: 70, brilho: 25, corBrilho: "#ffd79a" },
-  arcano:     { cor: "#1a1030", opJog: 90, opMestre: 40, borda: 80, brilho: 55, corBrilho: "#9d7bff" },
-  bruma:      { cor: "#6e7a86", opJog: 80, opMestre: 30, borda: 100, brilho: 0, corBrilho: "#ffffff" }
+  noite:      { cor: "#0c0f17", opJog: 94, opMestre: 40, borda: 50, brilho: 35, corBrilho: "#f0a03c", animada: true, densidade: 60, velocidade: 40 },
+  pergaminho: { cor: "#3b2f1e", opJog: 88, opMestre: 35, borda: 70, brilho: 25, corBrilho: "#ffd79a", animada: true, densidade: 45, velocidade: 25 },
+  arcano:     { cor: "#1a1030", opJog: 90, opMestre: 40, borda: 80, brilho: 55, corBrilho: "#9d7bff", animada: true, densidade: 75, velocidade: 55 },
+  bruma:      { cor: "#6e7a86", opJog: 80, opMestre: 30, borda: 100, brilho: 0, corBrilho: "#ffffff", animada: true, densidade: 90, velocidade: 70 }
 };
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -40,7 +40,7 @@ export class ConfigObjetosVivos extends HandlebarsApplicationMixin(ApplicationV2
     const campo = (chave, nome, desc, min, max, unidade = "%") => ({ chave, nome: t(nome), desc: t(desc), valor: d[chave], min, max, unidade });
     const estiloAtivo = Object.entries(ESTILOS).find(([, e]) => Object.keys(e).every(k => String(e[k]).toLowerCase() === String(d[k]).toLowerCase()))?.[0] ?? null;
     return {
-      L: { Titulo: t("Config.NevoaTitulo"), Intro: t("Config.NevoaIntro"), Estilos: t("Config.Estilos"), Cores: t("Config.Cores"), Salvar: t("Config.Salvar"), Cancelar: t("Config.Cancelar"), Padrao: t("Config.Padrao"), Dica: t("Config.NevoaDica"), Qualidade: t("Config.Qualidade"), QualidadeDica: t("Config.QualidadeDica") },
+      L: { Viva: t("Config.Viva"), VivaDica: t("Config.VivaDica"), Titulo: t("Config.NevoaTitulo"), Intro: t("Config.NevoaIntro"), Estilos: t("Config.Estilos"), Cores: t("Config.Cores"), Salvar: t("Config.Salvar"), Cancelar: t("Config.Cancelar"), Padrao: t("Config.Padrao"), Dica: t("Config.NevoaDica"), Qualidade: t("Config.Qualidade"), QualidadeDica: t("Config.QualidadeDica") },
       estilos: Object.keys(ESTILOS).map(k => ({ id: k, nome: t(`Config.Estilo.${k}`), cor: ESTILOS[k].cor, brilho: ESTILOS[k].corBrilho, ativo: k === estiloAtivo })),
       cor: { chave: "cor", nome: t("Config.Cor"), desc: t("Config.CorDica"), valor: d.cor },
       corBrilho: { chave: "corBrilho", nome: t("Config.CorBrilho"), desc: t("Config.CorBrilhoDica"), valor: d.corBrilho },
@@ -50,6 +50,8 @@ export class ConfigObjetosVivos extends HandlebarsApplicationMixin(ApplicationV2
         campo("borda", "Config.Borda", "Config.BordaDica", 0, 100),
         campo("brilho", "Config.Brilho", "Config.BrilhoDica", 0, 100)
       ],
+      animada: !!d.animada,
+      nuvens: [campo("densidade", "Config.Densidade", "Config.DensidadeDica", 0, 100), campo("velocidade", "Config.Velocidade", "Config.VelocidadeDica", 0, 100)],
       qualidade: { valor: game.settings.get(ID, "qualidade"), opcoes: ["completa", "leve", "minima"].map(v => ({ v, nome: t(`Config.${v[0].toUpperCase()}${v.slice(1)}`) })) },
       icone
     };
@@ -57,6 +59,12 @@ export class ConfigObjetosVivos extends HandlebarsApplicationMixin(ApplicationV2
 
   _onRender() {
     const el = this.element;
+    el.querySelector("[data-chave=animada]")?.addEventListener("click", () => {
+      this.dados.animada = !this.dados.animada;
+      el.querySelectorAll("[data-action=estilo]").forEach(b => b.classList.remove("ov-on"));
+      this.#previa();
+      this.render();
+    });
     el.querySelectorAll("[data-campo]").forEach(inp => inp.addEventListener("input", () => {
       const chave = inp.dataset.campo;
       this.dados[chave] = inp.type === "range" ? Number(inp.value) : inp.value;

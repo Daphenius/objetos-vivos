@@ -37,7 +37,7 @@ export const carregar = {
 };
 
 // Névoa do mapa interativo: cor, opacidade para jogadores e mestre, suavidade da borda e brilho mágico
-export const PADRAO_NEVOA = { cor: "#0c0f17", opJog: 94, opMestre: 40, borda: 50, brilho: 35, corBrilho: "#f0a03c" };
+export const PADRAO_NEVOA = { cor: "#0c0f17", opJog: 94, opMestre: 40, borda: 50, brilho: 35, corBrilho: "#f0a03c", animada: true, densidade: 60, velocidade: 40 };
 export function nevoaCfg() {
   if (nevoaCfg.previa) return { ...PADRAO_NEVOA, ...nevoaCfg.previa };
   let salvo = {};
