@@ -7,7 +7,7 @@ import { VISAO_MAX, VISOES, aplicarCamaleao, aplicarProfundidade, aplicarVisao }
 
 export { icone };
 export const ICONES = { som: "fa-volume-high", portas: "fa-door-open", visibilidade: "fa-eye-low-vision", objeto: "fa-arrows-rotate", chat: "fa-comment",
-  imagem: "fa-image", diario: "fa-book-open", camera: "fa-video", escuridao: "fa-moon", musica: "fa-music", mover: "fa-map-location-dot", viajar: "fa-map-pin", escada: "fa-stairs", esperar: "fa-hourglass-half" };
+  imagem: "fa-image", camera: "fa-video", escuridao: "fa-moon", musica: "fa-music", mover: "fa-map-location-dot", viajar: "fa-map-pin", escada: "fa-stairs", esperar: "fa-hourglass-half" };
 
 export function nomeDoc(uuid) {
   try { const d = fromUuidSync(uuid); return d?.name || (d?.documentName === "Tile" ? nomeObjeto(d) : d?.documentName) || uuid; } catch { return uuid; }
@@ -27,7 +27,6 @@ export function resumoBase(a) {
     case "objeto": return n(a.alvos) ? `${t(`Opc.${a.estado}`)} · ${a.alvos.map(nomeDoc).join(", ")}` : t("Resumo.Configurar");
     case "chat": return a.texto ? `"${a.texto.slice(0, 60)}"` : t("Resumo.Configurar");
     case "imagem": return a.arquivo ? a.arquivo.split("/").pop() : t("Resumo.Configurar");
-    case "diario": return a.diario ? nomeDoc(a.diario) : t("Resumo.Configurar");
     case "camera": return a.regiao ? nomeDoc(a.regiao) : t("Resumo.EsteObjeto");
     case "escuridao": return `${Math.round((Number(a.valor) || 0) * 100)}% · ${a.duracao}s`;
     case "musica": return a.modo === "pararTodas" ? t("Opc.pararTodas") : a.playlist ? `${t(`Opc.${a.modo}`)} · ${game.playlists.get(a.playlist)?.name ?? "?"}` : t("Resumo.Configurar");
@@ -382,14 +381,6 @@ export class EditorObjeto extends HandlebarsApplicationMixin(ApplicationV2) {
       case "texto": return Object.assign(c, { texto: true, valor: v });
       case "textoLongo": return Object.assign(c, { textoLongo: true, valor: v });
       case "playlist": return select([["", "—"], ...ordenado(game.playlists).map(p => [p.id, p.name])]);
-      case "diario": {
-        const ops = [];
-        for (const j of ordenado(game.journal)) {
-          ops.push([j.uuid, j.name]);
-          for (const p of j.pages?.contents ?? []) ops.push([p.uuid, `↳ ${p.name}`]);
-        }
-        return select([["", "—"], ...ops]);
-      }
       case "portas": return Object.assign(c, { portas: true, contagem: t("Resumo.PortasN", { n: v.length }), limpar: v.length > 0 });
       case "selecao": return Object.assign(c, { selecao: true, tooltip: v.map(nomeDoc).join(", "), contagem: t("Resumo.ObjetosN", { n: v.length }), limpar: v.length > 0 });
       case "objetos": {

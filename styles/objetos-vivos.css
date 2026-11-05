@@ -304,7 +304,3 @@ body.ov-encaixando #board { cursor: crosshair !important; }
 .ov-config .ov-select { flex: none; width: 200px; height: 32px; border-radius: 8px; border: 1px solid var(--ov-borda); background: var(--ov-botao); color: var(--ov-texto); }
 .ov-config-rodape { display: flex; gap: 8px; align-items: center; padding-top: 4px; border-top: 1px solid var(--ov-linha); } .ov-espaco { flex: 1; }
 
-/* Diário "só mostrar": janela de leitura */
-.ov-diario-conteudo { max-height: 65vh; overflow: auto; padding: 4px 8px; line-height: 1.5; }
-.ov-diario-conteudo img { max-width: 100%; height: auto; }
-.ov-diario-conteudo section + section { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--ov-linha, #2c2834); }

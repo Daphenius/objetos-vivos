@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.12.0
+
+- **Ação "Abrir diário" removida** (pedido do autor). Objetos antigos que a usavam continuam funcionando; essa ação é simplesmente ignorada. O módulo não altera permissão de documento em nenhum ponto.
+
+
 ## v3.10.0
 
 Auditoria: correções de viagem, escada, diário e socket, com testes de regressão.

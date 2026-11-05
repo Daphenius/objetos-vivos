@@ -220,9 +220,7 @@
       "osDoMapa": "All players on this map",
       "todosJogadores": "All connected players",
       "comVolta": "Show \"Back to map\" there",
-      "semVolta": "No back button",
-      "permanente": "Grant observer permission",
-      "temporario": "Just show it (no permission change)"
+      "semVolta": "No back button"
     },
     "Acao": {
       "som": "Sound effect",
@@ -231,7 +229,6 @@
       "objeto": "Another object",
       "chat": "Chat message",
       "imagem": "Show image",
-      "diario": "Open journal",
       "camera": "Move the camera",
       "escuridao": "Darkness",
       "musica": "Music",
@@ -247,7 +244,6 @@
       "objeto": "Changes or locks another",
       "chat": "Narration or whisper",
       "imagem": "On the player's screen",
-      "diario": "A page or note",
       "camera": "Shows what changed",
       "escuridao": "Day, night, blackout",
       "musica": "Play or stop",
@@ -263,7 +259,6 @@
       "objeto": "Example: the lever unlocks the chest, or lights the room's runes.",
       "chat": "You can use {token}, {jogador}, {objeto} and {mapa} in the text.",
       "imagem": "Opens the image in a window for whoever needs to see it.",
-      "diario": "\"Grant permission\": if the person cannot see the journal, the GM grants observer permission (they can open it again later). \"Just show it\": the page text opens in a window, without touching permissions.",
       "camera": "Pans the camera to the object or to a region. Zoom 0 keeps the current zoom.",
       "escuridao": "0% = bright day, 100% = total darkness. Duration in seconds.",
       "musica": "Uses Foundry's native playlists and plays for the whole table.",
@@ -283,7 +278,6 @@
       "texto": "Text",
       "como": "How",
       "titulo": "Title",
-      "diario": "Journal or page",
       "regiao": "Where",
       "zoom": "Zoom",
       "valor": "Darkness",
@@ -310,8 +304,7 @@
       "MesmoNivel": "— Stay on the same level —",
       "MesmoLugar": "Same spot where it is",
       "SemNiveis": "This map has no levels. Use the arrival region.",
-      "volta": "Back button",
-      "acesso": "Access"
+      "volta": "Back button"
     },
     "Resumo": {
       "Configurar": "Click Edit to set it up",

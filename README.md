@@ -165,7 +165,6 @@ Com o módulo [Gazua da Mesa](https://github.com/Daphenius/gazua-mesa) ativo, qu
 | Outro objeto | Muda o estado de outro objeto, ou tranca/destranca (ex.: a alavanca destranca o baú) |
 | Mensagem no chat | Narração, sussurro ou só para o mestre. Aceita `{token}`, `{jogador}`, `{objeto}` e `{mapa}` |
 | Mostrar imagem | Abre uma imagem na tela de quem precisa ver |
-| Abrir diário | Diário ou página na tela de quem precisa ver. "Dar permissão de observador" (padrão) ou "Só mostrar" (janela de leitura, sem mexer nas permissões) |
 | Mover a câmera | Leva a câmera até o objeto ou até uma região |
 | Escuridão | Muda a escuridão do mapa, com animação |
 | Música | Toca ou para uma playlist nativa |

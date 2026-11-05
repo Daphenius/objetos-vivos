@@ -110,7 +110,6 @@ export const ACOES = {
   objeto:       { campos: { alvos: ["objetos", []], estado: ["opcao", "proximo", ["proximo", "inicial", "trancar", "destrancar"]] } },
   chat:         { campos: { texto: ["textoLongo", ""], como: ["opcao", "narrador", ["narrador", "sussurro", "soMestre"]] } },
   imagem:       { campos: { arquivo: ["imagem", ""], titulo: ["texto", ""], para: ["para", "disparou"] } },
-  diario:       { campos: { diario: ["diario", ""], para: ["para", "disparou"], acesso: ["opcao", "permanente", ["permanente", "temporario"]] } },
   camera:       { campos: { regiao: ["regiaoAqui", ""], zoom: ["numero", 0], para: ["para", "disparou"] } },
   escuridao:    { campos: { valor: ["faixa", 1], duracao: ["numero", 2] } },
   musica:       { campos: { playlist: ["playlist", ""], modo: ["opcao", "tocar", ["tocar", "parar", "pararTodas"]] } },

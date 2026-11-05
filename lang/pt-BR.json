@@ -220,9 +220,7 @@
       "osDoMapa": "Todos os jogadores deste mapa",
       "todosJogadores": "Todos os jogadores conectados",
       "comVolta": "Mostrar \"Voltar ao mapa\" lá",
-      "semVolta": "Sem botão de volta",
-      "permanente": "Dar permissão de observador",
-      "temporario": "Só mostrar (sem dar permissão)"
+      "semVolta": "Sem botão de volta"
     },
     "Acao": {
       "som": "Efeito sonoro",
@@ -231,7 +229,6 @@
       "objeto": "Outro objeto",
       "chat": "Mensagem no chat",
       "imagem": "Mostrar imagem",
-      "diario": "Abrir diário",
       "camera": "Mover a câmera",
       "escuridao": "Escuridão",
       "musica": "Música",
@@ -247,7 +244,6 @@
       "objeto": "Muda ou tranca outro",
       "chat": "Narração ou sussurro",
       "imagem": "Na tela do jogador",
-      "diario": "Uma página ou nota",
       "camera": "Mostra onde mudou",
       "escuridao": "Dia, noite, apagão",
       "musica": "Tocar ou parar",
@@ -263,7 +259,6 @@
       "objeto": "Exemplo: a alavanca destranca o baú, ou acende as runas da sala.",
       "chat": "Pode usar {token}, {jogador}, {objeto} e {mapa} no texto.",
       "imagem": "Abre a imagem numa janela na tela de quem precisa ver.",
-      "diario": "\"Dar permissão\": se a pessoa não puder ver o diário, o mestre dá permissão de observador (ela continua podendo abrir depois). \"Só mostrar\": o texto da página aparece numa janela, sem mexer nas permissões.",
       "camera": "Leva a câmera até o objeto ou até uma região. Zoom 0 mantém o zoom atual.",
       "escuridao": "0% = dia claro, 100% = escuro total. Duração em segundos.",
       "musica": "Usa as playlists nativas do Foundry e toca para a mesa toda.",
@@ -283,7 +278,6 @@
       "texto": "Texto",
       "como": "Como",
       "titulo": "Título",
-      "diario": "Diário ou página",
       "regiao": "Onde",
       "zoom": "Zoom",
       "valor": "Escuridão",
@@ -310,8 +304,7 @@
       "MesmoNivel": "— Continua no mesmo nível —",
       "MesmoLugar": "No mesmo lugar onde está",
       "SemNiveis": "Este mapa não tem níveis. Use a região de chegada.",
-      "volta": "Botão de volta",
-      "acesso": "Acesso"
+      "volta": "Botão de volta"
     },
     "Resumo": {
       "Configurar": "Clique em Editar para configurar",

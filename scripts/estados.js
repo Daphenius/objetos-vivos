@@ -15,8 +15,7 @@ export async function aplicarEfeito(e) {
     else if (e.tipo === "imagem") {
       const IP = foundry.applications.apps.ImagePopout;
       new IP({ src: e.src, window: { title: e.titulo || "" } }).render({ force: true });
-    } else if (e.tipo === "diario") (await fromUuid(e.uuid))?.sheet?.render(true);
-    else if (e.tipo === "diarioTexto") await mostrarTexto(e.titulo, e.html);
+    }
     else if (e.tipo === "camera" && canvas.scene?.id === e.cena) canvas.animatePan({ x: e.x, y: e.y, scale: e.zoom || undefined, duration: 900 });
     else if (e.tipo === "aviso") ui.notifications.info(e.texto);
     else if (e.tipo === "escada") await efeitoEscada(e);
@@ -26,16 +25,6 @@ export async function aplicarEfeito(e) {
       else if (canvas.scene?.id !== cena.id) await cena.view();
     }
   } catch (err) { console.warn(`${ID} | efeito falhou`, err); }
-}
-
-// Janela só de leitura com o texto de um diário (o jogador não ganha permissão no documento)
-async function mostrarTexto(titulo, html) {
-  const TE = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
-  const conteudo = TE?.enrichHTML ? await TE.enrichHTML(html ?? "", { secrets: false }) : (html ?? "");
-  await foundry.applications.api.DialogV2.prompt({
-    window: { title: titulo || "", icon: "fa-solid fa-book-open" }, classes: ["ov-diario-texto"], position: { width: 560 },
-    content: `<div class="ov-diario-conteudo">${conteudo}</div>`, ok: { label: t("Fechar"), icon: "fa-solid fa-xmark" }, rejectClose: false
-  });
 }
 
 // Escada: escurece a tela, troca o nível que a pessoa vê e leva a câmera até o token
@@ -98,24 +87,6 @@ export const EXECUTAR = {
     await CONFIG.ChatMessage.documentClass.create({ content: `<div class="ov-narracao">${preencher(a.texto, ctx)}</div>`, speaker: { alias: t("Narrador") }, whisper });
   },
   async imagem(a, ctx) { if (a.arquivo) efeito(alvos(a.para, ctx), { tipo: "imagem", src: a.arquivo, titulo: a.titulo }); },
-  async diario(a, ctx) {
-    const doc = a.diario ? await fromUuid(a.diario) : null;
-    if (!doc) return;
-    const ids = alvos(a.para, ctx);
-    // "Só mostrar": a página vai pronta para a tela da pessoa, sem dar permissão no documento
-    if (a.acesso === "temporario") {
-      const paginas = doc.documentName === "JournalEntryPage" ? [doc] : [...(doc.pages ?? [])];
-      const html = paginas.map(pg => `<section>${paginas.length > 1 ? `<h2>${esc(pg.name)}</h2>` : ""}${pg.type === "image" ? `<img src="${esc(pg.src)}" alt="">` : pg.text?.content ?? ""}</section>`).join("");
-      efeito(ids, { tipo: "diarioTexto", titulo: doc.name, html });
-      return;
-    }
-    const entrada = doc.parent ?? doc;
-    const NIVEL = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
-    const dar = {};
-    for (const id of ids) { const u = game.users.get(id); if (u && !u.isGM && !entrada.testUserPermission(u, NIVEL)) dar[id] = NIVEL; }
-    if (Object.keys(dar).length) await entrada.update({ ownership: dar });
-    efeito(ids, { tipo: "diario", uuid: doc.uuid });
-  },
   async camera(a, ctx) {
     const c = a.regiao ? await centroDaRegiao(a.regiao) : centroDe(ctx.fonte);
     if (c) efeito(alvos(a.para, ctx), { tipo: "camera", cena: ctx.cena.id, x: c.x, y: c.y, zoom: Number(a.zoom) || 0 });

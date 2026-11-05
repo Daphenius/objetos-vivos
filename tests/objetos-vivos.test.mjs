@@ -628,22 +628,13 @@ test("escada com vários jogadores: cada um recebe UM 'fim', com a câmera no pr
   assert.notDeepEqual([porUsuario.ana[0].x, porUsuario.ana[0].y], [porUsuario.beto[0].x, porUsuario.beto[0].y], "chegam em casas diferentes");
 });
 
-test("diário 'só mostrar': manda o texto, sem mexer na permissão do documento", async () => {
+test("a ação 'Abrir diário' não existe mais (objetos antigos com ela são ignorados sem erro)", async () => {
   comoMestre();
-  let permissaoMudou = false;
-  const entrada = { documentName: "JournalEntry", uuid: "JournalEntry.j1", name: "Carta", pages: [{ name: "Única", type: "text", text: { content: "<p>Olá</p>" } }],
-    testUserPermission: () => false, async update() { permissaoMudou = true; } };
-  F.registro.set(entrada.uuid, entrada);
-  F.ana.viewedScene = "c1";
+  const { ACOES } = nucleo;
+  assert.equal("diario" in ACOES, false);
+  const d = F.tile("velho", objeto({ acoes: { sempre: [{ id: "x", tipo: "diario", diario: "JournalEntry.j1", para: "mapa" }, { id: "y", tipo: "aviso", texto: "ok", para: "mapa" }] } }));
   F.emitidos.length = 0;
-  await EXECUTAR.diario({ diario: entrada.uuid, para: "mapa", acesso: "temporario" }, { cena: F.cena, token: null, userId: "gm" });
-  const ef = F.emitidos.find(e => e.acao === "efeito" && e.efeito.tipo === "diarioTexto");
-  assert.ok(ef, "efeito de texto enviado");
-  assert.match(ef.efeito.html, /Olá/);
-  assert.equal(permissaoMudou, false);
-  // modo padrão continua dando permissão
-  await EXECUTAR.diario({ diario: entrada.uuid, para: "mapa", acesso: "permanente" }, { cena: F.cena, token: null, userId: "gm" });
-  assert.equal(permissaoMudou, true);
+  await assert.doesNotReject(usarObjeto(d, { userId: "gm", forcar: true }));
 });
 
 test("socket: erro dentro de um pedido não derruba o canal (fica no console)", async () => {
