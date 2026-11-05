@@ -3,12 +3,14 @@ import { aoMoverToken, aoMovimentoToken, esquecerUsaveis, estadosPorta, lembrarP
 import { botaoNaBarra, botoesHud, injetarSecao } from "./interface.js";
 import { atualizarMapa, botaoVolta, soltarMapa, voltarAoMapa } from "./mapa.js";
 import { ID, abrirBiblioteca, abrirEditor, carregar, cfgDe, ehObjeto, ehTile, estaTrancado, souMestreAtivo } from "./nucleo.js";
+import { TIPO_NEVOA, escolhasNevoa, registrarNevoaDensa } from "./regiao.js";
 import { registrarSocket } from "./socket.js";
 import { eventoParede, pedirUso } from "./testes.js";
 import { animar, aplicarCamaleao, aplicarProfundidade, aplicarVisao, atualizarBrilho, atualizarProfundidades, camoMestre, camuflado, liberarVisao, profDe, soltarBrilho, visaoDe } from "./visual.js";
 
 // Registro
 Hooks.once("init", () => {
+  registrarNevoaDensa();
   game.settings.register(ID, "biblioteca", { scope: "world", config: false, type: Array, default: [] });
   game.settings.register(ID, "pastaAssets", { scope: "client", config: false, type: Object, default: {} });
   game.settings.register(ID, "pacotesGuardados", { scope: "world", config: false, type: Array, default: [] });
@@ -83,6 +85,29 @@ Hooks.on("updateTile", (doc, mud) => {
 });
 Hooks.on("createTile", doc => { if (doc.parent?.id === canvas.scene?.id) { esquecerUsaveis(); if (ehObjeto(doc)) { atualizarBrilho(); atualizarMapa(); } } });
 Hooks.on("deleteTile", doc => { if (doc.parent?.id === canvas.scene?.id) { esquecerUsaveis(); if (ehObjeto(doc)) { atualizarBrilho(); atualizarMapa(); } } });
+// Névoa densa nas Regiões: redesenha quando a Região ou o comportamento muda, e quando o que o
+// jogador tem (personagem, itens, efeitos) muda
+const noMapa = doc => (doc.parent?.documentName === "Region" ? doc.parent.parent : doc.parent)?.id === canvas.scene?.id;
+for (const h of ["createRegion", "updateRegion", "deleteRegion", "createRegionBehavior", "updateRegionBehavior", "deleteRegionBehavior"]) Hooks.on(h, doc => { if (noMapa(doc)) atualizarMapa(); });
+for (const h of ["createItem", "deleteItem", "createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) Hooks.on(h, () => { if (!game.user.isGM) atualizarMapa(); });
+Hooks.on("updateUser", (u, mud) => { if (u.id === game.user.id && "character" in mud) atualizarMapa(); });
+// Ficha do comportamento: personagens e objetos viram listas de escolha
+Hooks.on("renderRegionBehaviorConfig", (app, html) => {
+  if (app.document?.type !== TIPO_NEVOA) return;
+  const raiz = html instanceof HTMLElement ? html : html?.[0];
+  const { atores, objetos } = escolhasNevoa();
+  const atual = app.document.system;
+  const campoAtores = raiz?.querySelector('[name="system.atores"]');
+  if (campoAtores && campoAtores.tagName !== "MULTI-SELECT") {
+    const ms = foundry.applications.fields.createMultiSelectInput({ name: "system.atores", options: Object.entries(atores).map(([value, label]) => ({ value, label })), value: [...(atual.atores ?? [])] });
+    campoAtores.replaceWith(ms);
+  }
+  const campoObjeto = raiz?.querySelector('[name="system.objeto"]');
+  if (campoObjeto && campoObjeto.tagName !== "SELECT") {
+    const sel = foundry.applications.fields.createSelectInput({ name: "system.objeto", options: Object.entries(objetos).map(([value, label]) => ({ value, label })), value: atual.objeto ?? "" });
+    campoObjeto.replaceWith(sel);
+  }
+});
 // Voltar ao mapa: o botão aparece/some quando o mapa atual ganha ou perde de onde voltar
 Hooks.on("updateScene", (cena, mud) => { if (cena.id === canvas.scene?.id && foundry.utils.hasProperty(mud, `flags.${ID}`)) botaoVolta(); });
 Hooks.on("deleteScene", () => botaoVolta());

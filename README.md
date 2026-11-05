@@ -73,15 +73,23 @@ Transforme um mapa-múndi (ou de região) num menu de viagem: cada cidade vira u
 2. No editor, aba **Ações**, abra a ação **Ir para o mapa** e escolha o mapa da cidade e **quem vai**: só quem clicou, todos os jogadores deste mapa ou todos os conectados.
 3. Na aba **Como usar**, seção **Mapa interativo**:
    - **Mostrar cadeado quando trancado**: um cadeado aparece em cima da cidade enquanto ela estiver trancada. Clicar numa cidade trancada só avisa o jogador.
-   - **Abrir a névoa em volta**: o mapa fica coberto por uma névoa e ela só abre em volta das cidades liberadas (não trancadas e à vista), com o tamanho que você escolher.
+   - **Cobrir com névoa enquanto trancado**: enquanto a cidade estiver trancada, uma névoa cobre a área em volta dela (tamanho em casas). O resto do mapa fica livre; a escuridão do mapa continua sendo do calendário/Foundry.
 4. Deixe só a cidade inicial liberada e tranque as outras. Para liberar uma cidade durante o jogo: botão de **cadeado no HUD** do tile (clique direito) ou a ação **Outro objeto → Destrancar** em outro objeto (por exemplo, chegar à cidade A destrava a estrada para a cidade B).
 5. No mapa da cidade aparece, para todos, o botão **Voltar para (mapa)**. Se o grupo foi junto, volta junto; se foi só um jogador, volta só ele. O mestre, ao clicar, volta sozinho.
 
-A névoa do mapa interativo é desenhada uma vez numa imagem e só é refeita quando uma cidade muda: não pesa durante o jogo. Ela não depende de token nem da visão do Foundry. O mestre vê a névoa clara, para conseguir trabalhar no mapa.
+**Visual da névoa das cidades**: em **Configurar Definições → Objetos Vivos → Abrir configurações** (ou `api.configurar()`): estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor, quanto esconde para jogadores e mestre, suavidade da borda, brilho mágico e a **névoa viva** (nuvens densas deslizando por cima, com densidade e velocidade). Mexeu, vê no mapa na hora; só grava ao clicar em Salvar.
 
-**Configurar a névoa**: em **Configurar Definições → Objetos Vivos → Abrir configurações** (ou `api.configurar()`), com estilos prontos (Noite, Pergaminho, Arcano, Bruma), cor da névoa, quanto ela esconde para os jogadores e para o mestre, suavidade da borda, um brilho mágico em volta dos lugares liberados e a **névoa viva**: nuvens densas deslizando por cima do que não foi explorado, com densidade e velocidade ajustáveis. Mexeu, vê no mapa na hora; só grava ao clicar em Salvar.
+## Névoa densa (Regiões)
 
-A névoa viva só anima com a qualidade dos efeitos em **Completa**; em Leve ou Mínima ela fica parada. Mesmo animada, o único trabalho por quadro é deslizar duas camadas de nuvens já desenhadas.
+Para cobrir um território inteiro, não só uma cidade: desenhe uma **Região** no mapa (camada de Regiões do Foundry) e, na aba **Comportamentos** dela, adicione **Névoa densa (Objetos Vivos)**. A área da Região fica coberta por uma névoa espessa, com o visual configurado ali mesmo (cor, quanto esconde, borda, brilho, névoa viva).
+
+Quem enxerga através:
+- os **personagens escolhidos** pelo mestre;
+- quem tiver no personagem um **item ou efeito** com um dos nomes combinados (ex.: *Lanterna Élfica, Visão Verdadeira*);
+- **todo mundo**, quando o **objeto ligado** (uma cidade do mapa interativo) é destrancado;
+- o mestre vê a névoa clara, só para saber onde está (dá para desligar).
+
+A névoa é desenhada uma vez por mapa e só é refeita quando uma Região, um comportamento, um cadeado ou o que o jogador carrega muda. Com a névoa viva, o único trabalho por quadro é deslizar as nuvens, e só com a qualidade dos efeitos em **Completa**.
 
 ## Desempenho
 

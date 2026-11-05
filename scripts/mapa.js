@@ -3,6 +3,7 @@
 // lugares liberados. Tudo aqui é desenhado uma vez e só é refeito quando um objeto muda.
 import { efeito } from "./estados.js";
 import { ASSETS, ID, cfgDe, corHex, emitir, esc, estaTrancado, icone, nevoaCfg, qualidade, souMestreAtivo, t } from "./nucleo.js";
+import { nevoasDoMapa, visaoDaNevoa } from "./regiao.js";
 
 // ---------- Voltar ao mapa
 // O mapa de destino guarda de onde a pessoa veio: flags.objetos-vivos.volta = { cena, grupo }
@@ -62,15 +63,16 @@ export function botaoVolta() {
 }
 
 // ---------- Névoa e cadeados
-// Raio (em pixels) que um objeto abre na névoa: o tamanho dele mais "raio" casas em volta
+// Raio (em pixels) que a névoa cobre em volta de um objeto trancado: o tamanho dele mais "raio" casas
 export function raioRevelado(doc, c, gs) {
   return Math.max(doc.width, doc.height) / 2 + Math.max(0, Number(c?.raio) || 0) * gs;
 }
-// O objeto abre a névoa? (liberado e não escondido). Camuflado também abre: no mapa interativo o
-// botão da cidade pode ser invisível em cima do desenho do próprio mapa.
-export function abreNevoa(o, c = cfgDe(o.document)) {
-  return !!c?.revela && !o.document.hidden && !estaTrancado(o.document, c);
+// A névoa cobre este objeto? (opção ligada, trancado e não escondido). Camuflado também: no mapa
+// interativo o botão da cidade pode ser invisível em cima do desenho do próprio mapa.
+export function cobreNevoa(o, c = cfgDe(o.document)) {
+  return !!c?.revela && !o.document.hidden && estaTrancado(o.document, c);
 }
+export const abreNevoa = (o, c = cfgDe(o.document)) => !!c?.revela && !o.document.hidden && !estaTrancado(o.document, c);
 // O cadeado aparece? (trancado; para os jogadores, só se o objeto não estiver escondido)
 export function mostraCadeado(o, c = cfgDe(o.document)) {
   if (!c?.cadeado || !estaTrancado(o.document, c)) return false;
@@ -87,8 +89,8 @@ export function soltarMapa() {
   quadroMapa = 0;
   pararNuvens();
   if (camada && !camada.destroyed) {
-    // a imagem da névoa é solta à mão; a textura das nuvens é compartilhada e fica
-    if (camada._ovRt && !camada._ovRt.baseTexture?.destroyed) camada._ovRt.destroy(true);
+    // as imagens das névoas são soltas à mão; a textura das nuvens é compartilhada e fica
+    for (const tex of camada._ovTexturas ?? []) if (!tex.baseTexture?.destroyed) tex.destroy(true);
     camada.destroy({ children: true });
   }
   camada = null;
@@ -97,19 +99,37 @@ export function soltarMapa() {
 function desenharMapa() {
   if (!globalThis.PIXI || !canvas.ready) return;
   const objetos = (canvas.tiles?.placeables ?? []).filter(o => !o.destroyed && cfgDe(o.document));
-  const temNevoa = objetos.some(o => cfgDe(o.document).revela);
+  const cobertos = objetos.filter(o => cobreNevoa(o));
   const cadeados = objetos.filter(o => mostraCadeado(o));
+  const regioes = nevoasDoMapa().map(n => ({ ...n, visao: visaoDaNevoa(n.dados) })).filter(n => n.visao !== "sim");
   soltarMapa();
-  if (!temNevoa && !cadeados.length) return;
+  if (!cobertos.length && !cadeados.length && !regioes.length) return;
   camada = new PIXI.Container();
   camada.eventMode = "none";
   camada.interactiveChildren = false;
-  if (temNevoa) {
-    const nevoa = desenharNevoa(objetos.filter(o => abreNevoa(o)));
-    if (nevoa) { camada._ovRt = nevoa._ovRt; camada.addChild(nevoa); }
+  camada._ovTexturas = [];
+  const nuvens = [];
+  const dims = canvas.dimensions, W = dims.width, H = dims.height, gs = dims.size;
+  const k = Math.min(1, 2048 / Math.max(W, H));
+  // Cidades trancadas: um círculo de névoa em volta de cada uma, com o visual das configurações
+  if (cobertos.length) {
+    const n = nevoaCfg();
+    const lugares = cobertos.map(o => { const d = o.document; return { cx: d.x + d.width / 2, cy: d.y + d.height / 2, r: raioRevelado(d, cfgDe(d), gs) }; });
+    const tex = PIXI.Texture.from(imagemNevoa(n, W, H, k, lugares));
+    camada._ovTexturas.push(tex);
+    camada.addChild(montarNevoa(tex, n, (game.user.isGM ? n.opMestre : n.opJog) / 100, W, H, gs, nuvens));
   }
+  // Regiões com "Névoa densa": cada uma com o próprio visual
+  for (const { regiao, dados, visao } of regioes) {
+    const formas = formasDaRegiao(regiao);
+    if (!formas.length) continue;
+    const look = { cor: dados.cor, borda: dados.borda, brilho: dados.brilho, corBrilho: dados.corBrilho, animada: dados.viva, densidade: dados.densidade, velocidade: dados.velocidade };
+    const tex = PIXI.Texture.from(imagemNevoa(look, W, H, k, [{ formas }]));
+    camada._ovTexturas.push(tex);
+    camada.addChild(montarNevoa(tex, look, visao === "mestre" ? 0.35 : dados.opacidade / 100, W, H, gs, nuvens));
+  }
+  if (nuvens.length) ligarNuvens(nuvens);
   const tex = PIXI.Texture.from(`${ASSETS}/cadeado.svg`);
-  const gs = canvas.dimensions.size;
   for (const o of cadeados) {
     const d = o.document;
     const lado = Math.min(gs * 1.2, Math.max(28, Math.min(d.width, d.height) * 0.55));
@@ -123,92 +143,116 @@ function desenharMapa() {
   (canvas.interface ?? canvas.controls)?.addChild(camada);
 }
 
-// A névoa é desenhada uma vez, numa imagem comum (canvas 2D, no máximo 2048 px) esticada sobre o
-// mapa: nenhum filtro, nenhum trabalho por quadro. Os lugares liberados são furados com borda suave.
-// Com "Névoa viva" ligada (e qualidade Completa), duas camadas de nuvens deslizam por cima,
-// recortadas pela mesma imagem: só muda a posição das nuvens a cada quadro, nada é redesenhado.
-function desenharNevoa(liberados) {
-  const n = nevoaCfg();
-  const dims = canvas.dimensions;
-  const W = dims.width, H = dims.height, gs = dims.size;
-  const k = Math.min(1, 2048 / Math.max(W, H));
-  const lugares = liberados.map(o => { const d = o.document; return { cx: d.x + d.width / 2, cy: d.y + d.height / 2, r: raioRevelado(d, cfgDe(d), gs) }; });
-  const cv = imagemNevoa(n, W, H, k, lugares);
-  const tex = PIXI.Texture.from(cv);
-  const opacidade = (game.user.isGM ? n.opMestre : n.opJog) / 100;
+// Uma névoa já desenhada numa imagem vira a camada no mapa: a imagem parada e, com "Névoa viva"
+// ligada (e qualidade Completa), duas camadas de nuvens deslizando por cima, recortadas pela mesma
+// imagem. Só muda a posição das nuvens a cada quadro, nada é redesenhado.
+function montarNevoa(tex, look, opacidade, W, H, gs, nuvens) {
   const grupo = new PIXI.Container();
-  grupo._ovRt = tex;
   grupo.eventMode = "none";
   const base = new PIXI.Sprite(tex);
   base.width = W; base.height = H;
   base.eventMode = "none";
   grupo.addChild(base);
-  const viva = n.animada && qualidade() === "completa" && PIXI.TilingSprite;
+  const viva = look.animada && qualidade() === "completa" && PIXI.TilingSprite;
   if (!viva) { base.alpha = opacidade; return grupo; }
-  // Névoa viva: a base fica um pouco mais clara e as nuvens completam a densidade
-  const densidade = n.densidade / 100;
+  const densidade = (Number(look.densidade) || 0) / 100;
   base.alpha = opacidade * (1 - 0.45 * densidade);
-  const nuvens = new PIXI.Container();
+  const cont = new PIXI.Container();
   const mascara = new PIXI.Sprite(tex);
   mascara.width = W; mascara.height = H;
-  nuvens.mask = mascara;
-  nuvens.addChild(mascara);
-  const tom = clarear(corHex(n.cor), 0.35);
-  const vel = 0.15 + (n.velocidade / 100) * 1.1;
-  const camadas = [
+  cont.mask = mascara;
+  cont.addChild(mascara);
+  const tom = clarear(corHex(look.cor), 0.35);
+  const vel = 0.15 + ((Number(look.velocidade) || 0) / 100) * 1.1;
+  for (const c of [
     { escala: 2.2 * gs / 100, alpha: 0.55 * densidade * opacidade, dx: 0.18, dy: 0.07 },
     { escala: 1.3 * gs / 100, alpha: 0.4 * densidade * opacidade, dx: -0.11, dy: 0.13 }
-  ].map(c => {
+  ]) {
     const sp = new PIXI.TilingSprite(texturaNuvens(), W, H);
     sp.tileScale.set(c.escala);
     sp.tint = tom;
     sp.alpha = c.alpha;
     sp.eventMode = "none";
     sp._ovDeriva = { dx: c.dx * vel, dy: c.dy * vel };
-    nuvens.addChild(sp);
-    return sp;
-  });
-  grupo.addChild(nuvens);
-  ligarNuvens(camadas);
+    cont.addChild(sp);
+    nuvens.push(sp);
+  }
+  grupo.addChild(cont);
   return grupo;
 }
 
-// A imagem da névoa: cor por cima de tudo, furos com borda suave nos lugares liberados e o halo.
-// Canvas 2D porque o resultado é o mesmo em qualquer placa de vídeo (sem depender de modos de mistura do PIXI).
+// Formas de uma Região (retângulos, elipses e polígonos, com os buracos)
+export function formasDaRegiao(regiao) {
+  const lista = [];
+  for (const f of regiao?.shapes ?? []) {
+    const tipo = f.type;
+    if (tipo === "rectangle") lista.push({ tipo, hole: !!f.hole, x: f.x, y: f.y, w: f.width, h: f.height, rot: f.rotation || 0 });
+    else if (tipo === "ellipse") lista.push({ tipo, hole: !!f.hole, x: f.x, y: f.y, rx: f.radiusX, ry: f.radiusY, rot: f.rotation || 0 });
+    else if (tipo === "polygon" && f.points?.length >= 6) lista.push({ tipo, hole: !!f.hole, pontos: [...f.points] });
+  }
+  return lista;
+}
+function tracarForma(ctx, f) {
+  ctx.beginPath();
+  if (f.tipo === "polygon") { ctx.moveTo(f.pontos[0], f.pontos[1]); for (let i = 2; i < f.pontos.length; i += 2) ctx.lineTo(f.pontos[i], f.pontos[i + 1]); ctx.closePath(); return; }
+  const cx = f.tipo === "rectangle" ? f.x + f.w / 2 : f.x, cy = f.tipo === "rectangle" ? f.y + f.h / 2 : f.y;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate((f.rot * Math.PI) / 180);
+  if (f.tipo === "rectangle") ctx.rect(-f.w / 2, -f.h / 2, f.w, f.h); else ctx.ellipse(0, 0, f.rx, f.ry, 0, 0, Math.PI * 2);
+  ctx.restore();
+}
+
+// A imagem da névoa: transparente, com a cor só nos lugares cobertos (círculos em volta de objetos
+// ou formas de uma Região), borda esfumaçada e o halo. Canvas 2D porque o resultado é o mesmo em
+// qualquer placa de vídeo (sem depender de modos de mistura do PIXI). Feita uma vez, nunca por quadro.
 export function imagemNevoa(n, W, H, k, lugares) {
   const cv = document.createElement("canvas");
   cv.width = Math.max(1, Math.ceil(W * k)); cv.height = Math.max(1, Math.ceil(H * k));
   const ctx = cv.getContext("2d");
-  ctx.fillStyle = n.cor;
-  ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.scale(k, k);
-  // borda: 0 = corte seco, 100 = bem esfumaçada
-  const largura = 0.1 + (n.borda / 100) * 0.9;
-  ctx.globalCompositeOperation = "destination-out";
-  for (const { cx, cy, r } of lugares) {
+  const largura = 0.1 + ((Number(n.borda) || 0) / 100) * 0.9; // 0 = corte seco, 100 = bem esfumaçada
+  const cor = corCss(n.cor);
+  const comFormas = lugares.filter(l => l.formas), comCirculo = lugares.filter(l => !l.formas);
+  for (const { cx, cy, r } of comCirculo) {
     const fim = r * (1 + largura);
     const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, fim);
-    g.addColorStop(0, "rgba(0,0,0,1)");
-    g.addColorStop(Math.min(0.999, r / fim), "rgba(0,0,0,1)");
-    g.addColorStop(1, "rgba(0,0,0,0)");
+    g.addColorStop(0, cor); g.addColorStop(Math.min(0.999, r / fim), cor); g.addColorStop(1, rgba(n.cor, 0));
     ctx.fillStyle = g;
     ctx.fillRect(cx - fim, cy - fim, fim * 2, fim * 2);
   }
-  // brilho mágico: um halo da cor escolhida na borda de cada lugar liberado
-  if (n.brilho > 0) {
+  // Regiões: o formato desenhado no mapa, com a borda esfumaçada por desfoque
+  const desfoque = Math.round(largura * 40 / k);
+  const temFiltro = "filter" in ctx;
+  for (const { formas } of comFormas) {
+    ctx.save();
+    if (temFiltro && desfoque > 0) ctx.filter = `blur(${desfoque}px)`;
+    ctx.fillStyle = cor;
+    for (const f of formas.filter(f => !f.hole)) { tracarForma(ctx, f); ctx.fill(); }
+    ctx.restore();
+    ctx.save();
+    ctx.globalCompositeOperation = "destination-out";
+    for (const f of formas.filter(f => f.hole)) { tracarForma(ctx, f); ctx.fillStyle = "#000"; ctx.fill(); }
+    ctx.restore();
+  }
+  // brilho mágico: um halo da cor escolhida na borda de cada lugar coberto
+  const forca = (Number(n.brilho) || 0) / 100;
+  if (forca > 0) {
+    ctx.save();
     ctx.globalCompositeOperation = "source-atop";
-    const forca = n.brilho / 100;
-    for (const { cx, cy, r } of lugares) {
-      const fim = r * (1 + largura * 0.6);
-      const g = ctx.createRadialGradient(cx, cy, r * 0.9, cx, cy, fim);
-      g.addColorStop(0, rgba(n.corBrilho, forca));
-      g.addColorStop(1, rgba(n.corBrilho, 0));
+    for (const { cx, cy, r } of comCirculo) {
+      const g = ctx.createRadialGradient(cx, cy, r * 0.75, cx, cy, r * (1 + largura * 0.6));
+      g.addColorStop(0, rgba(n.corBrilho, 0)); g.addColorStop(0.5, rgba(n.corBrilho, forca)); g.addColorStop(1, rgba(n.corBrilho, 0));
       ctx.fillStyle = g;
+      const fim = r * (1 + largura);
       ctx.fillRect(cx - fim, cy - fim, fim * 2, fim * 2);
     }
+    if (temFiltro) ctx.filter = `blur(${Math.max(2, Math.round(desfoque * 0.6))}px)`;
+    ctx.strokeStyle = rgba(n.corBrilho, forca); ctx.lineWidth = Math.max(6, desfoque * 1.2);
+    for (const { formas } of comFormas) for (const f of formas.filter(f => !f.hole)) { tracarForma(ctx, f); ctx.stroke(); }
+    ctx.restore();
   }
   return cv;
 }
+const corCss = c => `#${corHex(c).toString(16).padStart(6, "0")}`;
 const rgba = (hex, a) => { const c = corHex(hex); return `rgba(${(c >> 16) & 255},${(c >> 8) & 255},${c & 255},${a})`; };
 
 // Deslizar das nuvens: o único trabalho por quadro é somar dois números por camada
@@ -234,7 +278,6 @@ function texturaNuvens() {
     const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
     g.addColorStop(0, `rgba(255,255,255,${a})`); g.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = g;
-    // 9 cópias para a textura emendar nas bordas
     for (const ox of [-L, 0, L]) for (const oy of [-L, 0, L]) { ctx.save(); ctx.translate(x + ox, y + oy); ctx.fillRect(-r, -r, r * 2, r * 2); ctx.restore(); }
   }
   texNuvens = PIXI.Texture.from(cv);

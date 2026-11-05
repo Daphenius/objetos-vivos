@@ -605,13 +605,13 @@
     },
     "Mapa": {
       "Titulo": "Interactive map",
-      "Dica": "To release a locked city: padlock button on the tile HUD (right click) or the \"Object → Unlock\" action on another object.",
+      "Dica": "To release a locked city: padlock button on the tile HUD (right click) or the \"Object → Unlock\" action on another object. To cover a whole territory, use the \"Dense fog\" behavior on a Region.",
       "Cadeado": "Show padlock while locked",
       "CadeadoDica": "A padlock shows on top of the object while it is locked",
-      "Revela": "Clear the fog around it",
-      "RevelaDica": "The map is covered in fog; it only clears around released objects (unlocked and visible)",
-      "Raio": "Size of the cleared area",
-      "RaioDica": "How many squares around the object the fog clears",
+      "Revela": "Cover with fog while locked",
+      "RevelaDica": "While the object is locked, fog covers the area around it (players cannot see the city)",
+      "Raio": "Size of the covered area",
+      "RaioDica": "How many squares around the object the fog covers",
       "Voltar": "Back to {mapa}",
       "VoltarSo": "Only you go back",
       "VoltarGrupo": "You came together: the group goes back together",
@@ -629,7 +629,7 @@
       "Abrir": "Open settings",
       "MenuDica": "Color and transparency of the interactive-map fog, magical glow around released places, and effects quality.",
       "NevoaTitulo": "Interactive map fog",
-      "NevoaIntro": "Move the controls and see the result on the map right away. Nothing is saved until you click Save.",
+      "NevoaIntro": "The look of the fog covering locked cities. Move the controls and see it on the map right away; nothing is saved until you click Save.",
       "Estilos": "Presets",
       "Estilo": {
         "noite": "Night",
@@ -643,23 +643,80 @@
       "CorBrilho": "Glow color",
       "CorBrilhoDica": "The magical halo around released places",
       "OpJog": "Fog for players",
-      "OpJogDica": "How much the fog hides the map (100% = nothing shows through)",
+      "OpJogDica": "How much the fog hides the city (100% = nothing shows through)",
       "OpMestre": "Fog for the GM",
-      "OpMestreDica": "Lighter, so you can work on the map",
+      "OpMestreDica": "Lighter, so you can see what is covered",
       "Borda": "Edge softness",
       "BordaDica": "0% = hard cut; 100% = very smoky",
       "Brilho": "Magical glow",
-      "BrilhoDica": "Strength of the halo around released places (0% turns it off)",
-      "NevoaDica": "The fog is drawn once and only redrawn when a place is released. With living fog, the only per-frame work is drifting the clouds.",
+      "BrilhoDica": "Strength of the halo on the edge of covered areas (0% turns it off)",
+      "NevoaDica": "Applies to locked cities. Regions with \"Dense fog\" have their own look, in the behavior sheet.",
       "Salvar": "Save",
       "Cancelar": "Cancel",
       "Padrao": "Reset to default",
       "Viva": "Living fog (animated)",
-      "VivaDica": "Dense clouds drifting over the unexplored parts. Only with effects quality set to Full; otherwise the fog stays still.",
+      "VivaDica": "Dense clouds drifting over the covered areas. Only with effects quality set to Full; otherwise the fog stays still.",
       "Densidade": "Cloud density",
       "DensidadeDica": "The more, the thicker and more rolling",
       "Velocidade": "Speed",
       "VelocidadeDica": "How fast the clouds drift"
+    },
+    "NevoaDensa": {
+      "FIELDS": {
+        "atores": {
+          "label": "Who sees through",
+          "hint": "Player characters who can see what is inside the Region"
+        },
+        "itens": {
+          "label": "Item or effect that grants sight",
+          "hint": "Names separated by commas (e.g. Elven Lantern, True Seeing). Anyone whose character has one of them sees through"
+        },
+        "objeto": {
+          "label": "Goes away when this object is unlocked",
+          "hint": "A city of the interactive map, for example: once unlocked, the Region fog disappears for everyone"
+        },
+        "mestre": {
+          "label": "GM sees through",
+          "hint": "The fog shows lightly for you, just to know where it is"
+        },
+        "cor": {
+          "label": "Fog color",
+          "hint": ""
+        },
+        "opacidade": {
+          "label": "How much it hides (%)",
+          "hint": "100 = nothing shows through"
+        },
+        "borda": {
+          "label": "Edge softness (%)",
+          "hint": "0 = hard cut; 100 = very smoky"
+        },
+        "brilho": {
+          "label": "Magical glow (%)",
+          "hint": "Halo on the edge of the Region (0 turns it off)"
+        },
+        "corBrilho": {
+          "label": "Glow color",
+          "hint": ""
+        },
+        "viva": {
+          "label": "Living fog (animated)",
+          "hint": "Clouds drifting over it. Only with effects quality set to Full"
+        },
+        "densidade": {
+          "label": "Cloud density (%)",
+          "hint": ""
+        },
+        "velocidade": {
+          "label": "Cloud speed (%)",
+          "hint": ""
+        }
+      }
+    }
+  },
+  "TYPES": {
+    "RegionBehavior": {
+      "objetos-vivos.nevoaDensa": "Dense fog (Living Objects)"
     }
   }
 }

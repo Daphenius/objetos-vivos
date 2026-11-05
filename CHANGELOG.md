@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.6.0
+
+A névoa do jeito certo: só onde deve.
+
+- **Névoa das cidades invertida**: antes cobria o mapa inteiro e abria em volta das cidades liberadas, deixando o mapa do jogador escuro. Agora cobre só a área em volta de cada cidade **trancada**; o resto do mapa fica livre, e a escuridão do mapa continua sendo do calendário/Foundry.
+- **Comportamento de Região "Névoa densa"** (aba Comportamentos da Região): cobre o território da Região com névoa espessa, com visual próprio. Enxergam através os personagens escolhidos, quem tiver um item ou efeito com o nome combinado, e todo mundo quando o objeto ligado é destrancado. O mestre vê clara.
+- **Correção**: mundos que já tinham o comportamento "Névoa densa" numa Região davam erro ao carregar a cena (`objetos-vivos.nevoaDensa is not a valid type`) porque a v3.5.0 não o registrava.
+- 2 testes novos (40 no total).
+
+
 ## v3.5.0
 
 Névoa configurável e viva.

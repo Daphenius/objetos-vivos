@@ -605,13 +605,13 @@
     },
     "Mapa": {
       "Titulo": "Mapa interativo",
-      "Dica": "Para liberar uma cidade trancada: botão de cadeado no HUD do tile (clique direito) ou a ação \"Objeto → Destrancar\" em outro objeto.",
+      "Dica": "Para liberar uma cidade trancada: botão de cadeado no HUD do tile (clique direito) ou a ação \"Objeto → Destrancar\" em outro objeto. Para cobrir um território inteiro, use o comportamento \"Névoa densa\" numa Região.",
       "Cadeado": "Mostrar cadeado quando trancado",
       "CadeadoDica": "Um cadeado aparece em cima do objeto enquanto ele estiver trancado",
-      "Revela": "Abrir a névoa em volta",
-      "RevelaDica": "O mapa fica coberto pela névoa; ela só abre em volta dos objetos liberados (não trancados e à vista)",
-      "Raio": "Tamanho da área aberta",
-      "RaioDica": "Quantas casas em volta do objeto a névoa abre",
+      "Revela": "Cobrir com névoa enquanto trancado",
+      "RevelaDica": "Enquanto o objeto estiver trancado, uma névoa cobre a área em volta dele (os jogadores não enxergam a cidade)",
+      "Raio": "Tamanho da área coberta",
+      "RaioDica": "Quantas casas em volta do objeto a névoa cobre",
       "Voltar": "Voltar para {mapa}",
       "VoltarSo": "Volta só você",
       "VoltarGrupo": "Vocês vieram juntos: o grupo volta junto",
@@ -629,7 +629,7 @@
       "Abrir": "Abrir configurações",
       "MenuDica": "Cor e transparência da névoa do mapa interativo, brilho mágico em volta dos lugares liberados e qualidade dos efeitos.",
       "NevoaTitulo": "Névoa do mapa interativo",
-      "NevoaIntro": "Mexa nos controles e veja o resultado no mapa na hora. Nada é gravado até clicar em Salvar.",
+      "NevoaIntro": "O visual da névoa que cobre as cidades trancadas. Mexa nos controles e veja no mapa na hora; nada é gravado até clicar em Salvar.",
       "Estilos": "Estilos prontos",
       "Estilo": {
         "noite": "Noite",
@@ -643,23 +643,80 @@
       "CorBrilho": "Cor do brilho",
       "CorBrilhoDica": "O halo mágico em volta dos lugares liberados",
       "OpJog": "Névoa para os jogadores",
-      "OpJogDica": "Quanto a névoa esconde o mapa (100% = nada aparece por baixo)",
+      "OpJogDica": "Quanto a névoa esconde a cidade (100% = nada aparece por baixo)",
       "OpMestre": "Névoa para o mestre",
-      "OpMestreDica": "Mais clara, para você conseguir trabalhar no mapa",
+      "OpMestreDica": "Mais clara, para você ver o que está coberto",
       "Borda": "Suavidade da borda",
       "BordaDica": "0% = corte seco; 100% = bem esfumaçada",
       "Brilho": "Brilho mágico",
-      "BrilhoDica": "Força do halo em volta dos lugares liberados (0% desliga)",
-      "NevoaDica": "A névoa é desenhada uma vez e só é refeita quando um lugar é liberado. Com a névoa viva, o único trabalho por quadro é deslizar as nuvens.",
+      "BrilhoDica": "Força do halo na borda das áreas cobertas (0% desliga)",
+      "NevoaDica": "Vale para as cidades trancadas. As Regiões com \"Névoa densa\" têm o próprio visual, na ficha do comportamento.",
       "Salvar": "Salvar",
       "Cancelar": "Cancelar",
       "Padrao": "Voltar ao padrão",
       "Viva": "Névoa viva (animada)",
-      "VivaDica": "Nuvens densas deslizando por cima do que não foi explorado. Só com a qualidade dos efeitos em Completa; nas outras, a névoa fica parada.",
+      "VivaDica": "Nuvens densas deslizando por cima das áreas cobertas. Só com a qualidade dos efeitos em Completa; nas outras, a névoa fica parada.",
       "Densidade": "Densidade das nuvens",
       "DensidadeDica": "Quanto mais, mais fechada e enrolada",
       "Velocidade": "Velocidade",
       "VelocidadeDica": "Quão rápido as nuvens deslizam"
+    },
+    "NevoaDensa": {
+      "FIELDS": {
+        "atores": {
+          "label": "Quem enxerga através",
+          "hint": "Personagens dos jogadores que veem o que está dentro da Região"
+        },
+        "itens": {
+          "label": "Item ou efeito que permite ver",
+          "hint": "Nomes separados por vírgula (ex.: Lanterna Élfica, Visão Verdadeira). Quem tiver um deles no personagem enxerga"
+        },
+        "objeto": {
+          "label": "Some quando este objeto for destrancado",
+          "hint": "Uma cidade do mapa interativo, por exemplo: destrancou, a névoa da Região vai embora para todos"
+        },
+        "mestre": {
+          "label": "Mestre vê através",
+          "hint": "Para você a névoa aparece clara, só para saber onde está"
+        },
+        "cor": {
+          "label": "Cor da névoa",
+          "hint": ""
+        },
+        "opacidade": {
+          "label": "Quanto esconde (%)",
+          "hint": "100 = nada aparece por baixo"
+        },
+        "borda": {
+          "label": "Suavidade da borda (%)",
+          "hint": "0 = corte seco; 100 = bem esfumaçada"
+        },
+        "brilho": {
+          "label": "Brilho mágico (%)",
+          "hint": "Halo na borda da Região (0 desliga)"
+        },
+        "corBrilho": {
+          "label": "Cor do brilho",
+          "hint": ""
+        },
+        "viva": {
+          "label": "Névoa viva (animada)",
+          "hint": "Nuvens deslizando por cima. Só com a qualidade dos efeitos em Completa"
+        },
+        "densidade": {
+          "label": "Densidade das nuvens (%)",
+          "hint": ""
+        },
+        "velocidade": {
+          "label": "Velocidade das nuvens (%)",
+          "hint": ""
+        }
+      }
+    }
+  },
+  "TYPES": {
+    "RegionBehavior": {
+      "objetos-vivos.nevoaDensa": "Névoa densa (Objetos Vivos)"
     }
   }
 }

@@ -417,7 +417,8 @@ test("editor: sem clicar em comando, o jogo continua valendo", async () => {
 
 // ---------- 3.1.0: mapa interativo e efeitos mais leves
 const { padrao, nevoaCfg, PADRAO_NEVOA, corHex } = await import("../scripts/nucleo.js");
-const { quemViaja, voltaDe, raioRevelado, abreNevoa, mostraCadeado } = await import("../scripts/mapa.js");
+const { quemViaja, voltaDe, raioRevelado, abreNevoa, cobreNevoa, mostraCadeado } = await import("../scripts/mapa.js");
+const { visaoDaNevoa } = await import("../scripts/regiao.js");
 const { profDe } = await import("../scripts/visual.js");
 
 class Cenas extends Map { [Symbol.iterator]() { return this.values(); } get contents() { return [...this.values()]; } }
@@ -489,12 +490,14 @@ test("cidade trancada: não leva, avisa, mostra cadeado e não abre a névoa", a
   assert.ok(F.emitidos.some(e => e.efeito?.tipo === "aviso"), "o jogador é avisado");
   const o = { document: d };
   assert.equal(mostraCadeado(o), true);
+  assert.equal(cobreNevoa(o), true, "trancada: coberta pela névoa");
   assert.equal(abreNevoa(o), false);
   cfg(d).trancado = false;
   assert.equal(mostraCadeado(o), false);
+  assert.equal(cobreNevoa(o), false, "liberada: sem névoa");
   assert.equal(abreNevoa(o), true);
-  d.hidden = true;
-  assert.equal(abreNevoa(o), false, "escondida não abre a névoa");
+  cfg(d).trancado = true; d.hidden = true;
+  assert.equal(cobreNevoa(o), false, "escondida não desenha névoa (o jogador nem sabe que existe)");
 });
 
 test("névoa: raio = metade do objeto + casas em volta", () => {
@@ -531,4 +534,27 @@ test("névoa configurável: padrão, valor salvo e prévia da janela", () => {
   assert.equal(corHex("#f0a03c"), 0xf0a03c);
   assert.equal(corHex("lixo"), 0);
   delete F.config.nevoa;
+});
+
+test("névoa densa da Região: quem enxerga através", () => {
+  const ator = (id, itens = [], efeitos = []) => ({ id, items: itens.map(name => ({ name })), appliedEffects: efeitos.map(name => ({ name, disabled: false })) });
+  const d = { atores: new Set(["heroi"]), itens: "Lanterna Élfica, visão verdadeira", objeto: "", mestre: true };
+  const jogador = { isGM: false }, mestre = { isGM: true };
+  assert.equal(visaoDaNevoa(d, jogador, [ator("heroi")]), "sim", "personagem escolhido");
+  assert.equal(visaoDaNevoa(d, jogador, [ator("outro")]), "nao");
+  assert.equal(visaoDaNevoa(d, jogador, [ator("outro", ["lanterna élfica"])]), "sim", "item com o nome (sem diferenciar maiúsculas)");
+  assert.equal(visaoDaNevoa(d, jogador, [ator("outro", [], ["Visão Verdadeira"])]), "sim", "efeito com o nome");
+  assert.equal(visaoDaNevoa(d, jogador, []), "nao", "sem personagem: coberto");
+  assert.equal(visaoDaNevoa(d, mestre, []), "mestre");
+  assert.equal(visaoDaNevoa({ ...d, mestre: false }, mestre, []), "nao");
+});
+
+test("névoa densa da Região: some para todos quando o objeto ligado é destrancado", () => {
+  const d = F.tile("cid9", objeto({ trancado: true }));
+  globalThis.fromUuidSync = uuid => uuid === d.uuid ? d : null;
+  const n = { atores: new Set(), itens: "", objeto: d.uuid, mestre: true };
+  assert.equal(visaoDaNevoa(n, { isGM: false }, []), "nao");
+  cfg(d).trancado = false;
+  assert.equal(visaoDaNevoa(n, { isGM: false }, []), "sim");
+  delete globalThis.fromUuidSync;
 });
