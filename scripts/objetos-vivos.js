@@ -1,7 +1,8 @@
 import { aoDestrancar, definirTrancado, mudarEstado } from "./estados.js";
 import { aoMoverToken, aoMovimentoToken, esquecerUsaveis, estadosPorta, lembrarPortas, ligarMapa, ouvirPorta, ouvirTentativas } from "./gatilhos.js";
 import { botaoNaBarra, botoesHud, injetarSecao } from "./interface.js";
-import { atualizarMapa, botaoVolta, soltarMapa, voltarAoMapa } from "./mapa.js";
+import { atualizarMapa, botaoVolta, soltarMapa, temNevoaDensa, voltarAoMapa } from "./mapa.js";
+import { registrarNevoaDensa } from "./nevoa-densa.js";
 import { ID, abrirBiblioteca, abrirEditor, carregar, cfgDe, ehObjeto, ehTile, estaTrancado, souMestreAtivo } from "./nucleo.js";
 import { registrarSocket } from "./socket.js";
 import { eventoParede, pedirUso } from "./testes.js";
@@ -9,6 +10,7 @@ import { animar, aplicarCamaleao, aplicarProfundidade, aplicarVisao, atualizarBr
 
 // Registro
 Hooks.once("init", () => {
+  registrarNevoaDensa();
   game.settings.register(ID, "biblioteca", { scope: "world", config: false, type: Array, default: [] });
   game.settings.register(ID, "pastaAssets", { scope: "client", config: false, type: Object, default: {} });
   game.settings.register(ID, "pacotesGuardados", { scope: "world", config: false, type: Array, default: [] });
@@ -86,6 +88,16 @@ Hooks.on("deleteTile", doc => { if (doc.parent?.id === canvas.scene?.id) { esque
 // Voltar ao mapa: o botão aparece/some quando o mapa atual ganha ou perde de onde voltar
 Hooks.on("updateScene", (cena, mud) => { if (cena.id === canvas.scene?.id && foundry.utils.hasProperty(mud, `flags.${ID}`)) botaoVolta(); });
 Hooks.on("deleteScene", () => botaoVolta());
+
+// Região de névoa densa: a Região (ou o comportamento dela) mudou neste mapa
+const regiaoDaqui = doc => (doc?.documentName === "Region" ? doc : doc?.parent)?.parent?.id === canvas.scene?.id;
+for (const gancho of ["createRegion", "updateRegion", "deleteRegion", "createRegionBehavior", "updateRegionBehavior", "deleteRegionBehavior"]) {
+  Hooks.on(gancho, doc => { if (canvas.ready && regiaoDaqui(doc)) atualizarMapa(); });
+}
+// Quem enxerga na névoa densa depende das fichas e dos tokens: só redesenha se o mapa aberto tiver uma
+for (const gancho of ["createItem", "updateItem", "deleteItem", "createActiveEffect", "updateActiveEffect", "deleteActiveEffect", "updateActor", "updateUser", "createToken", "deleteToken"]) {
+  Hooks.on(gancho, () => { if (canvas.ready && temNevoaDensa()) atualizarMapa(); });
+}
 
 // Portas: o que aconteceu com elas
 Hooks.on("updateWall", (parede, mud, op, userId) => {

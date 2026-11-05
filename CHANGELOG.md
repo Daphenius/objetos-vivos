@@ -1,5 +1,27 @@
 # Changelog
 
+## v3.2.0
+
+Névoa só onde precisa e uma névoa densa para as Regiões.
+
+### Correção: a névoa do mapa interativo cobria o mapa todo
+- Ligar a névoa numa cidade cobria o mapa inteiro e abria só um círculo em volta das cidades liberadas. Agora é o contrário: **o mapa fica à vista e a névoa cobre só cada cidade trancada** (ou escondida), do tamanho dela mais as casas em volta escolhidas. Liberou a cidade, a mancha some.
+- A opção passou a se chamar **Cobrir com névoa enquanto trancado**, e o tamanho, **Tamanho da névoa**. Objetos já configurados continuam valendo, sem refazer nada.
+- A borda esfumaçada fica dentro das casas pedidas (a mancha não passa do tamanho escolhido) e nunca deixa o próprio objeto aparecendo.
+- O brilho mágico continua em volta das cidades liberadas. A janela de configurações (cor, transparência, borda, brilho) vale para as manchas.
+- A névoa não usa mais o modo de "apagar" da placa de vídeo.
+
+### Novidade: região de névoa densa
+- Novo comportamento para as **Regiões nativas** do Foundry: **Névoa densa (Objetos Vivos)**. Dentro da área não dá para ver nada (mapa, tokens, objetos).
+- **Quem enxerga**: os personagens marcados na Região e/ou quem tiver um item ou efeito ativo com o nome escolhido (ex.: Lanterna da Bruma). Para esses a névoa não aparece. O mestre vê a névoa bem clara.
+- Cor e quanto a névoa esconde são escolhidos em cada Região.
+- Desenhada uma vez; só é refeita quando a Região, uma ficha ou um token muda, e só em mapas que têm névoa densa.
+
+### Por dentro
+- 7 testes novos (45 no total), incluindo um que confere o que é desenhado: nenhuma cobertura do mapa todo, só a mancha em cima do lugar trancado.
+- Feito sobre a documentação da API do Foundry 14, com testes num Foundry simulado; falta o teste na mesa.
+
+
 ## v3.1.0
 
 Mapa interativo e um módulo bem mais leve.

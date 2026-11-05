@@ -479,7 +479,7 @@ test("Voltar ao mapa: quem não está naquele mapa não arrasta ninguém", async
   assert.equal(efeitosVerCena().length, 0);
 });
 
-test("cidade trancada: não leva, avisa, mostra cadeado e não abre a névoa", async () => {
+test("cidade trancada: não leva, avisa, mostra cadeado e fica sob a névoa", async () => {
   comoMestre();
   const d = F.tile("cid3", objeto({ ...viagem("quemUsou"), trancado: true, cadeado: true, revela: true }));
   F.emitidos.length = 0;
@@ -495,6 +495,7 @@ test("cidade trancada: não leva, avisa, mostra cadeado e não abre a névoa", a
   assert.equal(abreNevoa(o), true);
   d.hidden = true;
   assert.equal(abreNevoa(o), false, "escondida não abre a névoa");
+  F.cena.tiles.delete("cid3");
 });
 
 test("névoa: raio = metade do objeto + casas em volta", () => {
@@ -531,4 +532,162 @@ test("névoa configurável: padrão, valor salvo e prévia da janela", () => {
   assert.equal(corHex("#f0a03c"), 0xf0a03c);
   assert.equal(corHex("lixo"), 0);
   delete F.config.nevoa;
+});
+
+// ---------- 3.2.0: névoa só sobre os lugares trancados e região de névoa densa
+const { cobreNevoa, manchasDaNevoa, atualizarMapa, soltarMapa, temNevoaDensa } = await import("../scripts/mapa.js");
+const { TIPO_DENSA, regioesDensas, veNaNevoa, temChave, poligonosDe, dentroDe, registrarNevoaDensa } = await import("../scripts/nevoa-densa.js");
+
+test("névoa: cobre só o lugar trancado ou escondido; liberado fica sem névoa", () => {
+  comoMestre();
+  const d = F.tile("nv1", objeto({ revela: true, raio: 2, trancado: true }));
+  const o = { document: d };
+  assert.equal(cobreNevoa(o), true, "trancado: coberto");
+  cfg(d).trancado = false;
+  assert.equal(cobreNevoa(o), false, "liberado: sem névoa");
+  d.hidden = true;
+  assert.equal(cobreNevoa(o), true, "escondido: coberto");
+  d.hidden = false; cfg(d).revela = false; cfg(d).trancado = true;
+  assert.equal(cobreNevoa(o), false, "sem a opção marcada, nunca há névoa");
+  F.cena.tiles.delete("nv1");
+});
+
+test("névoa: a mancha termina nas casas pedidas e o miolo nunca é menor que o objeto", () => {
+  const o = (w, h, raio) => ({ document: { x: 1000, y: 500, width: w, height: h, flags: { "objetos-vivos": { objeto: objeto({ revela: true, raio }) } }, getFlag(m, k) { return this.flags[m]?.[k]; } } });
+  const [m] = manchasDaNevoa([o(100, 100, 3)], 100, 50);
+  assert.deepEqual([m.cx, m.cy, m.r], [1050, 550, 350]);
+  assert.ok(m.miolo < m.r && m.miolo >= 50, "borda suave dentro do raio");
+  assert.equal(manchasDaNevoa([o(100, 100, 3)], 100, 0)[0].miolo, 350, "borda 0: corte seco");
+  assert.equal(manchasDaNevoa([o(400, 400, 0)], 100, 100)[0].miolo, 200, "sem casas em volta: cobre o objeto inteiro");
+});
+
+// PIXI falso: guarda o que foi desenhado, para conferir a névoa sem navegador
+function pixiFalso() {
+  const desenhos = [];
+  class Graphics {
+    constructor() { this.ops = []; this.scale = { set() {} }; desenhos.push(this); }
+    beginFill(cor, alfa) { this.cheio = true; this.ops.push(["fill", cor, alfa]); return this; }
+    endFill() { this.cheio = false; return this; }
+    lineStyle() { return this; }
+    drawCircle(x, y, r) { this.ops.push([this.cheio ? "circulo" : "anel", x, y, r]); return this; }
+    drawRect(x, y, w, h) { this.ops.push(["retangulo", x, y, w, h]); return this; }
+    drawPolygon(p) { this.ops.push(["poligono", [...p]]); return this; }
+    beginHole() { this.ops.push(["buraco"]); return this; }
+    endHole() { return this; }
+    destroy() {}
+  }
+  class Container { constructor() { this.children = []; } addChild(c) { this.children.push(c); return c; } destroy() { this.destroyed = true; } }
+  class Sprite { constructor(tex) { this.tex = tex; this.scale = { set() {} }; this.anchor = { set() {} }; this.position = { set() {} }; } destroy() {} }
+  globalThis.PIXI = { Graphics, Container, Sprite, RenderTexture: { create: o => ({ rt: true, ...o }) }, Texture: { from: src => ({ src }) }, BLEND_MODES: { ADD: 1 } };
+  const palco = new Container();
+  Object.assign(canvas, { ready: true, dimensions: { size: 100, width: 4000, height: 3000 }, interface: palco, app: { renderer: { render() {} } } });
+  globalThis.requestAnimationFrame = f => { f(); return 0; };
+  globalThis.cancelAnimationFrame = () => {};
+  return { desenhos, palco };
+}
+
+test("névoa do mapa: não cobre o mapa todo, só uma mancha em cada lugar trancado", () => {
+  comoMestre();
+  const P = pixiFalso();
+  const trancada = F.tile("nvA", objeto({ revela: true, raio: 2, trancado: true }));
+  Object.assign(trancada, { x: 1000, y: 1000 });
+  const livre = F.tile("nvB", objeto({ revela: true, raio: 2, trancado: false }));
+  Object.assign(livre, { x: 3000, y: 2000 });
+  canvas.tiles.placeables = [{ document: trancada }, { document: livre }];
+  F.cena.regions = [];
+  atualizarMapa();
+  const ops = P.desenhos.flatMap(g => g.ops);
+  assert.equal(ops.filter(o => o[0] === "retangulo").length, 0, "nenhum retângulo cobrindo o mapa");
+  const cheios = ops.filter(o => o[0] === "circulo");
+  assert.ok(cheios.length > 0, "a mancha foi desenhada");
+  assert.ok(cheios.every(o => o[1] === 1050 && o[2] === 1050), "só em cima do lugar trancado (o halo do liberado não é preenchido)");
+  assert.ok(Math.max(...cheios.map(o => o[3])) <= 250, "não passa das casas pedidas (50 + 2 casas)");
+  // liberou: a mancha some
+  P.desenhos.length = 0;
+  cfg(trancada).trancado = false;
+  atualizarMapa();
+  assert.equal(P.desenhos.flatMap(g => g.ops).filter(o => o[0] === "fill").length, 0, "nada preenchido depois de liberar");
+  soltarMapa();
+  canvas.tiles.placeables = []; canvas.ready = false;
+  F.cena.tiles.delete("nvA"); F.cena.tiles.delete("nvB");
+});
+
+const ator = (id, dono, { itens = [], efeitos = [] } = {}) => ({ id, name: id, hasPlayerOwner: !!dono, testUserPermission: u => u.id === dono,
+  items: itens.map(name => ({ name })), appliedEffects: efeitos.map(e => (typeof e === "string" ? { name: e, disabled: false } : e)) });
+const regiao = (id, sys, extra = {}) => ({ id, behaviors: [{ type: TIPO_DENSA, disabled: false, system: sys }],
+  shapes: [{ type: "rectangle", x: 0, y: 0, width: 400, height: 200, rotation: 0 }], ...extra });
+
+test("névoa densa: enxerga quem está na lista ou tem o item/efeito; os outros não", () => {
+  const aAna = ator("aAna", "ana"), aBeto = ator("aBeto", "beto", { itens: ["Lanterna da Bruma"] }), aCaio = ator("aCaio", "caio", { efeitos: [{ name: "Olhos de Bruma", disabled: true }] });
+  const cena = { tokens: [{ id: "t1", actor: aAna }, { id: "t2", actor: aBeto }, { id: "t3", actor: aCaio }] };
+  const caio = F.usuario("caio");
+  const semDono = { id: "x", character: null };
+  assert.equal(veNaNevoa({ personagens: ["aAna"], chave: "" }, F.ana, cena), true, "na lista");
+  assert.equal(veNaNevoa({ personagens: ["aAna"], chave: "" }, F.beto, cena), false, "fora da lista");
+  assert.equal(veNaNevoa({ personagens: [], chave: " lanterna da bruma " }, F.beto, cena), true, "item, sem ligar para maiúsculas e espaços");
+  assert.equal(veNaNevoa({ personagens: [], chave: "Olhos de Bruma" }, caio, cena), false, "efeito desligado não vale");
+  aCaio.appliedEffects[0].disabled = false;
+  assert.equal(veNaNevoa({ personagens: [], chave: "Olhos de Bruma" }, caio, cena), true, "efeito ativo");
+  assert.equal(veNaNevoa({ personagens: ["aAna"], chave: "Lanterna da Bruma" }, semDono, cena), false, "jogador sem personagem no mapa");
+  assert.equal(temChave(aBeto, ""), false, "sem nome, ninguém tem");
+  // o personagem do jogador vale mesmo sem token no mapa
+  const antes = F.beto.character; F.beto.character = aAna;
+  assert.equal(veNaNevoa({ personagens: ["aAna"] }, F.beto, { tokens: [] }), true);
+  F.beto.character = antes;
+});
+
+test("névoa densa: regiões ligadas da cena e a forma delas", () => {
+  const r1 = regiao("r1", { personagens: [] });
+  const r2 = regiao("r2", {}); r2.behaviors[0].disabled = true;
+  const r3 = { id: "r3", behaviors: [{ type: "outro.tipo", disabled: false, system: {} }], shapes: [] };
+  assert.deepEqual(regioesDensas({ regions: [r1, r2, r3] }).map(d => d.regiao.id), ["r1"]);
+  assert.deepEqual(regioesDensas({}), []);
+  // formas simples
+  assert.deepEqual(poligonosDe(r1), [{ pontos: [0, 0, 400, 0, 400, 200, 0, 200], buraco: false }]);
+  const circ = poligonosDe({ shapes: [{ type: "circle", x: 100, y: 100, radius: 50 }, { type: "polygon", points: [0, 0, 10, 0, 10, 10], hole: true }] });
+  assert.equal(circ[0].pontos.length, 96);
+  assert.equal(circ[1].buraco, true);
+  // polígonos prontos do Foundry têm preferência
+  const prontos = poligonosDe({ polygons: [{ points: [0, 0, 9, 0, 9, 9], isPositive: true }, { points: [1, 1, 2, 1, 2, 2], isPositive: false }], shapes: [] });
+  assert.deepEqual(prontos.map(p => p.buraco), [false, true]);
+  assert.equal(dentroDe(5, 5, [0, 0, 10, 0, 10, 10, 0, 10]), true);
+  assert.equal(dentroDe(15, 5, [0, 0, 10, 0, 10, 10, 0, 10]), false);
+});
+
+test("névoa densa: desenhada para quem não pode ver, apagada para quem pode, clara para o mestre", () => {
+  const P = pixiFalso();
+  const aAna = ator("aAna", "ana");
+  F.cena.tokens.push({ id: "tAna", actor: aAna });
+  F.cena.regions = [regiao("r1", { personagens: ["aAna"], chave: "", cor: "#aeb6c2", opacidade: 100 })];
+  const densa = () => P.palco.children.at(-1)?.children.filter(c => c.ops) ?? [];
+  game.user = F.beto; atualizarMapa();
+  assert.equal(temNevoaDensa(), true);
+  assert.equal(densa().length, 1, "Beto não enxerga: a névoa cobre a região");
+  assert.equal(densa()[0].alpha, 1);
+  assert.deepEqual(densa()[0].ops.find(o => o[0] === "poligono")[1], [0, 0, 400, 0, 400, 200, 0, 200]);
+  game.user = F.ana; atualizarMapa();
+  assert.equal(P.palco.children.at(-1)?.destroyed ?? true, true, "Ana enxerga: nada é desenhado");
+  game.user = F.mestre; atualizarMapa();
+  assert.ok(densa()[0].alpha <= 0.35, "o mestre vê a névoa clara");
+  soltarMapa(); canvas.ready = false; F.cena.regions = []; F.cena.tokens.pop();
+});
+
+test("névoa densa: o comportamento de Região é registrado, com a lista de personagens dos jogadores", async () => {
+  const campo = class { constructor(a, b) { this.el = a; this.op = b ?? a; } _toInput(c) { return c; } };
+  foundry.data = { fields: { SetField: campo, StringField: campo, ColorField: campo, NumberField: campo }, regionBehaviors: { RegionBehaviorType: class {} } };
+  CONFIG.RegionBehavior = { dataModels: {}, typeIcons: {}, typeLabels: {} };
+  // carrega o arquivo de novo, agora com as Regiões no Foundry falso
+  const m = await import("../scripts/nevoa-densa.js?comRegioes");
+  m.registrarNevoaDensa();
+  const Modelo = CONFIG.RegionBehavior.dataModels["objetos-vivos.nevoaDensa"];
+  assert.ok(Modelo, "tipo registrado");
+  assert.equal(CONFIG.RegionBehavior.typeLabels["objetos-vivos.nevoaDensa"], "OV.Densa.Tipo");
+  const esquema = Modelo.defineSchema();
+  assert.deepEqual(Object.keys(esquema), ["personagens", "chave", "cor", "opacidade"]);
+  assert.equal(esquema.opacidade.op.initial, 100, "por padrão não dá para ver nada");
+  // a lista oferece os personagens dos jogadores e mantém quem já estava marcado
+  game.actors = [{ id: "pj", name: "Zara", hasPlayerOwner: true }, { id: "npc", name: "Goblin", hasPlayerOwner: false }, { id: "velho", name: "Aldo", hasPlayerOwner: false }];
+  const entrada = esquema.personagens._toInput({ value: ["velho"] });
+  assert.deepEqual(entrada.options, [{ value: "velho", label: "Aldo" }, { value: "pj", label: "Zara" }]);
+  delete game.actors; delete foundry.data; delete CONFIG.RegionBehavior;
 });
