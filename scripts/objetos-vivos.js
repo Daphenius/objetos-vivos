@@ -3,7 +3,7 @@ import { aoMoverToken, aoMovimentoToken, esquecerUsaveis, estadosPorta, lembrarP
 import { botaoNaBarra, botoesHud, injetarSecao } from "./interface.js";
 import { atualizarMapa, botaoVolta, soltarMapa, voltarAoMapa } from "./mapa.js";
 import { ID, abrirBiblioteca, abrirEditor, carregar, cfgDe, ehObjeto, ehTile, estaTrancado, souMestreAtivo } from "./nucleo.js";
-import { TIPO_NEVOA, escolhasNevoa, registrarNevoaDensa } from "./regiao.js";
+import { TIPO_NEVOA, escolhasNevoa, nevoasDoMapa, registrarNevoaDensa } from "./regiao.js";
 import { registrarSocket } from "./socket.js";
 import { eventoParede, pedirUso } from "./testes.js";
 import { animar, aplicarCamaleao, aplicarProfundidade, aplicarVisao, atualizarBrilho, atualizarProfundidades, camoMestre, camuflado, liberarVisao, profDe, soltarBrilho, visaoDe } from "./visual.js";
@@ -43,7 +43,7 @@ Hooks.on("dropCanvasData", (_canvas, dados) => {
     if (dados.dd) return bib.usarDoPacote(dados.pac, dados.dd, { x: dados.x, y: dados.y });
     const salvo = dados.salvo ? bib.meusObjetos().find(o => o.id === dados.salvo) : null;
     (await carregar.encaixe()).criarObjeto({ preset: dados.img ? null : dados.preset, img: dados.img ?? null, salvo, x: dados.x, y: dados.y });
-  })();
+  })().catch(err => console.error(`${ID} | arrastar da biblioteca`, err));
   return false;
 });
 
@@ -89,8 +89,13 @@ Hooks.on("deleteTile", doc => { if (doc.parent?.id === canvas.scene?.id) { esque
 // jogador tem (personagem, itens, efeitos) muda
 const noMapa = doc => (doc.parent?.documentName === "Region" ? doc.parent.parent : doc.parent)?.id === canvas.scene?.id;
 for (const h of ["createRegion", "updateRegion", "deleteRegion", "createRegionBehavior", "updateRegionBehavior", "deleteRegionBehavior"]) Hooks.on(h, doc => { if (noMapa(doc)) atualizarMapa(); });
-for (const h of ["createItem", "deleteItem", "createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) Hooks.on(h, () => { if (!game.user.isGM) atualizarMapa(); });
+// Jogador: só se há névoa densa no mapa e a mudança é num personagem dele (item/efeito que dá visão)
+const temNevoaDensa = () => !game.user.isGM && nevoasDoMapa().length > 0;
+const meuAtor = doc => { const a = doc?.parent?.documentName === "Actor" ? doc.parent : doc; return a?.documentName === "Actor" && a.isOwner; };
+for (const h of ["createItem", "deleteItem", "createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) Hooks.on(h, doc => { if (temNevoaDensa() && meuAtor(doc)) atualizarMapa(); });
+Hooks.on("updateActor", (a, mud) => { if (temNevoaDensa() && "ownership" in mud) atualizarMapa(); });
 Hooks.on("updateUser", (u, mud) => { if (u.id === game.user.id && "character" in mud) atualizarMapa(); });
+for (const h of ["createToken", "deleteToken"]) Hooks.on(h, doc => { if (temNevoaDensa() && doc.parent?.id === canvas.scene?.id) atualizarMapa(); });
 // Ficha do comportamento: personagens e objetos viram listas de escolha
 Hooks.on("renderRegionBehaviorConfig", (app, html) => {
   if (app.document?.type !== TIPO_NEVOA) return;

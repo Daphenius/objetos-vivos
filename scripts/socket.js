@@ -1,6 +1,6 @@
 import { aplicarEfeito } from "./estados.js";
 import { receberVolta } from "./mapa.js";
-import { ID, SOCKET, cfgDe, ehTile, pausa, souMestreAtivo, testeDe } from "./nucleo.js";
+import { ID, SOCKET, cfgDe, ehTile, pausa, souMestreAtivo, t, testeDe } from "./nucleo.js";
 import { aguardando, eventoParede, jogarDesafio, pedirUso, receberMinijogo, usarObjeto } from "./testes.js";
 
 // ---------- Pedidos que chegam dos jogadores (no mestre ativo). Nada do que vem no pedido é aceito sem
@@ -53,6 +53,16 @@ export function registrarSocket() {
     const [data, senderId] = args;
     const remetente = game.users.get(senderId);
     if (!remetente || !data || typeof data !== "object") return;
+    try { await tratar(data, remetente); }
+    catch (err) {
+      // uma falha num pedido não pode virar "erro não tratado" mudo: fica no console com a ação e quem pediu
+      console.error(`${ID} | falha ao tratar "${data.acao}" de ${remetente.name}`, err);
+      if (game.user.isGM) ui.notifications.warn(t("Aviso.PedidoFalhou", { acao: String(data.acao ?? "?"), quem: remetente.name }));
+    }
+  });
+}
+async function tratar(data, remetente) {
+  {
     if (data.acao === "jogar") {
       if (!remetente.isGM || !data.userIds?.includes(game.user.id)) return;
       const d = await fromUuid(data.uuid);
@@ -75,5 +85,5 @@ export function registrarSocket() {
     if (data.acao === "parede" && doc.documentName === "Wall" && (remetente.isGM || data.momento === "tentativa")) {
       eventoParede(doc, data.momento, { userId: remetente.id });
     }
-  });
+  }
 }

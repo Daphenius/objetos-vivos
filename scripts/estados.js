@@ -1,5 +1,5 @@
 import { ID, alvos, centroDaRegiao, centroDe, centroToken, cfgDe, ehTile, emitir, esc, estaTrancado, gazua, navegador, niveisDe, nomeObjeto, pausa, preencher, t, testeDe, volumeDe } from "./nucleo.js";
-import { quemViaja } from "./mapa.js";
+import { guardarVolta, quemViaja } from "./mapa.js";
 import { usarObjeto } from "./testes.js";
 
 // Efeitos na tela de quem precisa ver/ouvir
@@ -16,6 +16,7 @@ export async function aplicarEfeito(e) {
       const IP = foundry.applications.apps.ImagePopout;
       new IP({ src: e.src, window: { title: e.titulo || "" } }).render({ force: true });
     } else if (e.tipo === "diario") (await fromUuid(e.uuid))?.sheet?.render(true);
+    else if (e.tipo === "diarioTexto") await mostrarTexto(e.titulo, e.html);
     else if (e.tipo === "camera" && canvas.scene?.id === e.cena) canvas.animatePan({ x: e.x, y: e.y, scale: e.zoom || undefined, duration: 900 });
     else if (e.tipo === "aviso") ui.notifications.info(e.texto);
     else if (e.tipo === "escada") await efeitoEscada(e);
@@ -25,6 +26,16 @@ export async function aplicarEfeito(e) {
       else if (canvas.scene?.id !== cena.id) await cena.view();
     }
   } catch (err) { console.warn(`${ID} | efeito falhou`, err); }
+}
+
+// Janela só de leitura com o texto de um diário (o jogador não ganha permissão no documento)
+async function mostrarTexto(titulo, html) {
+  const TE = foundry.applications?.ux?.TextEditor?.implementation ?? globalThis.TextEditor;
+  const conteudo = TE?.enrichHTML ? await TE.enrichHTML(html ?? "", { secrets: false }) : (html ?? "");
+  await foundry.applications.api.DialogV2.prompt({
+    window: { title: titulo || "", icon: "fa-solid fa-book-open" }, classes: ["ov-diario-texto"], position: { width: 560 },
+    content: `<div class="ov-diario-conteudo">${conteudo}</div>`, ok: { label: t("Fechar"), icon: "fa-solid fa-xmark" }, rejectClose: false
+  });
 }
 
 // Escada: escurece a tela, troca o nível que a pessoa vê e leva a câmera até o token
@@ -91,6 +102,13 @@ export const EXECUTAR = {
     const doc = a.diario ? await fromUuid(a.diario) : null;
     if (!doc) return;
     const ids = alvos(a.para, ctx);
+    // "Só mostrar": a página vai pronta para a tela da pessoa, sem dar permissão no documento
+    if (a.acesso === "temporario") {
+      const paginas = doc.documentName === "JournalEntryPage" ? [doc] : [...(doc.pages ?? [])];
+      const html = paginas.map(pg => `<section>${paginas.length > 1 ? `<h2>${esc(pg.name)}</h2>` : ""}${pg.type === "image" ? `<img src="${esc(pg.src)}" alt="">` : pg.text?.content ?? ""}</section>`).join("");
+      efeito(ids, { tipo: "diarioTexto", titulo: doc.name, html });
+      return;
+    }
     const entrada = doc.parent ?? doc;
     const NIVEL = CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
     const dar = {};
@@ -125,13 +143,11 @@ export const EXECUTAR = {
     const destino = game.scenes.get(a.destino);
     if (!destino) return;
     const origem = ctx.cena;
-    if (a.volta !== "semVolta" && origem && destino.id !== origem.id) {
-      const volta = { cena: origem.id, grupo: a.quem !== "quemUsou" };
-      const atual = destino.getFlag(ID, "volta");
-      if (atual?.cena !== volta.cena || !!atual?.grupo !== volta.grupo) await destino.setFlag(ID, "volta", volta);
-    }
     const ids = quemViaja(a.quem, ctx);
     if (!ids.length) return;
+    if (a.volta !== "semVolta" && origem && destino.id !== origem.id) {
+      await guardarVolta(destino, ids, { cena: origem.id, grupo: a.quem !== "quemUsou" });
+    }
     efeito(ids, { tipo: "verCena", cena: destino.id });
     // O mestre fica sabendo quem foi (quando não foi ele mesmo)
     if (!ids.includes(game.user.id)) {
@@ -175,9 +191,12 @@ export const EXECUTAR = {
     for (const tk of tokens) teleportados.add(tk.uuid);
     try { await cena.updateEmbeddedDocuments("Token", upd, { animate: false, ovInterno: true }); }
     finally { for (const tk of tokens) teleportados.delete(tk.uuid); }
-    for (const tk of tokens) {
-      const c = centroToken(tk);
-      efeito([...new Set([...donos(tk), ...ids])], { tipo: "escada", fase: "fim", cena: cena.id, nivel: nivel?.id ?? null, x: c.x, y: c.y, token: tk.id, tela: a.tela !== "semTela" });
+    // cada pessoa recebe UM "fim": a câmera vai para o token dela (ou, se não tem token, para o primeiro)
+    for (const id of ids) {
+      const u = game.users.get(id);
+      const meu = tokens.find(tk => u && tk.actor?.testUserPermission(u, "OWNER")) ?? tokens[0];
+      const c = centroToken(meu);
+      efeito([id], { tipo: "escada", fase: "fim", cena: cena.id, nivel: nivel?.id ?? null, x: c.x, y: c.y, token: meu.id, tela: a.tela !== "semTela" });
     }
   },
   async esperar(a) { await new Promise(r => setTimeout(r, Math.max(0, Number(a.segundos) || 0) * 1000)); }

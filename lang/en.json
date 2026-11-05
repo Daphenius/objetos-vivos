@@ -220,7 +220,9 @@
       "osDoMapa": "All players on this map",
       "todosJogadores": "All connected players",
       "comVolta": "Show \"Back to map\" there",
-      "semVolta": "No back button"
+      "semVolta": "No back button",
+      "permanente": "Grant observer permission",
+      "temporario": "Just show it (no permission change)"
     },
     "Acao": {
       "som": "Sound effect",
@@ -261,7 +263,7 @@
       "objeto": "Example: the lever unlocks the chest, or lights the room's runes.",
       "chat": "You can use {token}, {jogador}, {objeto} and {mapa} in the text.",
       "imagem": "Opens the image in a window for whoever needs to see it.",
-      "diario": "If the person can't see the journal, the GM grants observer permission.",
+      "diario": "\"Grant permission\": if the person cannot see the journal, the GM grants observer permission (they can open it again later). \"Just show it\": the page text opens in a window, without touching permissions.",
       "camera": "Pans the camera to the object or to a region. Zoom 0 keeps the current zoom.",
       "escuridao": "0% = bright day, 100% = total darkness. Duration in seconds.",
       "musica": "Uses Foundry's native playlists and plays for the whole table.",
@@ -308,7 +310,8 @@
       "MesmoNivel": "— Stay on the same level —",
       "MesmoLugar": "Same spot where it is",
       "SemNiveis": "This map has no levels. Use the arrival region.",
-      "volta": "Back button"
+      "volta": "Back button",
+      "acesso": "Access"
     },
     "Resumo": {
       "Configurar": "Click Edit to set it up",
@@ -346,7 +349,8 @@
       "TrancadoGazua": "\"{objeto}\" is locked. Click it with your token nearby to use a key or lockpick.",
       "SemToken": "Move your token near the object first.",
       "SemNivel": "The level chosen on the stairs no longer exists on this map.",
-      "NaoPode": "You can’t use “{objeto}” right now."
+      "NaoPode": "You can’t use “{objeto}” right now.",
+      "PedidoFalhou": "Living Objects: the \"{acao}\" request from {quem} failed. See the console (F12)."
     },
     "Bib": {
       "Titulo": "Living Objects",

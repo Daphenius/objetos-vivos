@@ -6,10 +6,23 @@ import { ASSETS, ID, cfgDe, corHex, emitir, esc, escondido, estaTrancado, icone,
 import { nevoasDoMapa, visaoDaNevoa } from "./regiao.js";
 
 // ---------- Voltar ao mapa
-// O mapa de destino guarda de onde a pessoa veio: flags.objetos-vivos.volta = { cena, grupo }
-export function voltaDe(cena) {
-  const v = cena?.getFlag?.(ID, "volta");
+// O mapa de destino guarda de onde CADA pessoa veio: flags.objetos-vivos.voltas = { [userId]: { cena, grupo } }.
+// Duas viagens de mapas diferentes para o mesmo destino não se atropelam. O mestre, que normalmente
+// não viaja, usa a última viagem registrada ("_ultima"). A flag antiga "volta" (uma só por mapa) ainda é lida.
+export function voltaDe(cena, user = game.user) {
+  const voltas = cena?.getFlag?.(ID, "voltas") ?? {};
+  const v = voltas[user?.id] ?? (user?.isGM ? voltas._ultima : null) ?? cena?.getFlag?.(ID, "volta") ?? null;
   return v?.cena && game.scenes.get(v.cena) ? v : null;
+}
+// Grava a origem de uma viagem para os usuários levados (só muda o que é diferente do que já está)
+export async function guardarVolta(destino, ids, volta) {
+  const atual = destino.getFlag(ID, "voltas") ?? {};
+  const mud = {};
+  for (const id of [...ids, "_ultima"]) {
+    const a = atual[id];
+    if (a?.cena !== volta.cena || !!a?.grupo !== volta.grupo) mud[id] = volta;
+  }
+  if (Object.keys(mud).length) await destino.setFlag(ID, "voltas", { ...atual, ...mud });
 }
 
 // Quem vai junto numa viagem (ids de usuários). O mestre só vai se foi ele quem usou.
@@ -29,10 +42,13 @@ export function quemViaja(quem, ctx) {
 // O jogador clicou em "Voltar ao mapa": o mestre confere e leva (ele, ou o grupo todo se foram juntos)
 export function receberVolta(data, remetente) {
   const cena = game.scenes.get(data?.cena);
-  const v = voltaDe(cena);
+  const v = voltaDe(cena, remetente);
   if (!v) return;
   if (!remetente.isGM && remetente.viewedScene !== cena.id) return;
-  const ids = v.grupo ? game.users.filter(u => u.active && !u.isGM && u.viewedScene === cena.id).map(u => u.id) : [];
+  // em grupo: só volta junto quem está neste mapa E veio do mesmo lugar
+  const ids = v.grupo
+    ? game.users.filter(u => u.active && !u.isGM && u.viewedScene === cena.id && voltaDe(cena, u)?.cena === v.cena).map(u => u.id)
+    : [];
   if (!ids.includes(remetente.id)) ids.push(remetente.id);
   efeito(ids, { tipo: "verCena", cena: v.cena });
 }
@@ -74,7 +90,6 @@ export function raioRevelado(doc, c, gs) {
 export function cobreNevoa(o, c = cfgDe(o.document)) {
   return !!c?.revela && !escondido(o.document, c) && estaTrancado(o.document, c);
 }
-export const abreNevoa = (o, c = cfgDe(o.document)) => !!c?.revela && !escondido(o.document, c) && !estaTrancado(o.document, c);
 // O cadeado aparece? (trancado; para os jogadores, só se o objeto não estiver escondido)
 export function mostraCadeado(o, c = cfgDe(o.document)) {
   if (!c?.cadeado || !estaTrancado(o.document, c)) return false;

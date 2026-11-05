@@ -418,7 +418,7 @@ test("editor: sem clicar em comando, o jogo continua valendo", async () => {
 // ---------- 3.1.0: mapa interativo e efeitos mais leves
 const nucleo = await import("../scripts/nucleo.js");
 const { padrao, nevoaCfg, PADRAO_NEVOA, corHex } = nucleo;
-const { quemViaja, voltaDe, raioRevelado, abreNevoa, cobreNevoa, mostraCadeado } = await import("../scripts/mapa.js");
+const { quemViaja, voltaDe, raioRevelado, cobreNevoa, mostraCadeado } = await import("../scripts/mapa.js");
 const { visaoDaNevoa } = await import("../scripts/regiao.js");
 const { profDe } = await import("../scripts/visual.js");
 
@@ -492,11 +492,9 @@ test("cidade trancada: não leva, avisa, mostra cadeado e não abre a névoa", a
   const o = { document: d };
   assert.equal(mostraCadeado(o), true);
   assert.equal(cobreNevoa(o), true, "trancada: coberta pela névoa");
-  assert.equal(abreNevoa(o), false);
   cfg(d).trancado = false;
   assert.equal(mostraCadeado(o), false);
   assert.equal(cobreNevoa(o), false, "liberada: sem névoa");
-  assert.equal(abreNevoa(o), true);
   cfg(d).trancado = true; d.hidden = true;
   assert.equal(cobreNevoa(o), true, "cidade escondida ainda é coberta (o botão só perde a imagem)");
   assert.equal(mostraCadeado(o), true);
@@ -569,4 +567,93 @@ test("cidade escondida continua usável para viagem (mas um objeto comum escondi
   assert.equal(escondido(cidade, c), false, "escondida, mas é destino: usável, com cadeado e névoa");
   assert.equal(escondido(cidade, { acoes: { sempre: [{ tipo: "som" }] } }), true);
   assert.equal(escondido({ hidden: false }, {}), false);
+});
+
+// ---------- Auditoria 3.10.0: viagens simultâneas e escadas com vários jogadores
+test("viagens simultâneas: cada um volta para o SEU mapa de origem, e o grupo só leva quem veio do mesmo lugar", async () => {
+  comoMestre();
+  const c3 = novaCena("c3", "Durholme");
+  game.scenes.set("c3", c3);
+  delete cidade.flags["objetos-vivos"];
+  F.ana.viewedScene = "c1"; F.beto.viewedScene = "c3";
+  // Ana sai de c1 (grupo), Beto sai de c3 (sozinho); os dois chegam em c2
+  await EXECUTAR.viajar({ destino: "c2", quem: "osDoMapa", volta: "comVolta" }, { cena: F.cena, token: null, userId: "ana" });
+  await EXECUTAR.viajar({ destino: "c2", quem: "quemUsou", volta: "comVolta" }, { cena: c3, token: F.token("tb", "beto"), userId: "beto" });
+  assert.equal(voltaDe(cidade, F.ana).cena, "c1", "a viagem do Beto não sobrescreveu a origem da Ana");
+  assert.equal(voltaDe(cidade, F.beto).cena, "c3");
+  assert.equal(voltaDe(cidade, game.user).cena, "c3", "o mestre segue a última viagem");
+  // os dois estão em c2; Ana (grupo) pede para voltar: só vai quem veio de c1
+  F.ana.viewedScene = "c2"; F.beto.viewedScene = "c2";
+  F.emitidos.length = 0;
+  await F.socket({ acao: "voltar", cena: "c2" }, "ana");
+  const ef = F.emitidos.filter(e => e.acao === "efeito" && e.efeito.tipo === "verCena");
+  assert.equal(ef.length, 1);
+  assert.deepEqual(ef[0].userIds, ["ana"]);
+  assert.equal(ef[0].efeito.cena, "c1");
+  // Beto volta para Durholme
+  F.emitidos.length = 0;
+  await F.socket({ acao: "voltar", cena: "c2" }, "beto");
+  const eb = F.emitidos.filter(e => e.acao === "efeito" && e.efeito.tipo === "verCena");
+  assert.deepEqual([eb[0].userIds, eb[0].efeito.cena], [["beto"], "c3"]);
+  game.scenes.delete("c3");
+});
+
+test("flag antiga 'volta' (uma por mapa) ainda é lida", () => {
+  const velha = novaCena("c4", "Antiga");
+  velha.flags["objetos-vivos"] = { volta: { cena: "c1", grupo: true } };
+  game.scenes.set("c4", velha);
+  assert.deepEqual(voltaDe(velha, F.ana), { cena: "c1", grupo: true });
+  game.scenes.delete("c4");
+});
+
+test("escada com vários jogadores: cada um recebe UM 'fim', com a câmera no próprio token", async () => {
+  comoMestre();
+  const ta = F.token("ta", "ana", { x: 0, y: 0 }), tb = F.token("tb2", "beto", { x: 500, y: 500 });
+  ta.actor.hasPlayerOwner = tb.actor.hasPlayerOwner = true;
+  const cenaEscada = { ...F.cena, id: "c1", tokens: [ta, tb], grid: { size: 100 }, regions: new Map(),
+    async updateEmbeddedDocuments(_t, upd) { for (const u of upd) { const tk = [ta, tb].find(x => x.id === u._id); Object.assign(tk, u); } } };
+  ta.parent = tb.parent = cenaEscada;
+  const regiao = { uuid: "Scene.c1.Region.r1", shapes: [{ type: "rectangle", x: 1000, y: 1000, width: 200, height: 200, hole: false }] };
+  F.registro.set(regiao.uuid, regiao);
+  F.emitidos.length = 0;
+  await EXECUTAR.escada({ chegada: regiao.uuid, quem: "jogadores", tela: "semTela" }, { cena: cenaEscada, token: ta, userId: "ana" });
+  const fins = F.emitidos.filter(e => e.acao === "efeito" && e.efeito.tipo === "escada" && e.efeito.fase === "fim");
+  const porUsuario = {};
+  for (const e of fins) for (const id of e.userIds) (porUsuario[id] ??= []).push(e.efeito);
+  assert.deepEqual(Object.keys(porUsuario).sort(), ["ana", "beto"]);
+  assert.equal(porUsuario.ana.length, 1, "Ana recebe um só 'fim'");
+  assert.equal(porUsuario.beto.length, 1, "Beto recebe um só 'fim'");
+  assert.equal(porUsuario.ana[0].token, "ta", "a câmera da Ana vai para o token dela");
+  assert.equal(porUsuario.beto[0].token, "tb2", "a do Beto, para o dele");
+  assert.notDeepEqual([porUsuario.ana[0].x, porUsuario.ana[0].y], [porUsuario.beto[0].x, porUsuario.beto[0].y], "chegam em casas diferentes");
+});
+
+test("diário 'só mostrar': manda o texto, sem mexer na permissão do documento", async () => {
+  comoMestre();
+  let permissaoMudou = false;
+  const entrada = { documentName: "JournalEntry", uuid: "JournalEntry.j1", name: "Carta", pages: [{ name: "Única", type: "text", text: { content: "<p>Olá</p>" } }],
+    testUserPermission: () => false, async update() { permissaoMudou = true; } };
+  F.registro.set(entrada.uuid, entrada);
+  F.ana.viewedScene = "c1";
+  F.emitidos.length = 0;
+  await EXECUTAR.diario({ diario: entrada.uuid, para: "mapa", acesso: "temporario" }, { cena: F.cena, token: null, userId: "gm" });
+  const ef = F.emitidos.find(e => e.acao === "efeito" && e.efeito.tipo === "diarioTexto");
+  assert.ok(ef, "efeito de texto enviado");
+  assert.match(ef.efeito.html, /Olá/);
+  assert.equal(permissaoMudou, false);
+  // modo padrão continua dando permissão
+  await EXECUTAR.diario({ diario: entrada.uuid, para: "mapa", acesso: "permanente" }, { cena: F.cena, token: null, userId: "gm" });
+  assert.equal(permissaoMudou, true);
+});
+
+test("socket: erro dentro de um pedido não derruba o canal (fica no console)", async () => {
+  comoMestre();
+  const d = F.tile("quebrado", objeto({}));
+  const avisos = [];
+  const original = console.error; console.error = (...a) => avisos.push(a);
+  // um objeto cuja configuração explode ao ser lida
+  Object.defineProperty(d, "getFlag", { value: () => { throw new Error("boom"); }, configurable: true });
+  await assert.doesNotReject(F.socket({ acao: "usar", uuid: d.uuid }, "ana"));
+  console.error = original;
+  assert.ok(avisos.some(a => String(a[0]).includes("falha ao tratar")), "a falha foi registrada com a ação e quem pediu");
 });

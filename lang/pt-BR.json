@@ -220,7 +220,9 @@
       "osDoMapa": "Todos os jogadores deste mapa",
       "todosJogadores": "Todos os jogadores conectados",
       "comVolta": "Mostrar \"Voltar ao mapa\" lá",
-      "semVolta": "Sem botão de volta"
+      "semVolta": "Sem botão de volta",
+      "permanente": "Dar permissão de observador",
+      "temporario": "Só mostrar (sem dar permissão)"
     },
     "Acao": {
       "som": "Efeito sonoro",
@@ -261,7 +263,7 @@
       "objeto": "Exemplo: a alavanca destranca o baú, ou acende as runas da sala.",
       "chat": "Pode usar {token}, {jogador}, {objeto} e {mapa} no texto.",
       "imagem": "Abre a imagem numa janela na tela de quem precisa ver.",
-      "diario": "Se a pessoa não tiver permissão para ver o diário, o mestre dá permissão de observador.",
+      "diario": "\"Dar permissão\": se a pessoa não puder ver o diário, o mestre dá permissão de observador (ela continua podendo abrir depois). \"Só mostrar\": o texto da página aparece numa janela, sem mexer nas permissões.",
       "camera": "Leva a câmera até o objeto ou até uma região. Zoom 0 mantém o zoom atual.",
       "escuridao": "0% = dia claro, 100% = escuro total. Duração em segundos.",
       "musica": "Usa as playlists nativas do Foundry e toca para a mesa toda.",
@@ -308,7 +310,8 @@
       "MesmoNivel": "— Continua no mesmo nível —",
       "MesmoLugar": "No mesmo lugar onde está",
       "SemNiveis": "Este mapa não tem níveis. Use a região de chegada.",
-      "volta": "Botão de volta"
+      "volta": "Botão de volta",
+      "acesso": "Acesso"
     },
     "Resumo": {
       "Configurar": "Clique em Editar para configurar",
@@ -346,7 +349,8 @@
       "TrancadoGazua": "\"{objeto}\" está trancado. Clique nele com o seu token por perto para usar a chave ou a gazua.",
       "SemToken": "Coloque o seu token perto do objeto primeiro.",
       "SemNivel": "O nível escolhido na escada não existe mais neste mapa.",
-      "NaoPode": "Você não pode usar “{objeto}” agora."
+      "NaoPode": "Você não pode usar “{objeto}” agora.",
+      "PedidoFalhou": "Objetos Vivos: o pedido \"{acao}\" de {quem} falhou. Veja o console (F12)."
     },
     "Bib": {
       "Titulo": "Objetos Vivos",

@@ -1,5 +1,18 @@
 # Changelog
 
+## v3.10.0
+
+Auditoria: correções de viagem, escada, diário e socket, com testes de regressão.
+
+- **Voltar ao mapa por pessoa**: a origem da viagem era guardada numa única flag do mapa de destino, então duas viagens vindas de mapas diferentes para o mesmo destino sobrescreviam o retorno uma da outra. Agora cada usuário tem a própria origem (`flags.objetos-vivos.voltas`), o grupo só volta junto com quem veio do mesmo lugar, e o mestre segue a última viagem. A flag antiga continua sendo lida.
+- **Escada com vários jogadores**: cada pessoa recebia um comando de câmera por token transportado (o último vencia). Agora cada uma recebe um só, com a câmera no próprio token.
+- **Abrir diário: opção "Só mostrar"**: o texto da página abre numa janela de leitura sem dar permissão no documento. "Dar permissão de observador" continua sendo o padrão e funciona como antes.
+- **Socket**: uma falha dentro de um pedido não fica mais como erro não tratado; vai para o console com a ação e quem pediu, e o mestre recebe um aviso. As conferências de remetente, token, rolagem e minijogo não mudaram.
+- **Névoa densa**: o jogador só redesenha a névoa quando a mudança é num personagem dele, e também quando a posse de um ator ou os tokens do mapa mudam.
+- Removida uma função sem uso (`abreNevoa`) e uma promessa solta ao arrastar da biblioteca passou a registrar erro.
+- 5 testes novos (46 no total): viagens simultâneas, flag antiga, escada com dois jogadores, diário "só mostrar" e erro no socket.
+
+
 ## v3.9.0
 
 - **Correção**: uma cidade trancada dentro de uma Região com névoa densa ficava mais densa que o resto da Região, porque as duas névoas eram empilhadas. Agora, se a Região já está coberta para quem está vendo, o círculo da cidade não é desenhado; ele só aparece para quem enxerga através da Região (ou fora dela).
