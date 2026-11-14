@@ -185,7 +185,16 @@ export function aplicarVisao(tile) {
         // vídeo: a carta fica montada e é redesenhada a cada quadro (senão o vídeo congela)
         const plano = montarCarta(tex, W, H, v);
         const rt = PIXI.RenderTexture.create({ width: W, height: H, resolution: resolucaoVisao(W, H) });
-        const quadro = () => { if (!rt.destroyed && !plano.destroyed) canvas.app.renderer.render(plano, { renderTexture: rt, clear: true }); };
+        // só redesenha quando o vídeo mostra um quadro novo (vídeo pausado ou parado não custa nada)
+        const fonte = tex.baseTexture?.resource?.source ?? null;
+        let ultimoQuadro = -1;
+        const quadro = () => {
+          if (rt.destroyed || plano.destroyed) return;
+          const t = fonte?.currentTime ?? -2;
+          if (t === ultimoQuadro) return;
+          ultimoQuadro = t;
+          canvas.app.renderer.render(plano, { renderTexture: rt, clear: true });
+        };
         quadro();
         canvas.app.ticker.add(quadro);
         novo = { rt, tex, chave, plano, quadro };

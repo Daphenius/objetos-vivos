@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.13.1
+
+- Atualizado para o Foundry VTT 14.370 (versão estável mais recente).
+- **Desempenho:** a visão 3D de um tile com vídeo só é redesenhada quando o vídeo mostra um quadro novo. Vídeo pausado ou parado não gasta mais placa de vídeo a cada quadro.
+
 ## v3.13.0
 
 A névoa sai do Objetos Vivos (vai para um módulo próprio).
